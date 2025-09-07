@@ -13,6 +13,7 @@ I'm working on a PIM (Product Information Management) system with the following 
 - Backend: `/Users/colinroets/dev/projects/product/pim` (NestJS)
 - Frontend: `/Users/colinroets/dev/projects/product/pim-admin` (React + Tailwind)
 - Documentation: `/Users/colinroets/dev/projects/product/pimdocs`
+- Shell Scripts: `/Users/colinroets/dev/projects/product/shell scripts/` (local only, not in Git)
 - GitHub Repository: `git@github.com:namaqua/product.git`
 
 **Technology Stack:**
@@ -140,10 +141,10 @@ All documentation is in `/Users/colinroets/dev/projects/product/pimdocs/`:
 ├── pim/            # Backend application
 ├── pim-admin/      # Frontend application
 ├── pimdocs/        # Documentation
+├── shell scripts/  # All project shell scripts
 ├── package.json    # Monorepo scripts
 ├── .gitignore      # Git ignore rules
-├── README.md       # Project overview
-└── setup-github.sh # GitHub setup script
+└── README.md       # Project overview
 ```
 
 ### Backend (`/Users/colinroets/dev/projects/product/pim/`)
@@ -244,6 +245,16 @@ Example requests:
 - "Start building the Product module"
 - "Add routing to the frontend"
 - "Connect frontend to backend API"
+
+## Important Notes
+
+### Shell Scripts Location
+**All shell scripts must be saved in:** `/Users/colinroets/dev/projects/product/shell scripts/`
+- Shell scripts are LOCAL ONLY (not tracked in Git)
+- Git management scripts are in the root of shell scripts/
+- Frontend debug scripts are in shell scripts/frontend-debug/
+- Always create new scripts in this location
+- These are development utilities only, not part of the build
 
 ## Component Usage Examples
 

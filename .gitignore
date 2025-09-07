@@ -3,6 +3,10 @@ node_modules/
 dist/
 build/
 
+# Shell scripts (development utilities only)
+shell scripts/
+scripts/
+
 # Environment
 .env
 .env.local

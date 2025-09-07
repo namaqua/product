@@ -37,8 +37,11 @@ This document serves as the primary reference for maintaining continuity across 
 │   ├── public/            # Static assets
 │   ├── components/        # Tailwind Pro components
 │   └── package.json       # Frontend dependencies
-└── pimdocs/               # Project documentation
-    └── PROJECT_INSTRUCTIONS.md  # This file
+├── pimdocs/               # Project documentation
+│   └── PROJECT_INSTRUCTIONS.md  # This file
+└── shell scripts/         # All project shell scripts
+    ├── frontend-debug/    # Frontend troubleshooting scripts
+    └── *.sh               # Git and deployment scripts
 ```
 
 ## Development Environment Setup
@@ -147,8 +150,9 @@ DATABASE_PASSWORD=[strong_production_password]
 1. **No Over-Engineering**: Implement only requested features
 2. **Open Source Only**: All tools and libraries must be open source
 3. **Documentation**: Update `/Users/colinroets/dev/projects/product/pimdocs/` for significant changes
-4. **Testing**: Write tests for critical functionality only
-5. **Security**: Follow OWASP guidelines for web security
+4. **Shell Scripts**: Save all shell scripts in `/Users/colinroets/dev/projects/product/shell scripts/`
+5. **Testing**: Write tests for critical functionality only
+6. **Security**: Follow OWASP guidelines for web security
 
 ### Avoided Complexities
 - No microservices architecture unless specifically requested
@@ -239,6 +243,7 @@ Then paste into new chat session.
 ## Notes for Assistant
 - Always check this file first when starting a new session
 - Reference Tailwind Pro templates in `/Users/colinroets/dev/tailwind-admin Pro` (if available) for UI implementation
+- Save all shell scripts in `/Users/colinroets/dev/projects/product/shell scripts/`
 - Avoid suggesting features not explicitly requested
 - Keep solutions simple and deployable
 - Focus on working code over theoretical optimizations
