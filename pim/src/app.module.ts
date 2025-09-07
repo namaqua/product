@@ -6,6 +6,8 @@ import { AppService } from './app.service';
 import databaseConfig from './config/database.config';
 import { DatabaseHealthService } from './config/database-health.service';
 import { AuditSubscriber } from './common/subscribers/audit.subscriber';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -29,6 +31,10 @@ import { AuditSubscriber } from './common/subscribers/audit.subscriber';
       }),
       inject: [ConfigService],
     }),
+    
+    // Feature Modules
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseHealthService, AuditSubscriber],
