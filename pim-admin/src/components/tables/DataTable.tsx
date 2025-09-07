@@ -1,33 +1,33 @@
-import { useState, useMemo } from 'react'
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid'
-import { classNames } from '@/utils/classNames'
+import { useState, useMemo } from 'react';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/20/solid';
+import { classNames } from '@/utils/classNames';
 
 export interface Column<T> {
-  key: string
-  header: string
-  accessor: (item: T) => any
-  sortable?: boolean
-  render?: (value: any, item: T) => React.ReactNode
-  className?: string
+  key: string;
+  header: string;
+  accessor: (item: T) => unknown;
+  sortable?: boolean;
+  render?: (value: unknown, item: T) => React.ReactNode;
+  className?: string;
 }
 
 interface DataTableProps<T> {
-  data: T[]
-  columns: Column<T>[]
-  keyExtractor: (item: T) => string | number
-  onRowClick?: (item: T) => void
-  selectable?: boolean
-  selectedItems?: T[]
-  onSelectionChange?: (items: T[]) => void
-  loading?: boolean
-  emptyMessage?: string
+  data: T[];
+  columns: Column<T>[];
+  keyExtractor: (item: T) => string | number;
+  onRowClick?: (item: T) => void;
+  selectable?: boolean;
+  selectedItems?: T[];
+  onSelectionChange?: (items: T[]) => void;
+  loading?: boolean;
+  emptyMessage?: string;
   pagination?: {
-    page: number
-    pageSize: number
-    total: number
-    onPageChange: (page: number) => void
-    onPageSizeChange: (size: number) => void
-  }
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+    onPageSizeChange: (size: number) => void;
+  };
 }
 
 export default function DataTable<T>({
@@ -40,71 +40,71 @@ export default function DataTable<T>({
   onSelectionChange,
   loading = false,
   emptyMessage = 'No data found',
-  pagination
+  pagination,
 }: DataTableProps<T>) {
-  const [sortColumn, setSortColumn] = useState<string | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortColumn, setSortColumn] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   const handleSort = (column: Column<T>) => {
-    if (!column.sortable) return
+    if (!column.sortable) return;
 
     if (sortColumn === column.key) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortColumn(column.key)
-      setSortDirection('asc')
+      setSortColumn(column.key);
+      setSortDirection('asc');
     }
-  }
+  };
 
   const sortedData = useMemo(() => {
-    if (!sortColumn) return data
+    if (!sortColumn) return data;
 
-    const column = columns.find(col => col.key === sortColumn)
-    if (!column) return data
+    const column = columns.find((col) => col.key === sortColumn);
+    if (!column) return data;
 
     return [...data].sort((a, b) => {
-      const aVal = column.accessor(a)
-      const bVal = column.accessor(b)
+      const aVal = column.accessor(a);
+      const bVal = column.accessor(b);
 
-      if (aVal === null || aVal === undefined) return 1
-      if (bVal === null || bVal === undefined) return -1
+      if (aVal === null || aVal === undefined) return 1;
+      if (bVal === null || bVal === undefined) return -1;
 
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
-      return 0
-    })
-  }, [data, sortColumn, sortDirection, columns])
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [data, sortColumn, sortDirection, columns]);
 
   const handleSelectAll = () => {
     if (selectedItems.length === data.length) {
-      onSelectionChange?.([])
+      onSelectionChange?.([]);
     } else {
-      onSelectionChange?.(data)
+      onSelectionChange?.(data);
     }
-  }
+  };
 
   const handleSelectItem = (item: T) => {
-    const key = keyExtractor(item)
-    const isSelected = selectedItems.some(selected => keyExtractor(selected) === key)
-    
+    const key = keyExtractor(item);
+    const isSelected = selectedItems.some((selected) => keyExtractor(selected) === key);
+
     if (isSelected) {
-      onSelectionChange?.(selectedItems.filter(selected => keyExtractor(selected) !== key))
+      onSelectionChange?.(selectedItems.filter((selected) => keyExtractor(selected) !== key));
     } else {
-      onSelectionChange?.([...selectedItems, item])
+      onSelectionChange?.([...selectedItems, item]);
     }
-  }
+  };
 
   const isItemSelected = (item: T) => {
-    const key = keyExtractor(item)
-    return selectedItems.some(selected => keyExtractor(selected) === key)
-  }
+    const key = keyExtractor(item);
+    return selectedItems.some((selected) => keyExtractor(selected) === key);
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-navy-800"></div>
       </div>
-    )
+    );
   }
 
   return (
@@ -132,7 +132,7 @@ export default function DataTable<T>({
                       className={classNames(
                         'px-3 py-3.5 text-left text-sm font-semibold text-navy-900',
                         column.sortable ? 'cursor-pointer select-none' : '',
-                        column.className
+                        column.className,
                       )}
                       onClick={() => handleSort(column)}
                     >
@@ -172,7 +172,7 @@ export default function DataTable<T>({
                       key={keyExtractor(item)}
                       className={classNames(
                         onRowClick ? 'cursor-pointer hover:bg-gray-50' : '',
-                        isItemSelected(item) ? 'bg-accent-50' : ''
+                        isItemSelected(item) ? 'bg-accent-50' : '',
                       )}
                       onClick={() => onRowClick?.(item)}
                     >
@@ -183,8 +183,8 @@ export default function DataTable<T>({
                             className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-navy-800 focus:ring-navy-600"
                             checked={isItemSelected(item)}
                             onChange={(e) => {
-                              e.stopPropagation()
-                              handleSelectItem(item)
+                              e.stopPropagation();
+                              handleSelectItem(item);
                             }}
                             onClick={(e) => e.stopPropagation()}
                           />
@@ -195,7 +195,7 @@ export default function DataTable<T>({
                           key={column.key}
                           className={classNames(
                             'whitespace-nowrap px-3 py-4 text-sm text-gray-800',
-                            column.className
+                            column.className,
                           )}
                         >
                           {column.render
@@ -209,7 +209,7 @@ export default function DataTable<T>({
               </tbody>
             </table>
           </div>
-          
+
           {pagination && (
             <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6">
               <div className="flex flex-1 justify-between sm:hidden">
@@ -253,7 +253,10 @@ export default function DataTable<T>({
                     <option value={50}>50</option>
                     <option value={100}>100</option>
                   </select>
-                  <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <nav
+                    className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+                    aria-label="Pagination"
+                  >
                     <button
                       onClick={() => pagination.onPageChange(pagination.page - 1)}
                       disabled={pagination.page === 1}
@@ -281,8 +284,8 @@ export default function DataTable<T>({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // Add missing icon imports
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid'
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/20/solid';

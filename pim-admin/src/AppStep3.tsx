@@ -1,6 +1,6 @@
 // Step 3: Test @ alias imports
-import Button from '@/components/common/Button'
-import { classNames } from '@/utils/classNames'
+import Button from '@/components/common/Button';
+import { classNames } from '@/utils/classNames';
 
 function App() {
   return (
@@ -10,18 +10,11 @@ function App() {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             ✅ Step 3: Testing @ Alias Imports
           </h1>
-          <p className="text-gray-600 mb-4">
-            Testing @/ import paths...
-          </p>
-          
+          <p className="text-gray-600 mb-4">Testing @/ import paths...</p>
+
           <div className="flex gap-4">
             <Button variant="primary">@ Imports Work!</Button>
-            <button 
-              className={classNames(
-                'px-4 py-2 rounded',
-                true ? 'bg-green-500 text-white' : 'bg-gray-500'
-              )}
-            >
+            <button className={classNames('px-4 py-2 rounded', 'bg-green-500 text-white')}>
               ClassNames Util Works!
             </button>
           </div>
@@ -34,7 +27,7 @@ function App() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

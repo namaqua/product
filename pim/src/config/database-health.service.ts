@@ -11,18 +11,27 @@ export class DatabaseHealthService implements OnModuleInit {
     try {
       if (this.dataSource.isInitialized) {
         this.logger.log('✅ Database connection established successfully');
-        
+
         // Run a simple query to verify connection
         const result = await this.dataSource.query('SELECT NOW()');
         this.logger.log(`📅 Database server time: ${result[0].now}`);
-        
+
         // Log database info
-        this.logger.log(`📊 Database: ${this.dataSource.options.database}`);
-        this.logger.log(`🏠 Host: ${(this.dataSource.options as any).host}:${(this.dataSource.options as any).port}`);
-        this.logger.log(`👤 User: ${(this.dataSource.options as any).username}`);
+        const options = this.dataSource.options as {
+          database?: string;
+          host?: string;
+          port?: number;
+          username?: string;
+        };
+        this.logger.log(`📊 Database: ${options.database}`);
+        this.logger.log(`🏠 Host: ${options.host}:${options.port}`);
+        this.logger.log(`👤 User: ${options.username}`);
       }
     } catch (error) {
-      this.logger.error('❌ Database connection failed:', error.message);
+      this.logger.error(
+        '❌ Database connection failed:',
+        error instanceof Error ? error.message : String(error),
+      );
       throw error;
     }
   }
@@ -32,7 +41,10 @@ export class DatabaseHealthService implements OnModuleInit {
       await this.dataSource.query('SELECT 1');
       return true;
     } catch (error) {
-      this.logger.error('Database health check failed:', error);
+      this.logger.error(
+        'Database health check failed:',
+        error instanceof Error ? error.message : String(error),
+      );
       return false;
     }
   }

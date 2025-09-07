@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, Fragment } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
+import { useState, Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
 import {
   Bars3Icon,
   XMarkIcon,
@@ -15,8 +15,8 @@ import {
   GlobeAltIcon,
   Cog6ToothIcon,
   UsersIcon,
-} from '@heroicons/react/24/outline'
-import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid'
+} from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, current: true },
@@ -27,41 +27,42 @@ const navigation = [
   { name: 'Workflows', href: '/workflows', icon: ClipboardDocumentListIcon, current: false },
   { name: 'Import/Export', href: '/import-export', icon: ArrowPathIcon, current: false },
   { name: 'Channels', href: '/channels', icon: GlobeAltIcon, current: false },
-]
+];
 
 const adminNavigation = [
   { name: 'Users', href: '/admin/users', icon: UsersIcon, current: false },
   { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon, current: false },
-]
+];
 
-const userNavigation = [
-  { name: 'Your Profile', href: '/profile' },
-  { name: 'Settings', href: '/settings' },
-  { name: 'Sign out', href: '/logout' },
-]
+// Uncomment when user menu is implemented
+// const userNavigation = [
+//   { name: 'Your Profile', href: '/profile' },
+//   { name: 'Settings', href: '/settings' },
+//   { name: 'Sign out', href: '/logout' },
+// ];
 
 function classNames(...classes: string[]) {
-  return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
 
 interface ApplicationShellProps {
-  children: React.ReactNode
-  currentPath?: string
+  children: React.ReactNode;
+  currentPath?: string;
 }
 
 export default function ApplicationShell({ children, currentPath = '/' }: ApplicationShellProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Update current navigation item based on path
-  const updatedNavigation = navigation.map(item => ({
+  const updatedNavigation = navigation.map((item) => ({
     ...item,
-    current: item.href === currentPath
-  }))
+    current: item.href === currentPath,
+  }));
 
-  const updatedAdminNavigation = adminNavigation.map(item => ({
+  const updatedAdminNavigation = adminNavigation.map((item) => ({
     ...item,
-    current: item.href === currentPath
-  }))
+    current: item.href === currentPath,
+  }));
 
   return (
     <>
@@ -102,13 +103,17 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                     leaveTo="opacity-0"
                   >
                     <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                      <button type="button" className="-m-2.5 p-2.5" onClick={() => setSidebarOpen(false)}>
+                      <button
+                        type="button"
+                        className="-m-2.5 p-2.5"
+                        onClick={() => setSidebarOpen(false)}
+                      >
                         <span className="sr-only">Close sidebar</span>
                         <XMarkIcon className="h-6 w-6 text-white" aria-hidden="true" />
                       </button>
                     </div>
                   </Transition.Child>
-                  
+
                   {/* Mobile Sidebar content */}
                   <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
                     <div className="flex h-16 shrink-0 items-center">
@@ -131,13 +136,15 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                                     item.current
                                       ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
                                       : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      item.current ? 'text-navy-800' : 'text-gray-400 group-hover:text-navy-700',
-                                      'h-6 w-6 shrink-0'
+                                      item.current
+                                        ? 'text-navy-800'
+                                        : 'text-gray-400 group-hover:text-navy-700',
+                                      'h-6 w-6 shrink-0',
                                     )}
                                     aria-hidden="true"
                                   />
@@ -148,7 +155,9 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                           </ul>
                         </li>
                         <li>
-                          <div className="text-xs font-semibold leading-6 text-gray-400">Administration</div>
+                          <div className="text-xs font-semibold leading-6 text-gray-400">
+                            Administration
+                          </div>
                           <ul role="list" className="-mx-2 mt-2 space-y-1">
                             {updatedAdminNavigation.map((item) => (
                               <li key={item.name}>
@@ -158,13 +167,15 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                                     item.current
                                       ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
                                       : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      item.current ? 'text-navy-800' : 'text-gray-400 group-hover:text-navy-700',
-                                      'h-6 w-6 shrink-0'
+                                      item.current
+                                        ? 'text-navy-800'
+                                        : 'text-gray-400 group-hover:text-navy-700',
+                                      'h-6 w-6 shrink-0',
                                     )}
                                     aria-hidden="true"
                                   />
@@ -206,13 +217,15 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                             item.current
                               ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
                               : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              item.current ? 'text-navy-800' : 'text-gray-400 group-hover:text-navy-700',
-                              'h-6 w-6 shrink-0'
+                              item.current
+                                ? 'text-navy-800'
+                                : 'text-gray-400 group-hover:text-navy-700',
+                              'h-6 w-6 shrink-0',
                             )}
                             aria-hidden="true"
                           />
@@ -223,7 +236,9 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                   </ul>
                 </li>
                 <li>
-                  <div className="text-xs font-semibold leading-6 text-gray-400">Administration</div>
+                  <div className="text-xs font-semibold leading-6 text-gray-400">
+                    Administration
+                  </div>
                   <ul role="list" className="-mx-2 mt-2 space-y-1">
                     {updatedAdminNavigation.map((item) => (
                       <li key={item.name}>
@@ -233,13 +248,15 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                             item.current
                               ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
                               : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              item.current ? 'text-navy-800' : 'text-gray-400 group-hover:text-navy-700',
-                              'h-6 w-6 shrink-0'
+                              item.current
+                                ? 'text-navy-800'
+                                : 'text-gray-400 group-hover:text-navy-700',
+                              'h-6 w-6 shrink-0',
                             )}
                             aria-hidden="true"
                           />
@@ -309,13 +326,13 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
 
                 {/* Profile dropdown - simplified for now */}
                 <div className="flex items-center">
-                  <button
-                    type="button"
-                    className="-m-1.5 flex items-center p-1.5"
-                  >
+                  <button type="button" className="-m-1.5 flex items-center p-1.5">
                     <span className="sr-only">Open user menu</span>
                     <span className="hidden lg:flex lg:items-center">
-                      <span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
+                      <span
+                        className="ml-4 text-sm font-semibold leading-6 text-gray-900"
+                        aria-hidden="true"
+                      >
                         User Name
                       </span>
                     </span>
@@ -331,5 +348,5 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
         </div>
       </div>
     </>
-  )
+  );
 }
