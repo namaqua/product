@@ -1,0 +1,1 @@
+I'm working on the PIM project with these specifications: - Framework: NestJS - Database: PostgreSQL - Dev Path: /Users/colinroets/dev/pim - Docs Path: /Users/colinroets/dev/pimdocs - Deployment Target: DigitalOcean - Constraint: Open source tools only, avoid over-engineering Full instructions: /Users/colinroets/dev/pimdocs/PROJECT_INSTRUCTIONS.md

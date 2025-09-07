@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Test</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            font-family: system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        function TestApp() {
+            const [count, setCount] = useState(0);
+            const [message, setMessage] = useState('');
+            
+            const checkEnvironment = () => {
+                const checks = [];
+                checks.push(`React version: ${React.version}`);
+                checks.push(`Time: ${new Date().toLocaleTimeString()}`);
+                checks.push(`Counter works: ${count > 0 ? 'Yes' : 'Click button to test'}`);
+                setMessage(checks.join(' | '));
+            };
+            
+            return (
+                <div className="container">
+                    <h1>🚀 Standalone React Test</h1>
+                    <p className="success">✅ If you see this, React works!</p>
+                    
+                    <div style={{ marginTop: '20px' }}>
+                        <p>Counter: <strong>{count}</strong></p>
+                        <button onClick={() => setCount(count + 1)}>
+                            Click Me ({count})
+                        </button>
+                    </div>
+                    
+                    <div style={{ marginTop: '20px' }}>
+                        <button onClick={checkEnvironment}>
+                            Check Environment
+                        </button>
+                        {message && (
+                            <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+                                {message}
+                            </p>
+                        )}
+                    </div>
+                    
+                    <div style={{ marginTop: '30px', padding: '20px', background: '#f3f4f6', borderRadius: '5px' }}>
+                        <h3>If this page works but Vite doesn't:</h3>
+                        <ol>
+                            <li>The issue is with Vite or the build setup</li>
+                            <li>Try: <code>npx vite --clearScreen false --debug</code></li>
+                            <li>Check if TypeScript has errors: <code>npx tsc --noEmit</code></li>
+                        </ol>
+                    </div>
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TestApp />);
+        
+        console.log('Standalone React test loaded successfully!');
+    </script>
+</body>
+</html>

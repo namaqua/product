@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Our Products</title>
+    <style>
+      /* Fallback styles to ensure something is visible */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      #root {
+        min-height: 100vh;
+        background-color: #f0f0f0;
+      }
+      #root:empty::after {
+        content: "Loading React...";
+        display: block;
+        padding: 40px;
+        text-align: center;
+        font-size: 24px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      <div style="padding: 40px; text-align: center; color: red;">
+        <h1>JavaScript is disabled!</h1>
+        <p>Please enable JavaScript to run this application.</p>
+      </div>
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
