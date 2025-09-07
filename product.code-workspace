@@ -1,0 +1,33 @@
+{
+  "folders": [
+    {
+      "name": "Backend (NestJS)",
+      "path": "pim"
+    },
+    {
+      "name": "Frontend (React)",
+      "path": "pim-admin"
+    },
+    {
+      "name": "Documentation",
+      "path": "pimdocs"
+    },
+    {
+      "name": "Root",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": false
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "christian-kohler.path-intellisense"
+    ]
+  }
+}

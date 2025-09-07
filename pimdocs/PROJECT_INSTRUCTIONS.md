@@ -39,7 +39,7 @@ This document serves as the primary reference for maintaining continuity across 
 │   └── package.json       # Frontend dependencies
 ├── pimdocs/               # Project documentation
 │   └── PROJECT_INSTRUCTIONS.md  # This file
-└── shell scripts/         # All project shell scripts
+└── shell-scripts/         # All project shell scripts
     ├── frontend-debug/    # Frontend troubleshooting scripts
     └── *.sh               # Git and deployment scripts
 ```
@@ -150,7 +150,12 @@ DATABASE_PASSWORD=[strong_production_password]
 1. **No Over-Engineering**: Implement only requested features
 2. **Open Source Only**: All tools and libraries must be open source
 3. **Documentation**: Update `/Users/colinroets/dev/projects/product/pimdocs/` for significant changes
-4. **Shell Scripts**: Save all shell scripts in `/Users/colinroets/dev/projects/product/shell scripts/`
+4. **Shell Scripts**: Save all shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/`
+   ```bash
+   cd /Users/colinroets/dev/projects/product/shell-scripts
+   chmod +x script-name.sh
+   ./script-name.sh
+   ```
 5. **Testing**: Write tests for critical functionality only
 6. **Security**: Follow OWASP guidelines for web security
 
@@ -243,7 +248,7 @@ Then paste into new chat session.
 ## Notes for Assistant
 - Always check this file first when starting a new session
 - Reference Tailwind Pro templates in `/Users/colinroets/dev/tailwind-admin Pro` (if available) for UI implementation
-- Save all shell scripts in `/Users/colinroets/dev/projects/product/shell scripts/`
+- Save all shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/`
 - Avoid suggesting features not explicitly requested
 - Keep solutions simple and deployable
 - Focus on working code over theoretical optimizations

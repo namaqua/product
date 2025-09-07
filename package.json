@@ -22,7 +22,10 @@
     "lint:frontend": "cd pim-admin && npm run lint",
     "format": "npm run format:backend && npm run format:frontend",
     "format:backend": "cd pim && npm run format",
-    "format:frontend": "cd pim-admin && npm run format"
+    "format:frontend": "cd pim-admin && npm run format",
+    "format:check": "npm run format:check:backend && npm run format:check:frontend",
+    "format:check:backend": "cd pim && npm run format:check",
+    "format:check:frontend": "cd pim-admin && npm run format:check"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

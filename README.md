@@ -9,7 +9,7 @@ A modern PIM system built with NestJS and React.
 ├── pim/          # Backend (NestJS + PostgreSQL)
 ├── pim-admin/    # Frontend (React + Vite + TypeScript)  
 ├── pimdocs/      # Documentation
-└── shell scripts/  # Local development utilities (not in Git)
+└── shell-scripts/  # Local development utilities (not in Git)
 ```
 
 ## 🎨 UI Theme

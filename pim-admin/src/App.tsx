@@ -1,7 +1,7 @@
-import Dashboard from '@/features/dashboard/Dashboard'
+import Dashboard from '@/features/dashboard/Dashboard';
 
 function App() {
-  return <Dashboard />
+  return <Dashboard />;
 }
 
-export default App
+export default App;

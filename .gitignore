@@ -4,6 +4,7 @@ dist/
 build/
 
 # Shell scripts (development utilities only)
+shell-scripts/
 shell scripts/
 scripts/
 

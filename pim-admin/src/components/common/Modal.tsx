@@ -1,17 +1,17 @@
-'use client'
+'use client';
 
-import { Fragment, ReactNode } from 'react'
-import { Dialog, Transition } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import { classNames } from '@/utils/classNames'
+import { Fragment, ReactNode } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import { classNames } from '@/utils/classNames';
 
 interface ModalProps {
-  open: boolean
-  onClose: (value: boolean) => void
-  title?: string
-  children: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
-  showCloseButton?: boolean
+  open: boolean;
+  onClose: (value: boolean) => void;
+  title?: string;
+  children: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+  showCloseButton?: boolean;
 }
 
 export default function Modal({
@@ -20,15 +20,15 @@ export default function Modal({
   title,
   children,
   size = 'md',
-  showCloseButton = true
+  showCloseButton = true,
 }: ModalProps) {
   const sizeClasses = {
     sm: 'sm:max-w-sm',
     md: 'sm:max-w-lg',
     lg: 'sm:max-w-2xl',
     xl: 'sm:max-w-4xl',
-    full: 'sm:max-w-full'
-  }
+    full: 'sm:max-w-full',
+  };
 
   return (
     <Transition.Root show={open} as={Fragment}>
@@ -59,7 +59,7 @@ export default function Modal({
               <Dialog.Panel
                 className={classNames(
                   'relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:p-6',
-                  sizeClasses[size]
+                  sizeClasses[size],
                 )}
               >
                 {showCloseButton && (
@@ -75,7 +75,10 @@ export default function Modal({
                   </div>
                 )}
                 {title && (
-                  <Dialog.Title as="h3" className="text-lg font-semibold leading-6 text-gray-900 mb-4">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-semibold leading-6 text-gray-900 mb-4"
+                  >
                     {title}
                   </Dialog.Title>
                 )}
@@ -86,5 +89,5 @@ export default function Modal({
         </div>
       </Dialog>
     </Transition.Root>
-  )
+  );
 }

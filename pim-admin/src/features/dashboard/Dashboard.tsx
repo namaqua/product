@@ -1,69 +1,101 @@
-import { useState } from 'react'
-import ApplicationShell from '@/components/layouts/ApplicationShell'
-import Button from '@/components/common/Button'
-import DataTable, { Column } from '@/components/tables/DataTable'
-import { 
-  ArrowUpIcon, 
+import { useState } from 'react';
+import ApplicationShell from '@/components/layouts/ApplicationShell';
+import Button from '@/components/common/Button';
+import DataTable, { Column } from '@/components/tables/DataTable';
+import {
+  ArrowUpIcon,
   ArrowDownIcon,
   CubeIcon,
   FolderIcon,
   TagIcon,
-  PhotoIcon
-} from '@heroicons/react/20/solid'
+  PhotoIcon,
+} from '@heroicons/react/20/solid';
 
 // Sample data types
 interface Product {
-  id: string
-  name: string
-  sku: string
-  category: string
-  status: 'active' | 'draft' | 'archived'
-  price: number
-  lastModified: string
+  id: string;
+  name: string;
+  sku: string;
+  category: string;
+  status: 'active' | 'draft' | 'archived';
+  price: number;
+  lastModified: string;
 }
 
 // Sample data
 const sampleProducts: Product[] = [
-  { id: '1', name: 'Product Alpha', sku: 'SKU-001', category: 'Electronics', status: 'active', price: 299.99, lastModified: '2025-01-05' },
-  { id: '2', name: 'Product Beta', sku: 'SKU-002', category: 'Clothing', status: 'draft', price: 79.99, lastModified: '2025-01-04' },
-  { id: '3', name: 'Product Gamma', sku: 'SKU-003', category: 'Electronics', status: 'active', price: 599.99, lastModified: '2025-01-03' },
-  { id: '4', name: 'Product Delta', sku: 'SKU-004', category: 'Home', status: 'archived', price: 149.99, lastModified: '2025-01-02' },
-]
+  {
+    id: '1',
+    name: 'Product Alpha',
+    sku: 'SKU-001',
+    category: 'Electronics',
+    status: 'active',
+    price: 299.99,
+    lastModified: '2025-01-05',
+  },
+  {
+    id: '2',
+    name: 'Product Beta',
+    sku: 'SKU-002',
+    category: 'Clothing',
+    status: 'draft',
+    price: 79.99,
+    lastModified: '2025-01-04',
+  },
+  {
+    id: '3',
+    name: 'Product Gamma',
+    sku: 'SKU-003',
+    category: 'Electronics',
+    status: 'active',
+    price: 599.99,
+    lastModified: '2025-01-03',
+  },
+  {
+    id: '4',
+    name: 'Product Delta',
+    sku: 'SKU-004',
+    category: 'Home',
+    status: 'archived',
+    price: 149.99,
+    lastModified: '2025-01-02',
+  },
+];
 
 const stats = [
-  { 
-    name: 'Total Products', 
-    value: '2,847', 
-    change: '+12.5%', 
+  {
+    name: 'Total Products',
+    value: '2,847',
+    change: '+12.5%',
     changeType: 'increase' as const,
-    icon: CubeIcon 
+    icon: CubeIcon,
   },
-  { 
-    name: 'Active Categories', 
-    value: '145', 
-    change: '+3.2%', 
+  {
+    name: 'Active Categories',
+    value: '145',
+    change: '+3.2%',
     changeType: 'increase' as const,
-    icon: FolderIcon 
+    icon: FolderIcon,
   },
-  { 
-    name: 'Attributes', 
-    value: '892', 
-    change: '-1.5%', 
+  {
+    name: 'Attributes',
+    value: '892',
+    change: '-1.5%',
     changeType: 'decrease' as const,
-    icon: TagIcon 
+    icon: TagIcon,
   },
-  { 
-    name: 'Media Assets', 
-    value: '12,543', 
-    change: '+23.1%', 
+  {
+    name: 'Media Assets',
+    value: '12,543',
+    change: '+23.1%',
     changeType: 'increase' as const,
-    icon: PhotoIcon 
+    icon: PhotoIcon,
   },
-]
+];
 
 export default function Dashboard() {
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const columns: Column<Product>[] = [
     {
@@ -76,13 +108,13 @@ export default function Dashboard() {
           <div className="font-medium text-navy-900">{value}</div>
           <div className="text-gray-500">{item.sku}</div>
         </div>
-      )
+      ),
     },
     {
       key: 'category',
       header: 'Category',
       accessor: (item) => item.category,
-      sortable: true
+      sortable: true,
     },
     {
       key: 'status',
@@ -90,29 +122,31 @@ export default function Dashboard() {
       accessor: (item) => item.status,
       sortable: true,
       render: (value) => (
-        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
           ${value === 'active' ? 'bg-green-100 text-green-800' : ''}
           ${value === 'draft' ? 'bg-yellow-100 text-yellow-800' : ''}
           ${value === 'archived' ? 'bg-gray-100 text-gray-800' : ''}
-        `}>
+        `}
+        >
           {value}
         </span>
-      )
+      ),
     },
     {
       key: 'price',
       header: 'Price',
       accessor: (item) => item.price,
       sortable: true,
-      render: (value) => `$${value.toFixed(2)}`
+      render: (value) => `$${value.toFixed(2)}`,
     },
     {
       key: 'lastModified',
       header: 'Last Modified',
       accessor: (item) => item.lastModified,
-      sortable: true
-    }
-  ]
+      sortable: true,
+    },
+  ];
 
   return (
     <ApplicationShell currentPath="/">
@@ -126,12 +160,8 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="mt-4 sm:mt-0 space-x-3">
-            <Button variant="secondary">
-              Export Data
-            </Button>
-            <Button variant="accent">
-              Add Product
-            </Button>
+            <Button variant="secondary">Export Data</Button>
+            <Button variant="accent">Add Product</Button>
           </div>
         </div>
 
@@ -156,11 +186,20 @@ export default function Dashboard() {
                   `}
                 >
                   {stat.changeType === 'increase' ? (
-                    <ArrowUpIcon className="h-5 w-5 flex-shrink-0 self-center text-green-500" aria-hidden="true" />
+                    <ArrowUpIcon
+                      className="h-5 w-5 flex-shrink-0 self-center text-green-500"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <ArrowDownIcon className="h-5 w-5 flex-shrink-0 self-center text-red-500" aria-hidden="true" />
+                    <ArrowDownIcon
+                      className="h-5 w-5 flex-shrink-0 self-center text-red-500"
+                      aria-hidden="true"
+                    />
                   )}
-                  <span className="sr-only"> {stat.changeType === 'increase' ? 'Increased' : 'Decreased'} by </span>
+                  <span className="sr-only">
+                    {' '}
+                    {stat.changeType === 'increase' ? 'Increased' : 'Decreased'} by{' '}
+                  </span>
                   {stat.change}
                 </p>
               </dd>
@@ -185,12 +224,12 @@ export default function Dashboard() {
                 pageSize: 10,
                 total: 100,
                 onPageChange: setCurrentPage,
-                onPageSizeChange: (size) => console.log('Page size:', size)
+                onPageSizeChange: (size) => console.log('Page size:', size),
               }}
             />
           </div>
         </div>
       </div>
     </ApplicationShell>
-  )
+  );
 }

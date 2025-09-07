@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import databaseConfig from './config/database.config';
 import { DatabaseHealthService } from './config/database-health.service';
+import { AuditSubscriber } from './common/subscribers/audit.subscriber';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { DatabaseHealthService } from './config/database-health.service';
       load: [databaseConfig],
       envFilePath: '.env',
     }),
-    
+
     // TypeORM Module - Database connection
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -30,9 +31,6 @@ import { DatabaseHealthService } from './config/database-health.service';
     }),
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    DatabaseHealthService,
-  ],
+  providers: [AppService, DatabaseHealthService, AuditSubscriber],
 })
 export class AppModule {}

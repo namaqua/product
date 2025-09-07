@@ -1,0 +1,19 @@
+# Dependencies
+node_modules
+dist
+build
+
+# IDE
+.idea
+.vscode
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# Generated files
+*.generated.ts
+*.generated.js

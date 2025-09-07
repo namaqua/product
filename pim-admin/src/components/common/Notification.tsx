@@ -1,46 +1,46 @@
-'use client'
+'use client';
 
-import { Fragment, useEffect, useState } from 'react'
-import { Transition } from '@headlessui/react'
+import { Fragment, useEffect, useState } from 'react';
+import { Transition } from '@headlessui/react';
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
   InformationCircleIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline'
-import { classNames } from '@/utils/classNames'
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
+import { classNames } from '@/utils/classNames';
 
-export type NotificationType = 'success' | 'error' | 'warning' | 'info'
+export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
 interface NotificationProps {
-  id?: string
-  type: NotificationType
-  title: string
-  message?: string
-  show: boolean
-  autoClose?: boolean
-  duration?: number
-  onClose?: () => void
+  id?: string;
+  type: NotificationType;
+  title: string;
+  message?: string;
+  show: boolean;
+  autoClose?: boolean;
+  duration?: number;
+  onClose?: () => void;
   actions?: {
-    label: string
-    onClick: () => void
-  }[]
+    label: string;
+    onClick: () => void;
+  }[];
 }
 
 const icons = {
   success: CheckCircleIcon,
   error: XCircleIcon,
   warning: ExclamationTriangleIcon,
-  info: InformationCircleIcon
-}
+  info: InformationCircleIcon,
+};
 
 const colors = {
   success: 'text-green-600',
   error: 'text-red-600',
   warning: 'text-yellow-600',
-  info: 'text-blue-600'
-}
+  info: 'text-blue-600',
+};
 
 export default function Notification({
   type = 'info',
@@ -50,28 +50,28 @@ export default function Notification({
   autoClose = true,
   duration = 5000,
   onClose,
-  actions
+  actions,
 }: NotificationProps) {
-  const [visible, setVisible] = useState(show)
-  const Icon = icons[type]
+  const [visible, setVisible] = useState(show);
+  const Icon = icons[type];
 
   useEffect(() => {
-    setVisible(show)
-    
+    setVisible(show);
+
     if (show && autoClose && duration > 0) {
       const timer = setTimeout(() => {
-        setVisible(false)
-        onClose?.()
-      }, duration)
-      
-      return () => clearTimeout(timer)
+        setVisible(false);
+        onClose?.();
+      }, duration);
+
+      return () => clearTimeout(timer);
     }
-  }, [show, autoClose, duration, onClose])
+  }, [show, autoClose, duration, onClose]);
 
   const handleClose = () => {
-    setVisible(false)
-    onClose?.()
-  }
+    setVisible(false);
+    onClose?.();
+  };
 
   return (
     <Transition
@@ -92,9 +92,7 @@ export default function Notification({
             </div>
             <div className="ml-3 w-0 flex-1 pt-0.5">
               <p className="text-sm font-medium text-gray-900">{title}</p>
-              {message && (
-                <p className="mt-1 text-sm text-gray-500">{message}</p>
-              )}
+              {message && <p className="mt-1 text-sm text-gray-500">{message}</p>}
               {actions && actions.length > 0 && (
                 <div className="mt-3 flex space-x-7">
                   {actions.map((action, index) => (
@@ -123,7 +121,7 @@ export default function Notification({
         </div>
       </div>
     </Transition>
-  )
+  );
 }
 
 // Container component for positioning notifications
@@ -133,9 +131,7 @@ export function NotificationContainer({ children }: { children: React.ReactNode 
       aria-live="assertive"
       className="pointer-events-none fixed inset-0 flex items-end px-4 py-6 sm:items-start sm:p-6 z-50"
     >
-      <div className="flex w-full flex-col items-center space-y-4 sm:items-end">
-        {children}
-      </div>
+      <div className="flex w-full flex-col items-center space-y-4 sm:items-end">{children}</div>
     </div>
-  )
+  );
 }
