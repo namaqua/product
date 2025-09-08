@@ -1,0 +1,10 @@
+# Start everything
+cd /Users/colinroets/dev/projects/product
+./start-pim.sh
+cd pim && npm run start:dev
+
+# Test API
+curl http://localhost:3010/api/v1/products
+
+# Check health
+curl http://localhost:3010/health

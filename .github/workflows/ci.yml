@@ -1,0 +1,86 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: pim_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: pim_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: pim/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./pim
+      run: npm ci
+
+    - name: Run linter
+      working-directory: ./pim
+      run: npm run lint
+
+    - name: Run tests
+      working-directory: ./pim
+      env:
+        NODE_ENV: test
+        DATABASE_HOST: localhost
+        DATABASE_PORT: 5433
+        DATABASE_NAME: pim_test
+        DATABASE_USER: pim_user
+        DATABASE_PASSWORD: test_password
+        JWT_SECRET: test_secret_key
+      run: npm test
+
+    - name: Build application
+      working-directory: ./pim
+      run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./pim
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/pim-backend:latest
+          ${{ secrets.DOCKER_USERNAME }}/pim-backend:${{ github.sha }}
