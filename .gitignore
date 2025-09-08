@@ -2,11 +2,9 @@
 node_modules/
 dist/
 build/
-
-# Shell scripts (development utilities only)
-shell-scripts/
-shell scripts/
-scripts/
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
 
 # Environment
 .env
@@ -15,6 +13,7 @@ scripts/
 .env.test.local
 .env.production.local
 *.local
+!.env.example
 
 # IDE
 .vscode/*
@@ -48,11 +47,16 @@ pnpm-debug.log*
 coverage/
 .nyc_output/
 
+# Docker volumes (local data)
+postgres_pim_data/
+redis_pim_data/
+
 # Temporary
 tmp/
 temp/
 .temp/
 .tmp/
+uploads/
 
 # Build artifacts
 *.pid
@@ -82,3 +86,13 @@ temp/
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Database backups
+*.sql
+*.dump
+backup/
+backups/
+
+# Shell scripts (if you want to keep them private)
+# shell-scripts/
+# Uncomment above if you don't want to share shell scripts

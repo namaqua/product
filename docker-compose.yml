@@ -1,0 +1,47 @@
+version: '3.8'
+
+name: pim-dev
+
+services:
+  # PostgreSQL for PIM
+  postgres-pim:
+    image: postgres:15-alpine
+    container_name: postgres-pim
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: secure_password_change_me
+      POSTGRES_DB: pim_dev
+    ports:
+      - "5433:5432"  # Map to 5433 to avoid conflict with marketplace
+    volumes:
+      - postgres_pim_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim_user -d pim_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-network
+
+  # Redis for PIM (optional - for caching/sessions)
+  redis-pim:
+    image: redis:7-alpine
+    container_name: redis-pim
+    restart: unless-stopped
+    ports:
+      - "6380:6379"  # Use 6380 to avoid conflict with marketplace's 6379
+    volumes:
+      - redis_pim_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - pim-network
+
+volumes:
+  postgres_pim_data:
+  redis_pim_data:
+
+networks:
+  pim-network:
+    driver: bridge
