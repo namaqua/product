@@ -1,6 +1,16 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import {
+  HttpExceptionFilter,
+  DatabaseExceptionFilter,
+  AllExceptionsFilter,
+  TransformInterceptor,
+  LoggingInterceptor,
+  TimeoutInterceptor,
+  createValidationPipe,
+} from './common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,16 +21,21 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
+  // Global validation pipe with custom configuration
+  app.useGlobalPipes(createValidationPipe());
+
+  // Global exception filters (order matters - most specific first)
+  app.useGlobalFilters(
+    new AllExceptionsFilter(),
+    new DatabaseExceptionFilter(),
+    new HttpExceptionFilter(),
+  );
+
+  // Global interceptors
+  app.useGlobalInterceptors(
+    new LoggingInterceptor(),
+    new TimeoutInterceptor(30000), // 30 second timeout
+    new TransformInterceptor(),
   );
 
   // API prefix
@@ -28,9 +43,7 @@ async function bootstrap() {
     exclude: ['health'],
   });
 
-  // Swagger documentation will be added after installing @nestjs/swagger
-  // Uncomment the following after installing:
-  /*
+  // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('PIM API')
     .setDescription('Product Information Management System API')
@@ -39,11 +52,11 @@ async function bootstrap() {
     .addTag('Authentication', 'User authentication endpoints')
     .addTag('Users', 'User management endpoints')
     .addTag('Products', 'Product management endpoints')
+    .addTag('Categories', 'Category management endpoints')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
-  */
 
   const port = process.env.PORT || 3010;
   await app.listen(port);
@@ -51,6 +64,6 @@ async function bootstrap() {
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`🏥 Health check: http://localhost:${port}/health`);
   console.log(`📡 API endpoints: http://localhost:${port}/api/v1`);
-  // console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
 }
 bootstrap();

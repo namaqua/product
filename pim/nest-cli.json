@@ -3,6 +3,19 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
-  }
+    "deleteOutDir": true,
+    "watchOptions": {
+      "excludeDirectories": [
+        "**/node_modules",
+        "**/dist",
+        "**/_backup_*",
+        "src/modules/products/_backup_entities"
+      ]
+    }
+  },
+  "exclude": [
+    "**/_backup_*/**",
+    "**/*.backup.*",
+    "src/modules/products/_backup_entities/**"
+  ]
 }

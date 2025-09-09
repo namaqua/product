@@ -1,26 +1,7 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  OneToMany,
-  ManyToMany,
-  JoinTable,
-  Index,
-  CreateDateColumn,
-  UpdateDateColumn,
-  DeleteDateColumn,
-  BeforeInsert,
-  BeforeUpdate,
-} from 'typeorm';
-import { User } from '../../users/entities/user.entity';
-import { ProductLocale } from './product-locale.entity';
-import { ProductVariant } from './product-variant.entity';
-import { ProductBundle } from './product-bundle.entity';
-import { ProductRelationship } from './product-relationship.entity';
-import { ProductAttribute } from './product-attribute.entity';
-import { ProductMedia } from './product-media.entity';
-import { ProductCategory } from './product-category.entity';
+import { Entity, Column, Index, OneToMany, ManyToOne, ManyToMany, JoinColumn, JoinTable } from 'typeorm';
+import { SoftDeleteEntity } from '../../../common/entities';
+import { Category } from '../../categories/entities/category.entity';
+import { AttributeValue } from '../../attributes/entities/attribute-value.entity';
 
 export enum ProductType {
   SIMPLE = 'simple',
@@ -37,22 +18,29 @@ export enum ProductStatus {
   ARCHIVED = 'archived',
 }
 
+/**
+ * Product entity - Core PIM entity for managing product information
+ */
 @Entity('products')
-@Index(['sku'])
+@Index(['sku'], { unique: true })
 @Index(['type'])
 @Index(['status'])
 @Index(['parentId'])
-export class Product {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
-  @Column({ type: 'varchar', length: 100, unique: true })
+@Index(['isActive'])
+export class Product extends SoftDeleteEntity {
+  @Column({
+    type: 'varchar',
+    length: 100,
+    unique: true,
+    comment: 'Stock Keeping Unit - unique product identifier',
+  })
   sku: string;
 
   @Column({
     type: 'enum',
     enum: ProductType,
     default: ProductType.SIMPLE,
+    comment: 'Product type classification',
   })
   type: ProductType;
 
@@ -60,143 +48,347 @@ export class Product {
     type: 'enum',
     enum: ProductStatus,
     default: ProductStatus.DRAFT,
+    comment: 'Current workflow status',
   })
   status: ProductStatus;
 
-  // For variant products - reference to parent configurable product
-  @Column({ type: 'uuid', nullable: true })
-  parentId: string | null;
+  @Column({
+    type: 'varchar',
+    length: 255,
+    comment: 'Product name/title',
+  })
+  name: string;
 
-  @ManyToOne(() => Product, (product) => product.children, { nullable: true })
-  parent: Product;
+  @Column({
+    type: 'text',
+    nullable: true,
+    comment: 'Detailed product description',
+  })
+  description: string | null;
 
-  @OneToMany(() => Product, (product) => product.parent)
-  children: Product[];
-
-  // Inventory tracking
-  @Column({ type: 'integer', default: 0 })
-  quantity: number;
-
-  @Column({ type: 'boolean', default: true })
-  trackInventory: boolean;
-
-  @Column({ type: 'boolean', default: true })
-  inStock: boolean;
-
-  @Column({ type: 'integer', nullable: true })
-  minQuantity: number | null;
-
-  @Column({ type: 'integer', nullable: true })
-  maxQuantity: number | null;
+  @Column({
+    type: 'text',
+    nullable: true,
+    comment: 'Short product description for listings',
+  })
+  shortDescription: string | null;
 
   // Pricing
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Base product price',
+  })
   price: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  comparePrice: number | null;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Cost of goods sold',
+  })
+  cost: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  costPrice: number | null;
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Special/sale price',
+  })
+  specialPrice: number | null;
 
-  // Physical properties
-  @Column({ type: 'decimal', precision: 10, scale: 3, nullable: true })
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: true,
+    comment: 'Special price start date',
+  })
+  specialPriceFrom: Date | null;
+
+  @Column({
+    type: 'timestamp with time zone',
+    nullable: true,
+    comment: 'Special price end date',
+  })
+  specialPriceTo: Date | null;
+
+  // Inventory
+  @Column({
+    type: 'integer',
+    default: 0,
+    comment: 'Current stock quantity',
+  })
+  quantity: number;
+
+  @Column({
+    type: 'boolean',
+    default: true,
+    comment: 'Whether stock is tracked for this product',
+  })
+  manageStock: boolean;
+
+  @Column({
+    type: 'boolean',
+    default: true,
+    comment: 'Whether product is in stock',
+  })
+  inStock: boolean;
+
+  @Column({
+    type: 'integer',
+    nullable: true,
+    comment: 'Minimum quantity for low stock alerts',
+  })
+  lowStockThreshold: number | null;
+
+  // Physical attributes
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    comment: 'Product weight in kg',
+  })
   weight: number | null;
 
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  weightUnit: string | null;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Product length in cm',
+  })
   length: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Product width in cm',
+  })
   width: number | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    comment: 'Product height in cm',
+  })
   height: number | null;
 
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  dimensionUnit: string | null;
+  // SEO
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'SEO meta title',
+  })
+  metaTitle: string | null;
 
-  // SEO and visibility
-  @Column({ type: 'boolean', default: true })
+  @Column({
+    type: 'text',
+    nullable: true,
+    comment: 'SEO meta description',
+  })
+  metaDescription: string | null;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+    comment: 'SEO meta keywords',
+  })
+  metaKeywords: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'URL slug for product page',
+  })
+  urlKey: string | null;
+
+  // Hierarchical relationship for variants
+  @Column({
+    type: 'uuid',
+    nullable: true,
+    comment: 'Parent product ID for variants',
+  })
+  parentId: string | null;
+
+  @ManyToOne(() => Product, (product) => product.variants, {
+    nullable: true,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'parentId' })
+  parent: Product | null;
+
+  @OneToMany(() => Product, (product) => product.parent)
+  variants: Product[];
+
+  // Category relationships
+  @ManyToMany(() => Category, (category) => category.products)
+  @JoinTable({
+    name: 'product_categories',
+    joinColumn: { name: 'productId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'categoryId', referencedColumnName: 'id' },
+  })
+  categories: Category[];
+
+  // Attribute values (EAV pattern)
+  @OneToMany(() => AttributeValue, (value) => value.product)
+  attributeValues: AttributeValue[];
+
+  // Additional data
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: 'Custom attributes as JSON',
+  })
+  attributes: Record<string, any> | null;
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: 'Product features list',
+  })
+  features: string[] | null;
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: 'Product specifications',
+  })
+  specifications: Record<string, any> | null;
+
+  @Column({
+    type: 'simple-array',
+    nullable: true,
+    comment: 'Product tags for categorization',
+  })
+  tags: string[] | null;
+
+  @Column({
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+    comment: 'Product barcode (EAN/UPC)',
+  })
+  barcode: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    comment: 'Manufacturer part number',
+  })
+  mpn: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'Product brand name',
+  })
+  brand: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'Product manufacturer',
+  })
+  manufacturer: string | null;
+
+  // Visibility
+  @Column({
+    type: 'boolean',
+    default: true,
+    comment: 'Whether product is visible in catalog',
+  })
   isVisible: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({
+    type: 'boolean',
+    default: false,
+    comment: 'Whether product is featured',
+  })
   isFeatured: boolean;
 
-  @Column({ type: 'integer', default: 0 })
+  @Column({
+    type: 'integer',
+    default: 0,
+    comment: 'Sort order for display',
+  })
   sortOrder: number;
 
-  // Metadata
-  @Column({ type: 'jsonb', nullable: true })
-  metadata: Record<string, any> | null;
-
-  @Column({ type: 'jsonb', nullable: true })
-  customFields: Record<string, any> | null;
-
-  // Version control
-  @Column({ type: 'integer', default: 1 })
-  version: number;
-
-  // Relationships
-  @OneToMany(() => ProductLocale, (locale) => locale.product, {
-    cascade: true,
-    eager: false,
-  })
-  locales: ProductLocale[];
-
-  @OneToMany(() => ProductVariant, (variant) => variant.parentProduct)
-  variants: ProductVariant[];
-
-  @OneToMany(() => ProductBundle, (bundle) => bundle.bundleProduct)
-  bundleItems: ProductBundle[];
-
-  @OneToMany(() => ProductRelationship, (rel) => rel.sourceProduct)
-  relatedProducts: ProductRelationship[];
-
-  @OneToMany(() => ProductAttribute, (attr) => attr.product, {
-    cascade: true,
-  })
-  attributes: ProductAttribute[];
-
-  @OneToMany(() => ProductMedia, (media) => media.product, {
-    cascade: true,
-  })
-  media: ProductMedia[];
-
-  @OneToMany(() => ProductCategory, (pc) => pc.product, {
-    cascade: true,
-  })
-  productCategories: ProductCategory[];
-
-  // Audit fields
-  @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
-
-  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
-  deletedAt: Date | null;
-
-  @ManyToOne(() => User, { nullable: true })
-  createdBy: User | null;
-
-  @ManyToOne(() => User, { nullable: true })
-  updatedBy: User | null;
-
-  // Hooks
-  @BeforeInsert()
-  @BeforeUpdate()
-  updateInventoryStatus() {
-    if (this.trackInventory) {
-      this.inStock = this.quantity > 0;
-    }
+  /**
+   * Check if product is available for sale
+   */
+  isAvailable(): boolean {
+    return (
+      this.isActive &&
+      this.status === ProductStatus.PUBLISHED &&
+      this.isVisible &&
+      !this.isDeleted
+    );
   }
 
-  @BeforeUpdate()
-  incrementVersion() {
-    this.version++;
+  /**
+   * Check if product has variants
+   */
+  hasVariants(): boolean {
+    return this.type === ProductType.CONFIGURABLE && this.variants?.length > 0;
+  }
+
+  /**
+   * Check if product is a variant
+   */
+  isVariant(): boolean {
+    return this.parentId !== null;
+  }
+
+  /**
+   * Get effective price (special price if active, otherwise regular price)
+   */
+  getEffectivePrice(): number | null {
+    const now = new Date();
+    if (
+      this.specialPrice !== null &&
+      (!this.specialPriceFrom || this.specialPriceFrom <= now) &&
+      (!this.specialPriceTo || this.specialPriceTo >= now)
+    ) {
+      return this.specialPrice;
+    }
+    return this.price;
+  }
+
+  /**
+   * Check if product is on sale
+   */
+  isOnSale(): boolean {
+    const effectivePrice = this.getEffectivePrice();
+    return effectivePrice !== null && effectivePrice < (this.price || 0);
+  }
+
+  /**
+   * Update stock quantity
+   */
+  updateStock(quantity: number): void {
+    this.quantity = quantity;
+    this.inStock = quantity > 0;
+  }
+
+  /**
+   * Check if stock is low
+   */
+  isLowStock(): boolean {
+    if (!this.manageStock) return false;
+    if (this.lowStockThreshold === null) return false;
+    return this.quantity <= this.lowStockThreshold;
   }
 }

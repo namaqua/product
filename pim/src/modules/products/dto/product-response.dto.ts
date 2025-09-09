@@ -1,196 +1,211 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { ProductType, ProductStatus } from '../entities/product.entity';
-import { RelationshipType } from '../entities/product-relationship.entity';
-import { MediaType } from '../entities/product-media.entity';
 
-// Locale Response
-export class ProductLocaleResponse {
+@Exclude()
+export class ProductResponseDto {
+  @Expose()
+  @ApiProperty({ description: 'Product ID' })
   id: string;
-  localeCode: string;
-  name: string;
-  description: string | null;
-  shortDescription: string | null;
-  metaTitle: string | null;
-  metaDescription: string | null;
-  metaKeywords: string | null;
-  urlKey: string | null;
-  features: Record<string, any> | null;
-  specifications: Record<string, any> | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
 
-// Attribute Response
-export class ProductAttributeResponse {
-  id: string;
-  attributeCode: string;
-  valueText: string | null;
-  valueNumber: number | null;
-  valueBoolean: boolean | null;
-  valueDate: Date | null;
-  valueDatetime: Date | null;
-  valueJson: Record<string, any> | null;
-  valueOptions: string[] | null;
-  localeCode: string | null;
-  channelCode: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// Media Response
-export class ProductMediaResponse {
-  id: string;
-  url: string;
-  mediaType: MediaType;
-  isPrimary: boolean;
-  localeCode: string | null;
-  altText: string | null;
-  title: string | null;
-  sortOrder: number;
-  filename: string | null;
-  mimeType: string | null;
-  fileSize: number | null;
-  width: number | null;
-  height: number | null;
-  createdAt: Date;
-}
-
-// Variant Response
-export class ProductVariantResponse {
-  id: string;
-  variantProductId: string;
-  variantProduct?: ProductResponse;
-  variantAttributes: Record<string, any>;
-  priceModifier: number;
-  weightModifier: number;
-  isDefault: boolean;
-  sortOrder: number;
-  createdAt: Date;
-}
-
-// Bundle Item Response
-export class BundleItemResponse {
-  id: string;
-  componentProductId: string;
-  componentProduct?: ProductResponse;
-  quantity: number;
-  isRequired: boolean;
-  sortOrder: number;
-  createdAt: Date;
-}
-
-// Relationship Response
-export class ProductRelationshipResponse {
-  id: string;
-  targetProductId: string;
-  targetProduct?: ProductResponse;
-  relationshipType: RelationshipType;
-  sortOrder: number;
-  createdAt: Date;
-}
-
-// Category Response (simplified until Category module is created)
-export class ProductCategoryResponse {
-  id: string;
-  categoryId: string;
-  isPrimary: boolean;
-  sortOrder: number;
-  createdAt: Date;
-}
-
-// Main Product Response
-export class ProductResponse {
-  id: string;
+  @Expose()
+  @ApiProperty({ description: 'Stock Keeping Unit' })
   sku: string;
-  type: ProductType;
-  status: ProductStatus;
-  parentId: string | null;
 
-  // Inventory
-  quantity: number;
-  trackInventory: boolean;
-  inStock: boolean;
-  minQuantity: number | null;
-  maxQuantity: number | null;
+  @Expose()
+  @ApiProperty({ description: 'Product name' })
+  name: string;
+
+  @Expose()
+  @ApiProperty({ enum: ProductType, description: 'Product type' })
+  type: ProductType;
+
+  @Expose()
+  @ApiProperty({ enum: ProductStatus, description: 'Product status' })
+  status: ProductStatus;
+
+  @Expose()
+  @ApiProperty({ description: 'Product description', required: false })
+  description: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Short description', required: false })
+  shortDescription: string | null;
 
   // Pricing
+  @Expose()
+  @ApiProperty({ description: 'Product price', required: false })
   price: number | null;
-  comparePrice: number | null;
-  costPrice: number | null;
 
-  // Physical properties
+  @Expose()
+  @ApiProperty({ description: 'Cost of goods sold', required: false })
+  cost: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Special price', required: false })
+  specialPrice: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Effective price (calculated)' })
+  effectivePrice: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Is product on sale' })
+  isOnSale: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Special price start date', required: false })
+  specialPriceFrom: Date | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Special price end date', required: false })
+  specialPriceTo: Date | null;
+
+  // Inventory
+  @Expose()
+  @ApiProperty({ description: 'Stock quantity' })
+  quantity: number;
+
+  @Expose()
+  @ApiProperty({ description: 'Manage stock flag' })
+  manageStock: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'In stock flag' })
+  inStock: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Low stock threshold', required: false })
+  lowStockThreshold: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Is low stock' })
+  isLowStock: boolean;
+
+  // Physical attributes
+  @Expose()
+  @ApiProperty({ description: 'Weight in kg', required: false })
   weight: number | null;
-  weightUnit: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Length in cm', required: false })
   length: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Width in cm', required: false })
   width: number | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Height in cm', required: false })
   height: number | null;
-  dimensionUnit: string | null;
+
+  // SEO
+  @Expose()
+  @ApiProperty({ description: 'Meta title', required: false })
+  metaTitle: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Meta description', required: false })
+  metaDescription: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Meta keywords', required: false })
+  metaKeywords: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'URL key', required: false })
+  urlKey: string | null;
+
+  // Relationships
+  @Expose()
+  @ApiProperty({ description: 'Parent product ID', required: false })
+  parentId: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Has variants' })
+  hasVariants: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Is variant' })
+  isVariant: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Variant products', type: [ProductResponseDto], required: false })
+  @Type(() => ProductResponseDto)
+  variants: ProductResponseDto[];
+
+  // Additional data
+  @Expose()
+  @ApiProperty({ description: 'Custom attributes', required: false })
+  attributes: Record<string, any> | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Features list', required: false })
+  features: string[] | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Specifications', required: false })
+  specifications: Record<string, any> | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Tags', required: false })
+  tags: string[] | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Barcode', required: false })
+  barcode: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Manufacturer part number', required: false })
+  mpn: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Brand', required: false })
+  brand: string | null;
+
+  @Expose()
+  @ApiProperty({ description: 'Manufacturer', required: false })
+  manufacturer: string | null;
 
   // Visibility
+  @Expose()
+  @ApiProperty({ description: 'Is visible in catalog' })
   isVisible: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Is featured' })
   isFeatured: boolean;
+
+  @Expose()
+  @ApiProperty({ description: 'Sort order' })
   sortOrder: number;
 
+  @Expose()
+  @ApiProperty({ description: 'Is available for sale' })
+  isAvailable: boolean;
+
   // Metadata
-  metadata: Record<string, any> | null;
-  customFields: Record<string, any> | null;
-  version: number;
+  @Expose()
+  @ApiProperty({ description: 'Is active' })
+  isActive: boolean;
 
-  // Timestamps
+  @Expose()
+  @ApiProperty({ description: 'Created date' })
   createdAt: Date;
+
+  @Expose()
+  @ApiProperty({ description: 'Updated date' })
   updatedAt: Date;
-  deletedAt: Date | null;
 
-  // Relations (optional, based on includes)
-  locales?: ProductLocaleResponse[];
-  attributes?: ProductAttributeResponse[];
-  media?: ProductMediaResponse[];
-  categories?: ProductCategoryResponse[];
-  variants?: ProductVariantResponse[];
-  bundleItems?: BundleItemResponse[];
-  relationships?: ProductRelationshipResponse[];
+  @Expose()
+  @ApiProperty({ description: 'Created by user ID', required: false })
+  createdBy: string | null;
 
-  // Computed fields
-  primaryImage?: string;
-  defaultName?: string;
-  defaultDescription?: string;
-}
+  @Expose()
+  @ApiProperty({ description: 'Updated by user ID', required: false })
+  updatedBy: string | null;
 
-// Paginated Response
-export class PaginatedProductResponse {
-  items: ProductResponse[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
-}
-
-// Bulk Operation Response
-export class BulkOperationResponse {
-  success: boolean;
-  processedCount: number;
-  failedCount: number;
-  errors?: Array<{
-    productId: string;
-    error: string;
-  }>;
-}
-
-// Import/Export Response
-export class ImportExportResponse {
-  id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  totalRecords: number;
-  processedRecords: number;
-  successCount: number;
-  errorCount: number;
-  errors?: Array<{
-    row: number;
-    field?: string;
-    message: string;
-  }>;
-  fileUrl?: string;
-  startedAt?: Date;
-  completedAt?: Date;
+  @Expose()
+  @ApiProperty({ description: 'Version number' })
+  version: number;
 }

@@ -3,13 +3,23 @@
 ## Project Overview
 This document serves as the primary reference for maintaining continuity across all development sessions for the PIM (Personal Information Management) project.
 
+## IMPORTANT: Shell Scripts Location
+**ALL shell scripts (.sh files) MUST be created and saved in:**
+```
+/Users/colinroets/dev/projects/product/shell-scripts/
+```
+- Shell scripts are LOCAL ONLY (not tracked in Git)
+- Never create shell scripts in the project root directory
+- Frontend debug scripts go in: `/Users/colinroets/dev/projects/product/shell-scripts/frontend-debug/`
+
 ## Core Technology Stack
 
 ### Backend
 - **Framework**: NestJS (Latest stable version)
-- **Database**: PostgreSQL (Latest stable version)
+- **Database**: PostgreSQL in Docker (port 5433)
+- **Infrastructure**: Docker Compose for local development
 - **Runtime**: Node.js (LTS version)
-- **Package Manager**: npm or yarn
+- **Package Manager**: npm
 - **Process Manager**: PM2 (for production)
 - **Reverse Proxy**: Nginx (for production)
 
@@ -39,6 +49,8 @@ This document serves as the primary reference for maintaining continuity across 
 │   └── package.json       # Frontend dependencies
 ├── pimdocs/               # Project documentation
 │   └── PROJECT_INSTRUCTIONS.md  # This file
+├── docker-compose.yml     # Docker services configuration
+├── scripts/               # Database init scripts
 └── shell-scripts/         # All project shell scripts
     ├── frontend-debug/    # Frontend troubleshooting scripts
     └── *.sh               # Git and deployment scripts
@@ -48,9 +60,11 @@ This document serves as the primary reference for maintaining continuity across 
 
 ### Local Development
 - **Path**: `/Users/colinroets/dev/projects/product/pim`
-- **Database**: PostgreSQL running locally on port 5432
+- **Database**: PostgreSQL in Docker container on port 5433
+- **Redis**: Optional Redis in Docker on port 6380
 - **Application**: NestJS running on port 3010
 - **Environment**: Development mode with hot-reload
+- **Docker Compose**: Manages PostgreSQL and Redis containers
 
 ### Environment Variables
 Create `.env` file in `/Users/colinroets/dev/projects/product/pim/` with:
@@ -58,28 +72,41 @@ Create `.env` file in `/Users/colinroets/dev/projects/product/pim/` with:
 NODE_ENV=development
 PORT=3010
 DATABASE_HOST=localhost
-DATABASE_PORT=5432
+DATABASE_PORT=5433  # Docker PostgreSQL mapped port
 DATABASE_NAME=pim_dev
 DATABASE_USER=pim_user
-DATABASE_PASSWORD=[secure_password]
+DATABASE_PASSWORD=secure_password_change_me
 ```
 
 ## Database Configuration
 
-### PostgreSQL Setup
-```sql
--- Create database
-CREATE DATABASE pim_dev;
+### Docker Compose Setup
+PostgreSQL runs in Docker container managed by docker-compose.yml:
+```yaml
+services:
+  postgres-pim:
+    image: postgres:15-alpine
+    ports:
+      - "5433:5432"  # Maps to 5433 to avoid conflicts
+    environment:
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: secure_password_change_me
+      POSTGRES_DB: pim_dev
+```
 
--- Create user
-CREATE USER pim_user WITH PASSWORD '[secure_password]';
+### Starting Database
+```bash
+# Start Docker services
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d
 
--- Grant privileges
-GRANT ALL PRIVILEGES ON DATABASE pim_dev TO pim_user;
+# Verify containers are running
+docker ps | grep pim
 ```
 
 ### TypeORM Configuration
 Database connection managed through NestJS TypeORM module with migrations enabled.
+Connection uses port 5433 to connect to Docker PostgreSQL.
 
 ## Development Guidelines
 
@@ -150,7 +177,7 @@ DATABASE_PASSWORD=[strong_production_password]
 1. **No Over-Engineering**: Implement only requested features
 2. **Open Source Only**: All tools and libraries must be open source
 3. **Documentation**: Update `/Users/colinroets/dev/projects/product/pimdocs/` for significant changes
-4. **Shell Scripts**: Save all shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/`
+4. **Shell Scripts**: ALWAYS save all shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/` (NEVER in project root)
    ```bash
    cd /Users/colinroets/dev/projects/product/shell-scripts
    chmod +x script-name.sh
@@ -200,25 +227,40 @@ npm run build
 npm run preview
 ```
 
-### Database
+### Docker & Database
 ```bash
-# Connect to PostgreSQL
-psql -U pim_user -d pim_dev
+# Start Docker services
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d
+
+# Stop Docker services
+docker-compose down
+
+# Connect to PostgreSQL (Docker on port 5433)
+psql -U pim_user -d pim_dev -h localhost -p 5433
+
+# Or connect via Docker exec
+docker exec -it postgres-pim psql -U pim_user -d pim_dev
+
+# View Docker logs
+docker-compose logs -f postgres-pim
 
 # Backup database
-pg_dump -U pim_user pim_dev > backup.sql
+docker exec postgres-pim pg_dump -U pim_user pim_dev > backup.sql
 
 # Restore database
-psql -U pim_user pim_dev < backup.sql
+docker exec -i postgres-pim psql -U pim_user pim_dev < backup.sql
 ```
 
 ## Session Continuity Checklist
 When starting a new chat session:
 1. **USE THE CONTINUITY PROMPT**: Copy the entire contents of `/Users/colinroets/dev/projects/product/pimdocs/CONTINUITY_PROMPT.md`
 2. Reference this document for project standards
-3. Check current branch and last commit
-4. Review pending tasks in TASKS.md
-5. Verify environment variables status
+3. Ensure Docker is running: `docker ps`
+4. Start database if needed: `docker-compose up -d`
+5. Check current branch and last commit
+6. Review pending tasks in TASKS.md
+7. Verify environment variables status
 
 **Quick Copy Command:**
 ```bash
@@ -248,7 +290,8 @@ Then paste into new chat session.
 ## Notes for Assistant
 - Always check this file first when starting a new session
 - Reference Tailwind Pro templates in `/Users/colinroets/dev/tailwind-admin Pro` (if available) for UI implementation
-- Save all shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/`
+- **CRITICAL**: Save ALL shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/` (NEVER in project root)
+- Shell scripts are LOCAL ONLY and not tracked in Git
 - Avoid suggesting features not explicitly requested
 - Keep solutions simple and deployable
 - Focus on working code over theoretical optimizations

@@ -6,472 +6,347 @@ import {
   IsBoolean,
   IsArray,
   IsObject,
-  ValidateNested,
+  IsDateString,
+  MaxLength,
+  MinLength,
   Min,
-  Max,
-  Length,
-  IsUUID,
+  IsNotEmpty,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductType, ProductStatus } from '../entities/product.entity';
-import { RelationshipType } from '../entities/product-relationship.entity';
-import { MediaType } from '../entities/product-media.entity';
+import { Type } from 'class-transformer';
 
-// Locale DTO
-export class ProductLocaleDto {
+export class CreateProductDto {
+  @ApiProperty({
+    description: 'Stock Keeping Unit - unique product identifier',
+    example: 'PROD-001',
+    minLength: 3,
+    maxLength: 100,
+  })
   @IsString()
-  @Length(2, 10)
-  localeCode: string;
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(100)
+  sku: string;
 
+  @ApiProperty({
+    description: 'Product name/title',
+    example: 'Premium Wireless Headphones',
+    maxLength: 255,
+  })
   @IsString()
-  @Length(1, 255)
+  @IsNotEmpty()
+  @MaxLength(255)
   name: string;
 
+  @ApiPropertyOptional({
+    enum: ProductType,
+    default: ProductType.SIMPLE,
+    description: 'Product type classification',
+  })
+  @IsEnum(ProductType)
+  @IsOptional()
+  type?: ProductType = ProductType.SIMPLE;
+
+  @ApiPropertyOptional({
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
+    description: 'Current workflow status',
+  })
+  @IsEnum(ProductStatus)
+  @IsOptional()
+  status?: ProductStatus = ProductStatus.DRAFT;
+
+  @ApiPropertyOptional({
+    description: 'Detailed product description',
+    example: 'High-quality wireless headphones with noise cancellation...',
+  })
   @IsString()
   @IsOptional()
   description?: string;
 
+  @ApiPropertyOptional({
+    description: 'Short product description for listings',
+    example: 'Premium wireless headphones with 30-hour battery life',
+  })
   @IsString()
   @IsOptional()
   shortDescription?: string;
 
+  // Pricing
+  @ApiPropertyOptional({
+    description: 'Base product price',
+    example: 199.99,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  price?: number;
+
+  @ApiPropertyOptional({
+    description: 'Cost of goods sold',
+    example: 75.00,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  cost?: number;
+
+  @ApiPropertyOptional({
+    description: 'Special/sale price',
+    example: 149.99,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  specialPrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'Special price start date',
+    example: '2025-01-01T00:00:00Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  specialPriceFrom?: string;
+
+  @ApiPropertyOptional({
+    description: 'Special price end date',
+    example: '2025-01-31T23:59:59Z',
+  })
+  @IsDateString()
+  @IsOptional()
+  specialPriceTo?: string;
+
+  // Inventory
+  @ApiPropertyOptional({
+    description: 'Current stock quantity',
+    example: 100,
+    minimum: 0,
+    default: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  quantity?: number = 0;
+
+  @ApiPropertyOptional({
+    description: 'Whether stock is tracked for this product',
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  manageStock?: boolean = true;
+
+  @ApiPropertyOptional({
+    description: 'Minimum quantity for low stock alerts',
+    example: 10,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  lowStockThreshold?: number;
+
+  // Physical attributes
+  @ApiPropertyOptional({
+    description: 'Product weight in kg',
+    example: 0.5,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  weight?: number;
+
+  @ApiPropertyOptional({
+    description: 'Product length in cm',
+    example: 20,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  length?: number;
+
+  @ApiPropertyOptional({
+    description: 'Product width in cm',
+    example: 15,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  width?: number;
+
+  @ApiPropertyOptional({
+    description: 'Product height in cm',
+    example: 10,
+    minimum: 0,
+  })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Type(() => Number)
+  height?: number;
+
+  // SEO
+  @ApiPropertyOptional({
+    description: 'SEO meta title',
+    example: 'Premium Wireless Headphones | Best Sound Quality',
+    maxLength: 255,
+  })
   @IsString()
   @IsOptional()
-  @Length(0, 255)
+  @MaxLength(255)
   metaTitle?: string;
 
+  @ApiPropertyOptional({
+    description: 'SEO meta description',
+    example: 'Experience premium sound quality with our wireless headphones...',
+  })
   @IsString()
   @IsOptional()
   metaDescription?: string;
 
+  @ApiPropertyOptional({
+    description: 'SEO meta keywords',
+    example: 'wireless headphones, bluetooth, noise cancellation',
+  })
   @IsString()
   @IsOptional()
   metaKeywords?: string;
 
+  @ApiPropertyOptional({
+    description: 'URL slug for product page',
+    example: 'premium-wireless-headphones',
+    maxLength: 255,
+  })
   @IsString()
   @IsOptional()
-  @Length(0, 255)
+  @MaxLength(255)
   urlKey?: string;
 
-  @IsObject()
-  @IsOptional()
-  features?: Record<string, any>;
-
-  @IsObject()
-  @IsOptional()
-  specifications?: Record<string, any>;
-}
-
-// Attribute DTO
-export class ProductAttributeDto {
+  // Parent relationship
+  @ApiPropertyOptional({
+    description: 'Parent product ID for variants',
+    example: 'uuid-of-parent-product',
+  })
   @IsString()
-  @Length(1, 100)
-  attributeCode: string;
-
-  @IsOptional()
-  valueText?: string;
-
-  @IsNumber()
-  @IsOptional()
-  valueNumber?: number;
-
-  @IsBoolean()
-  @IsOptional()
-  valueBoolean?: boolean;
-
-  @IsString()
-  @IsOptional()
-  valueDate?: string;
-
-  @IsString()
-  @IsOptional()
-  valueDatetime?: string;
-
-  @IsObject()
-  @IsOptional()
-  valueJson?: Record<string, any>;
-
-  @IsArray()
-  @IsOptional()
-  @IsUUID('4', { each: true })
-  valueOptions?: string[];
-
-  @IsString()
-  @IsOptional()
-  @Length(2, 10)
-  localeCode?: string;
-
-  @IsString()
-  @IsOptional()
-  @Length(1, 50)
-  channelCode?: string;
-}
-
-// Media DTO
-export class ProductMediaDto {
-  @IsString()
-  url: string;
-
-  @IsEnum(MediaType)
-  @IsOptional()
-  mediaType?: MediaType;
-
-  @IsBoolean()
-  @IsOptional()
-  isPrimary?: boolean;
-
-  @IsString()
-  @IsOptional()
-  @Length(2, 10)
-  localeCode?: string;
-
-  @IsString()
-  @IsOptional()
-  altText?: string;
-
-  @IsString()
-  @IsOptional()
-  @Length(0, 255)
-  title?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  sortOrder?: number;
-}
-
-// Variant DTO
-export class ProductVariantDto {
-  @IsUUID()
-  variantProductId: string;
-
-  @IsObject()
-  variantAttributes: Record<string, any>;
-
-  @IsNumber()
-  @IsOptional()
-  priceModifier?: number;
-
-  @IsNumber()
-  @IsOptional()
-  weightModifier?: number;
-
-  @IsBoolean()
-  @IsOptional()
-  isDefault?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  sortOrder?: number;
-}
-
-// Bundle Item DTO
-export class BundleItemDto {
-  @IsUUID()
-  componentProductId: string;
-
-  @IsNumber()
-  @Min(1)
-  quantity: number;
-
-  @IsBoolean()
-  @IsOptional()
-  isRequired?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  sortOrder?: number;
-}
-
-// Relationship DTO
-export class ProductRelationshipDto {
-  @IsUUID()
-  targetProductId: string;
-
-  @IsEnum(RelationshipType)
-  relationshipType: RelationshipType;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  sortOrder?: number;
-}
-
-// Create Product DTO
-export class CreateProductDto {
-  @IsString()
-  @Length(1, 100)
-  sku: string;
-
-  @IsEnum(ProductType)
-  @IsOptional()
-  type?: ProductType;
-
-  @IsEnum(ProductStatus)
-  @IsOptional()
-  status?: ProductStatus;
-
-  @IsUUID()
   @IsOptional()
   parentId?: string;
 
-  // Inventory
-  @IsNumber()
+  // Additional data
+  @ApiPropertyOptional({
+    description: 'Custom attributes as JSON',
+    example: { color: 'black', material: 'plastic' },
+  })
+  @IsObject()
   @IsOptional()
-  @Min(0)
-  quantity?: number;
+  attributes?: Record<string, any>;
 
-  @IsBoolean()
+  @ApiPropertyOptional({
+    description: 'Product features list',
+    example: ['Noise Cancellation', '30-hour battery', 'Bluetooth 5.0'],
+  })
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  trackInventory?: boolean;
+  features?: string[];
 
-  @IsNumber()
+  @ApiPropertyOptional({
+    description: 'Product specifications',
+    example: { battery: '30 hours', connectivity: 'Bluetooth 5.0' },
+  })
+  @IsObject()
   @IsOptional()
-  @Min(0)
-  minQuantity?: number;
+  specifications?: Record<string, any>;
 
-  @IsNumber()
+  @ApiPropertyOptional({
+    description: 'Product tags for categorization',
+    example: ['electronics', 'audio', 'wireless'],
+  })
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  @Min(0)
-  maxQuantity?: number;
+  tags?: string[];
 
-  // Pricing
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  price?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  comparePrice?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  costPrice?: number;
-
-  // Physical properties
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  weight?: number;
-
+  @ApiPropertyOptional({
+    description: 'Product barcode (EAN/UPC)',
+    example: '1234567890123',
+    maxLength: 50,
+  })
   @IsString()
   @IsOptional()
-  @Length(1, 10)
-  weightUnit?: string;
+  @MaxLength(50)
+  barcode?: string;
 
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  length?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  width?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  height?: number;
-
+  @ApiPropertyOptional({
+    description: 'Manufacturer part number',
+    example: 'WH-1000XM4',
+    maxLength: 100,
+  })
   @IsString()
   @IsOptional()
-  @Length(1, 10)
-  dimensionUnit?: string;
+  @MaxLength(100)
+  mpn?: string;
+
+  @ApiPropertyOptional({
+    description: 'Product brand name',
+    example: 'Sony',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  brand?: string;
+
+  @ApiPropertyOptional({
+    description: 'Product manufacturer',
+    example: 'Sony Corporation',
+    maxLength: 255,
+  })
+  @IsString()
+  @IsOptional()
+  @MaxLength(255)
+  manufacturer?: string;
 
   // Visibility
+  @ApiPropertyOptional({
+    description: 'Whether product is visible in catalog',
+    default: true,
+  })
   @IsBoolean()
   @IsOptional()
-  isVisible?: boolean;
+  isVisible?: boolean = true;
 
+  @ApiPropertyOptional({
+    description: 'Whether product is featured',
+    default: false,
+  })
   @IsBoolean()
   @IsOptional()
-  isFeatured?: boolean;
+  isFeatured?: boolean = false;
 
+  @ApiPropertyOptional({
+    description: 'Sort order for display',
+    example: 0,
+    minimum: 0,
+    default: 0,
+  })
   @IsNumber()
   @IsOptional()
   @Min(0)
-  sortOrder?: number;
-
-  // Metadata
-  @IsObject()
-  @IsOptional()
-  metadata?: Record<string, any>;
-
-  @IsObject()
-  @IsOptional()
-  customFields?: Record<string, any>;
-
-  // Related data
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductLocaleDto)
-  locales?: ProductLocaleDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductAttributeDto)
-  attributes?: ProductAttributeDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductMediaDto)
-  media?: ProductMediaDto[];
-
-  @IsArray()
-  @IsOptional()
-  @IsUUID('4', { each: true })
-  categoryIds?: string[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductVariantDto)
-  variants?: ProductVariantDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => BundleItemDto)
-  bundleItems?: BundleItemDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductRelationshipDto)
-  relationships?: ProductRelationshipDto[];
-}
-
-// Update Product DTO
-export class UpdateProductDto {
-  @IsString()
-  @Length(1, 100)
-  @IsOptional()
-  sku?: string;
-
-  @IsEnum(ProductStatus)
-  @IsOptional()
-  status?: ProductStatus;
-
-  // Inventory
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  quantity?: number;
-
-  @IsBoolean()
-  @IsOptional()
-  trackInventory?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  minQuantity?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  maxQuantity?: number;
-
-  // Pricing
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  price?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  comparePrice?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  costPrice?: number;
-
-  // Physical properties
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  weight?: number;
-
-  @IsString()
-  @IsOptional()
-  @Length(1, 10)
-  weightUnit?: string;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  length?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  width?: number;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  height?: number;
-
-  @IsString()
-  @IsOptional()
-  @Length(1, 10)
-  dimensionUnit?: string;
-
-  // Visibility
-  @IsBoolean()
-  @IsOptional()
-  isVisible?: boolean;
-
-  @IsBoolean()
-  @IsOptional()
-  isFeatured?: boolean;
-
-  @IsNumber()
-  @IsOptional()
-  @Min(0)
-  sortOrder?: number;
-
-  // Metadata
-  @IsObject()
-  @IsOptional()
-  metadata?: Record<string, any>;
-
-  @IsObject()
-  @IsOptional()
-  customFields?: Record<string, any>;
-
-  // Related data
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductLocaleDto)
-  locales?: ProductLocaleDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductAttributeDto)
-  attributes?: ProductAttributeDto[];
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ProductMediaDto)
-  media?: ProductMediaDto[];
-
-  @IsArray()
-  @IsOptional()
-  @IsUUID('4', { each: true })
-  categoryIds?: string[];
+  @Type(() => Number)
+  sortOrder?: number = 0;
 }

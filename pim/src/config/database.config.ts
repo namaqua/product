@@ -14,7 +14,7 @@ export default registerAs(
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     subscribers: [AuditSubscriber],
-    synchronize: false, // Disabled to prevent schema issues
+    synchronize: process.env.NODE_ENV === 'development', // Auto-sync in development only
     logging: true, // Enable to debug queries
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     autoLoadEntities: true,

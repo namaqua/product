@@ -104,6 +104,60 @@ This script will:
 
 ---
 
+## Docker-Specific Issues
+
+### Issue: Docker not running
+**Error:** `Cannot connect to the Docker daemon`
+
+**Solution:**
+1. Start Docker Desktop application
+2. Wait for Docker to fully start
+3. Verify Docker is running:
+   ```bash
+   docker --version
+   docker ps
+   ```
+
+### Issue: Port conflicts with other projects
+**Error:** `bind: address already in use`
+
+**Solution:**
+1. Check what's using the ports:
+   ```bash
+   lsof -i :5433  # PostgreSQL
+   lsof -i :6380  # Redis
+   lsof -i :3010  # Backend
+   ```
+2. Stop conflicting services or change ports in docker-compose.yml
+
+### Issue: Database data lost after docker-compose down
+**Error:** Tables don't exist after restarting Docker
+
+**Solution:**
+1. Never use `docker-compose down -v` unless you want to delete data
+2. Use `docker-compose down` (without -v) to preserve volumes
+3. To backup before removing:
+   ```bash
+   docker exec postgres-pim pg_dump -U pim_user pim_dev > backup.sql
+   ```
+
+### Issue: Can't connect to database from backend
+**Error:** `ECONNREFUSED 127.0.0.1:5433`
+
+**Solution:**
+1. Ensure Docker container is running:
+   ```bash
+   docker ps | grep postgres-pim
+   ```
+2. Check .env has correct port:
+   ```
+   DATABASE_PORT=5433
+   ```
+3. Test connection directly:
+   ```bash
+   psql -U pim_user -d pim_dev -h localhost -p 5433
+   ```
+
 ## Common Issues & Solutions
 
 ### Issue: NestJS CLI not found
@@ -114,37 +168,44 @@ This script will:
 npm install -g @nestjs/cli
 ```
 
-### Issue: Port 3000 already in use
-**Error:** `Error: listen EADDRINUSE: address already in use :::3000`
+### Issue: Port already in use
+**Error:** `Error: listen EADDRINUSE: address already in use :::3010`
 
 **Solution:**
-1. Find what's using port 3000:
+1. Find what's using the port:
    ```bash
-   lsof -i :3000
+   lsof -i :3010  # Backend port
+   lsof -i :5433  # Database port
    ```
 2. Kill the process or change the port in .env:
    ```env
-   PORT=3001
+   PORT=3011  # Use different port for backend
    ```
 
 ### Issue: Database connection failed
 **Error:** `error: password authentication failed for user "pim_user"`
 
 **Solution:**
-1. Verify PostgreSQL is running:
+1. Verify Docker containers are running:
    ```bash
-   brew services list | grep postgresql
+   docker ps | grep pim
+   # Should see postgres-pim container
    ```
-2. Check user exists:
-   ```sql
-   psql -U postgres
-   \du
+2. If not running, start Docker services:
+   ```bash
+   cd /Users/colinroets/dev/projects/product
+   docker-compose up -d
    ```
-3. Reset password if needed:
-   ```sql
-   ALTER USER pim_user WITH PASSWORD 'new_password';
+3. Check if using correct port (5433 not 5432):
+   ```bash
+   # Backend .env should have:
+   DATABASE_PORT=5433
    ```
-4. Update .env file with correct password
+4. Connect via Docker:
+   ```bash
+   docker exec -it postgres-pim psql -U pim_user -d pim_dev
+   ```
+5. If password issue persists, check docker-compose.yml for correct password
 
 ### Issue: Frontend won't start
 **Error:** `command not found: vite`
@@ -188,7 +249,7 @@ chmod +x script-name.sh
 
 ### Backend Health Check
 ```bash
-cd /Users/colinroets/dev/pim
+cd /Users/colinroets/dev/projects/product/pim
 
 # 1. Check files exist
 ls package.json src/ 
@@ -196,16 +257,19 @@ ls package.json src/
 # 2. Check dependencies installed
 ls node_modules/
 
-# 3. Test startup
+# 3. Ensure Docker is running
+docker ps | grep pim
+
+# 4. Test startup
 npm run start:dev
 
-# 4. Check API response
-curl http://localhost:3000
+# 5. Check API response
+curl http://localhost:3010/health
 ```
 
 ### Frontend Health Check
 ```bash
-cd /Users/colinroets/dev/pim-admin
+cd /Users/colinroets/dev/projects/product/pim-admin
 
 # 1. Check files exist
 ls package.json src/
@@ -221,19 +285,22 @@ npm run dev
 
 ### Database Health Check
 ```bash
-# 1. Connect to PostgreSQL
-psql -U pim_user -d pim_dev
+# 1. Check Docker container is running
+docker ps | grep postgres-pim
 
-# 2. If that fails, try as postgres user
-psql -U postgres
+# 2. Connect to PostgreSQL (port 5433)
+psql -U pim_user -d pim_dev -h localhost -p 5433
 
-# 3. List databases
+# 3. Or connect via Docker exec
+docker exec -it postgres-pim psql -U pim_user -d pim_dev
+
+# 4. List databases
 \l
 
-# 4. Check user exists
-\du
+# 5. Check tables
+\dt
 
-# 5. Exit
+# 6. Exit
 \q
 ```
 
@@ -245,16 +312,16 @@ If everything is broken, here's how to start over:
 
 ### 1. Clean Up
 ```bash
-# Remove existing projects
-rm -rf /Users/colinroets/dev/pim
-rm -rf /Users/colinroets/dev/pim-admin
+# Stop and remove Docker containers
+cd /Users/colinroets/dev/projects/product
+docker-compose down -v  # -v removes volumes (database data)
 
-# Drop databases (optional)
-psql -U postgres
-DROP DATABASE IF EXISTS pim_dev;
-DROP DATABASE IF EXISTS pim_test;
-DROP USER IF EXISTS pim_user;
-\q
+# Remove existing projects (if needed)
+rm -rf pim/node_modules pim/dist
+rm -rf pim-admin/node_modules pim-admin/dist
+
+# Clean Docker system (optional, removes all unused containers/images)
+docker system prune -a
 ```
 
 ### 2. Run Setup Scripts
@@ -292,21 +359,29 @@ LOG_LEVEL=debug
 
 ### Common Commands Reference
 ```bash
+# Docker
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d           # Start services
+docker-compose down            # Stop services
+docker-compose logs -f         # View logs
+docker ps                      # List running containers
+
 # Backend
-cd /Users/colinroets/dev/pim
-npm run start:dev        # Development mode
-npm run build           # Build for production
-npm run test            # Run tests
+cd pim
+npm run start:dev              # Development mode
+npm run build                  # Build for production
+npm run test                   # Run tests
 
 # Frontend
-cd /Users/colinroets/dev/pim-admin  
-npm run dev             # Development mode
-npm run build           # Build for production
-npm run preview         # Preview production build
+cd pim-admin  
+npm run dev                    # Development mode
+npm run build                  # Build for production
+npm run preview                # Preview production build
 
 # Database
-psql -U pim_user -d pim_dev    # Connect to database
-pg_dump pim_dev > backup.sql   # Backup database
+psql -U pim_user -d pim_dev -p 5433   # Connect to Docker PostgreSQL
+docker exec -it postgres-pim psql -U pim_user -d pim_dev  # Via Docker
+docker exec postgres-pim pg_dump -U pim_user pim_dev > backup.sql  # Backup
 ```
 
 ---

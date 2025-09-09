@@ -1,34 +1,21 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
   ConflictException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In, Like, Between, MoreThan } from 'typeorm';
-import {
-  Product,
-  ProductLocale,
-  ProductVariant,
-  ProductBundle,
-  ProductRelationship,
-  ProductAttribute,
-  ProductMedia,
-  ProductCategory,
-  ProductType,
-  ProductStatus,
-} from './entities';
+import { Repository, FindOptionsWhere, Like, Between, In, Not, IsNull } from 'typeorm';
+import { Product, ProductStatus, ProductType } from './entities/product.entity';
 import {
   CreateProductDto,
   UpdateProductDto,
-  FilterProductDto,
-  BulkUpdateStatusDto,
-  BulkUpdateVisibilityDto,
-  ProductResponse,
-  PaginatedProductResponse,
-  BulkOperationResponse,
+  ProductQueryDto,
+  ProductResponseDto,
 } from './dto';
+import { plainToInstance } from 'class-transformer';
+import { PaginatedResponseDto, createPaginatedResponse } from '../../common/dto';
 
 @Injectable()
 export class ProductsService {
@@ -37,323 +24,155 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-    @InjectRepository(ProductLocale)
-    private readonly localeRepository: Repository<ProductLocale>,
-    @InjectRepository(ProductVariant)
-    private readonly variantRepository: Repository<ProductVariant>,
-    @InjectRepository(ProductBundle)
-    private readonly bundleRepository: Repository<ProductBundle>,
-    @InjectRepository(ProductRelationship)
-    private readonly relationshipRepository: Repository<ProductRelationship>,
-    @InjectRepository(ProductAttribute)
-    private readonly attributeRepository: Repository<ProductAttribute>,
-    @InjectRepository(ProductMedia)
-    private readonly mediaRepository: Repository<ProductMedia>,
-    @InjectRepository(ProductCategory)
-    private readonly categoryRepository: Repository<ProductCategory>,
-    private readonly dataSource: DataSource,
   ) {}
-
-  /**
-   * DEBUG: Simple direct query without any complex logic
-   */
-  async getSimpleProducts(): Promise<any> {
-    console.log('🔍 DEBUG: Running simple products query');
-    try {
-      // Check database connection info
-      const dbInfo = await this.dataSource.query(`
-        SELECT current_database() as database,
-               current_user as user,
-               inet_server_addr() as server_addr,
-               inet_server_port() as server_port,
-               version() as version
-      `);
-      console.log('📊 Database info:', dbInfo);
-      
-      // Check all tables and their row counts
-      const tables = await this.dataSource.query(`
-        SELECT schemaname, tablename 
-        FROM pg_tables 
-        WHERE schemaname = 'public'
-      `);
-      console.log('📊 Tables:', tables);
-      
-      // First, try raw SQL
-      const rawResult = await this.dataSource.query('SELECT COUNT(*) as count FROM products');
-      console.log('📊 Raw SQL count:', rawResult);
-      
-      // Check what table TypeORM thinks it should use
-      const metadata = this.productRepository.metadata;
-      console.log('📋 Table name:', metadata.tableName);
-      console.log('📋 Schema:', metadata.schema);
-      
-      // Try another raw query
-      const rawProducts = await this.dataSource.query('SELECT id, sku, status FROM products LIMIT 5');
-      console.log('📊 Raw products:', rawProducts);
-      
-      // Most basic TypeORM query
-      const products = await this.productRepository.find();
-      console.log(`📊 TypeORM found ${products.length} products`);
-      
-      return {
-        rawCount: rawResult,
-        rawProducts: rawProducts,
-        typeormProducts: products,
-        tableInfo: {
-          tableName: metadata.tableName,
-          schema: metadata.schema
-        }
-      };
-    } catch (error) {
-      console.error('❌ Error in simple query:', error);
-      throw error;
-    }
-  }
 
   /**
    * Create a new product
    */
-  async create(createProductDto: CreateProductDto, userId: string): Promise<ProductResponse> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  async create(
+    createProductDto: CreateProductDto,
+    userId?: string,
+  ): Promise<ProductResponseDto> {
+    this.logger.log(`Creating product with SKU: ${createProductDto.sku}`);
 
-    try {
-      // Check if SKU already exists
-      const existingProduct = await this.productRepository.findOne({
-        where: { sku: createProductDto.sku },
-      });
+    // Check if SKU already exists
+    const existingProduct = await this.productRepository.findOne({
+      where: { sku: createProductDto.sku },
+    });
 
-      if (existingProduct) {
-        throw new ConflictException(`Product with SKU ${createProductDto.sku} already exists`);
-      }
-
-      // Create the product
-      const product = this.productRepository.create({
-        ...createProductDto,
-        createdBy: { id: userId } as any,
-        updatedBy: { id: userId } as any,
-      });
-
-      const savedProduct = await queryRunner.manager.save(Product, product);
-
-      // Save locales if provided
-      if (createProductDto.locales?.length) {
-        const locales = createProductDto.locales.map((locale) =>
-          this.localeRepository.create({
-            ...locale,
-            productId: savedProduct.id,
-          }),
-        );
-        await queryRunner.manager.save(ProductLocale, locales);
-      }
-
-      // Save attributes if provided
-      if (createProductDto.attributes?.length) {
-        const attributes = createProductDto.attributes.map((attr) =>
-          this.attributeRepository.create({
-            ...attr,
-            productId: savedProduct.id,
-          }),
-        );
-        await queryRunner.manager.save(ProductAttribute, attributes);
-      }
-
-      // Save media if provided
-      if (createProductDto.media?.length) {
-        const media = createProductDto.media.map((m, index) =>
-          this.mediaRepository.create({
-            ...m,
-            productId: savedProduct.id,
-            isPrimary: index === 0 && !m.isPrimary ? true : m.isPrimary,
-          }),
-        );
-        await queryRunner.manager.save(ProductMedia, media);
-      }
-
-      // Save categories if provided
-      if (createProductDto.categoryIds?.length) {
-        const categories = createProductDto.categoryIds.map((categoryId, index) =>
-          this.categoryRepository.create({
-            productId: savedProduct.id,
-            categoryId,
-            isPrimary: index === 0,
-          }),
-        );
-        await queryRunner.manager.save(ProductCategory, categories);
-      }
-
-      // Save variants if it's a configurable product
-      if (product.type === ProductType.CONFIGURABLE && createProductDto.variants?.length) {
-        const variants = createProductDto.variants.map((variant) =>
-          this.variantRepository.create({
-            ...variant,
-            parentProductId: savedProduct.id,
-          }),
-        );
-        await queryRunner.manager.save(ProductVariant, variants);
-      }
-
-      // Save bundle items if it's a bundle product
-      if (product.type === ProductType.BUNDLE && createProductDto.bundleItems?.length) {
-        const bundleItems = createProductDto.bundleItems.map((item) =>
-          this.bundleRepository.create({
-            ...item,
-            bundleProductId: savedProduct.id,
-          }),
-        );
-        await queryRunner.manager.save(ProductBundle, bundleItems);
-      }
-
-      // Save relationships if provided
-      if (createProductDto.relationships?.length) {
-        const relationships = createProductDto.relationships.map((rel) =>
-          this.relationshipRepository.create({
-            ...rel,
-            sourceProductId: savedProduct.id,
-          }),
-        );
-        await queryRunner.manager.save(ProductRelationship, relationships);
-      }
-
-      await queryRunner.commitTransaction();
-
-      // Fetch and return the complete product
-      return this.findOne(savedProduct.id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error(`Failed to create product: ${error.message}`, error.stack);
-      throw error;
-    } finally {
-      await queryRunner.release();
+    if (existingProduct) {
+      throw new ConflictException(`Product with SKU ${createProductDto.sku} already exists`);
     }
+
+    // Validate parent product if specified
+    if (createProductDto.parentId) {
+      const parentProduct = await this.productRepository.findOne({
+        where: { id: createProductDto.parentId },
+      });
+
+      if (!parentProduct) {
+        throw new NotFoundException(`Parent product with ID ${createProductDto.parentId} not found`);
+      }
+
+      if (parentProduct.type !== ProductType.CONFIGURABLE) {
+        throw new BadRequestException('Parent product must be of type CONFIGURABLE');
+      }
+    }
+
+    // Create product entity
+    const product = this.productRepository.create({
+      ...createProductDto,
+      createdBy: userId,
+      updatedBy: userId,
+      inStock: createProductDto.quantity ? createProductDto.quantity > 0 : false,
+    });
+
+    // Generate URL key if not provided
+    if (!product.urlKey && product.name) {
+      product.urlKey = this.generateUrlKey(product.name);
+    }
+
+    const savedProduct = await this.productRepository.save(product);
+    return this.toResponseDto(savedProduct);
   }
 
   /**
    * Find all products with filtering and pagination
    */
-  async findAll(filterDto: FilterProductDto): Promise<PaginatedProductResponse> {
-    console.log('🔍 findAll called with filters:', filterDto);
-    const {
-      page = 1,
-      limit = 20,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-      search,
-      sku,
-      type,
-      status,
-      statuses,
-      isVisible,
-      isFeatured,
-      inStock,
-      minPrice,
-      maxPrice,
-      minQuantity,
-      categoryIds,
-      parentId,
-      localeCode,
-      includeLocales,
-      includeAttributes,
-      includeMedia,
-      includeCategories,
-      includeVariants,
-      includeRelationships,
-    } = filterDto;
+  async findAll(query: ProductQueryDto): Promise<PaginatedResponseDto<ProductResponseDto>> {
+    const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC', includeVariants = false } = query;
 
-    const queryBuilder = this.productRepository.createQueryBuilder('product');
+    const where: FindOptionsWhere<Product> | FindOptionsWhere<Product>[] = {};
 
-    // Apply filters
-    if (search) {
-      queryBuilder.leftJoin('product.locales', 'searchLocale');
-      queryBuilder.andWhere(
-        '(product.sku ILIKE :search OR searchLocale.name ILIKE :search OR searchLocale.description ILIKE :search)',
-        { search: `%${search}%` },
-      );
+    // Build search conditions
+    if (query.search) {
+      where.name = Like(`%${query.search}%`);
+      // Could also search in description, but TypeORM doesn't support OR easily in FindOptionsWhere
+      // For complex queries, we'd use QueryBuilder
     }
 
-    if (sku) {
-      queryBuilder.andWhere('product.sku ILIKE :sku', { sku: `%${sku}%` });
+    if (query.sku) {
+      where.sku = query.sku;
     }
 
-    if (type) {
-      queryBuilder.andWhere('product.type = :type', { type });
+    if (query.type) {
+      where.type = query.type;
     }
 
-    if (status) {
-      queryBuilder.andWhere('product.status = :status', { status });
+    if (query.status) {
+      where.status = query.status;
     }
 
-    if (statuses?.length) {
-      queryBuilder.andWhere('product.status IN (:...statuses)', { statuses });
+    if (query.brand) {
+      where.brand = query.brand;
     }
 
-    if (isVisible !== undefined) {
-      queryBuilder.andWhere('product.isVisible = :isVisible', { isVisible });
+    if (query.manufacturer) {
+      where.manufacturer = query.manufacturer;
     }
 
-    if (isFeatured !== undefined) {
-      queryBuilder.andWhere('product.isFeatured = :isFeatured', { isFeatured });
+    if (query.parentId) {
+      where.parentId = query.parentId;
+    } else if (!includeVariants) {
+      // By default, don't include variants unless specifically requested
+      where.parentId = IsNull();
     }
 
-    if (inStock !== undefined) {
-      queryBuilder.andWhere('product.inStock = :inStock', { inStock });
+    if (query.inStock !== undefined) {
+      where.inStock = query.inStock;
     }
 
-    if (minPrice !== undefined) {
-      queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
+    if (query.isFeatured !== undefined) {
+      where.isFeatured = query.isFeatured;
     }
 
-    if (maxPrice !== undefined) {
-      queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
+    if (query.isVisible !== undefined) {
+      where.isVisible = query.isVisible;
     }
 
-    if (minQuantity !== undefined) {
-      queryBuilder.andWhere('product.quantity >= :minQuantity', { minQuantity });
+    if (query.isActive !== undefined) {
+      where.isActive = query.isActive;
     }
 
-    if (categoryIds?.length) {
-      queryBuilder
-        .leftJoin('product.productCategories', 'filterCategory')
-        .andWhere('filterCategory.categoryId IN (:...categoryIds)', { categoryIds });
-    }
+    // Price range filter (requires QueryBuilder for complex conditions)
+    let queryBuilder = this.productRepository.createQueryBuilder('product');
+    
+    // Apply basic where conditions
+    Object.keys(where).forEach(key => {
+      if (where[key as keyof typeof where] !== undefined) {
+        queryBuilder.andWhere(`product.${key} = :${key}`, { [key]: where[key as keyof typeof where] });
+      }
+    });
 
-    if (parentId !== undefined) {
-      queryBuilder.andWhere('product.parentId = :parentId', { parentId });
-    }
-
-    // Include relations based on flags
-    if (includeLocales) {
-      queryBuilder.leftJoinAndSelect('product.locales', 'locale');
-      if (localeCode) {
-        queryBuilder.andWhere('locale.localeCode = :localeCode', { localeCode });
+    // Apply price range
+    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
+      if (query.minPrice !== undefined && query.maxPrice !== undefined) {
+        queryBuilder.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
+          minPrice: query.minPrice,
+          maxPrice: query.maxPrice,
+        });
+      } else if (query.minPrice !== undefined) {
+        queryBuilder.andWhere('product.price >= :minPrice', { minPrice: query.minPrice });
+      } else if (query.maxPrice !== undefined) {
+        queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice: query.maxPrice });
       }
     }
 
-    if (includeAttributes) {
-      queryBuilder.leftJoinAndSelect('product.attributes', 'attribute');
+    // Apply tags filter
+    if (query.tags && query.tags.length > 0) {
+      queryBuilder.andWhere('product.tags && :tags', { tags: query.tags });
     }
 
-    if (includeMedia) {
-      queryBuilder.leftJoinAndSelect('product.media', 'media');
-      queryBuilder.orderBy('media.isPrimary', 'DESC');
-      queryBuilder.addOrderBy('media.sortOrder', 'ASC');
-    }
+    // Apply soft delete filter
+    queryBuilder.andWhere('product.isDeleted = :isDeleted', { isDeleted: false });
 
-    if (includeCategories) {
-      queryBuilder.leftJoinAndSelect('product.productCategories', 'category');
-    }
-
+    // Add relations if needed
     if (includeVariants) {
       queryBuilder.leftJoinAndSelect('product.variants', 'variant');
     }
 
-    if (includeRelationships) {
-      queryBuilder.leftJoinAndSelect('product.relatedProducts', 'relationship');
-    }
-
     // Apply sorting
-    const sortField = sortBy === 'name' && includeLocales ? 'locale.name' : `product.${sortBy}`;
+    const sortField = `product.${sortBy}`;
     queryBuilder.orderBy(sortField, sortOrder);
 
     // Apply pagination
@@ -361,72 +180,45 @@ export class ProductsService {
     queryBuilder.skip(skip).take(limit);
 
     // Execute query
-    console.log('🔍 Executing query...');
-    const query = queryBuilder.getQuery();
-    console.log('📝 SQL Query:', query);
     const [items, total] = await queryBuilder.getManyAndCount();
-    console.log(`📊 Found ${total} products`);
 
-    // Transform to response format
-    const transformedItems = items.map((item) => this.transformToResponse(item));
+    // Transform to DTOs
+    const dtos = items.map(item => this.toResponseDto(item));
 
-    return {
-      items: transformedItems,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-      hasNext: page * limit < total,
-      hasPrevious: page > 1,
-    };
+    return createPaginatedResponse(dtos, page, limit, total);
   }
 
   /**
    * Find a single product by ID
    */
-  async findOne(id: string): Promise<ProductResponse> {
+  async findOne(id: string, includeVariants = false): Promise<ProductResponseDto> {
+    const relations = includeVariants ? ['variants'] : [];
+    
     const product = await this.productRepository.findOne({
-      where: { id },
-      relations: [
-        'locales',
-        'attributes',
-        'media',
-        'productCategories',
-        'variants',
-        'bundleItems',
-        'relatedProducts',
-      ],
+      where: { id, isDeleted: false },
+      relations,
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    return this.transformToResponse(product);
+    return this.toResponseDto(product);
   }
 
   /**
    * Find a product by SKU
    */
-  async findBySku(sku: string): Promise<ProductResponse> {
+  async findBySku(sku: string): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
-      where: { sku },
-      relations: [
-        'locales',
-        'attributes',
-        'media',
-        'productCategories',
-        'variants',
-        'bundleItems',
-        'relatedProducts',
-      ],
+      where: { sku, isDeleted: false },
     });
 
     if (!product) {
       throw new NotFoundException(`Product with SKU ${sku} not found`);
     }
 
-    return this.transformToResponse(product);
+    return this.toResponseDto(product);
   }
 
   /**
@@ -435,360 +227,210 @@ export class ProductsService {
   async update(
     id: string,
     updateProductDto: UpdateProductDto,
-    userId: string,
-  ): Promise<ProductResponse> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      const product = await this.productRepository.findOne({ where: { id } });
-
-      if (!product) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
-      }
-
-      // Check SKU uniqueness if updating
-      if (updateProductDto.sku && updateProductDto.sku !== product.sku) {
-        const existingProduct = await this.productRepository.findOne({
-          where: { sku: updateProductDto.sku },
-        });
-
-        if (existingProduct) {
-          throw new ConflictException(`Product with SKU ${updateProductDto.sku} already exists`);
-        }
-      }
-
-      // Update product fields
-      Object.assign(product, updateProductDto, {
-        updatedBy: { id: userId } as any,
-      });
-
-      await queryRunner.manager.save(Product, product);
-
-      // Update locales if provided
-      if (updateProductDto.locales) {
-        // Delete existing locales
-        await queryRunner.manager.delete(ProductLocale, { productId: id });
-
-        // Create new locales
-        const locales = updateProductDto.locales.map((locale) =>
-          this.localeRepository.create({
-            ...locale,
-            productId: id,
-          }),
-        );
-        await queryRunner.manager.save(ProductLocale, locales);
-      }
-
-      // Update attributes if provided
-      if (updateProductDto.attributes) {
-        await queryRunner.manager.delete(ProductAttribute, { productId: id });
-
-        const attributes = updateProductDto.attributes.map((attr) =>
-          this.attributeRepository.create({
-            ...attr,
-            productId: id,
-          }),
-        );
-        await queryRunner.manager.save(ProductAttribute, attributes);
-      }
-
-      // Update media if provided
-      if (updateProductDto.media) {
-        await queryRunner.manager.delete(ProductMedia, { productId: id });
-
-        const media = updateProductDto.media.map((m, index) =>
-          this.mediaRepository.create({
-            ...m,
-            productId: id,
-            isPrimary: index === 0 && !m.isPrimary ? true : m.isPrimary,
-          }),
-        );
-        await queryRunner.manager.save(ProductMedia, media);
-      }
-
-      // Update categories if provided
-      if (updateProductDto.categoryIds) {
-        await queryRunner.manager.delete(ProductCategory, { productId: id });
-
-        const categories = updateProductDto.categoryIds.map((categoryId, index) =>
-          this.categoryRepository.create({
-            productId: id,
-            categoryId,
-            isPrimary: index === 0,
-          }),
-        );
-        await queryRunner.manager.save(ProductCategory, categories);
-      }
-
-      await queryRunner.commitTransaction();
-
-      return this.findOne(id);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error(`Failed to update product: ${error.message}`, error.stack);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
-  }
-
-  /**
-   * Delete a product (soft delete)
-   */
-  async remove(id: string): Promise<void> {
-    const product = await this.productRepository.findOne({ where: { id } });
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
-
-    await this.productRepository.softRemove(product);
-  }
-
-  /**
-   * Restore a soft-deleted product
-   */
-  async restore(id: string): Promise<ProductResponse> {
+    userId?: string,
+  ): Promise<ProductResponseDto> {
     const product = await this.productRepository.findOne({
-      where: { id },
-      withDeleted: true,
+      where: { id, isDeleted: false },
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
-    if (!product.deletedAt) {
-      throw new BadRequestException(`Product with ID ${id} is not deleted`);
+    // Check SKU uniqueness if changing
+    if (updateProductDto.sku && updateProductDto.sku !== product.sku) {
+      const existingProduct = await this.productRepository.findOne({
+        where: { sku: updateProductDto.sku, id: Not(id) },
+      });
+
+      if (existingProduct) {
+        throw new ConflictException(`Product with SKU ${updateProductDto.sku} already exists`);
+      }
     }
 
-    await this.productRepository.recover(product);
-    return this.findOne(id);
+    // Validate parent product if changing
+    if (updateProductDto.parentId && updateProductDto.parentId !== product.parentId) {
+      const parentProduct = await this.productRepository.findOne({
+        where: { id: updateProductDto.parentId },
+      });
+
+      if (!parentProduct) {
+        throw new NotFoundException(`Parent product with ID ${updateProductDto.parentId} not found`);
+      }
+
+      if (parentProduct.type !== ProductType.CONFIGURABLE) {
+        throw new BadRequestException('Parent product must be of type CONFIGURABLE');
+      }
+    }
+
+    // Update product
+    Object.assign(product, updateProductDto);
+    product.updatedBy = userId;
+
+    // Update stock status if quantity changed
+    if (updateProductDto.quantity !== undefined) {
+      product.inStock = updateProductDto.quantity > 0;
+    }
+
+    // Generate URL key if name changed and no URL key provided
+    if (updateProductDto.name && !updateProductDto.urlKey && !product.urlKey) {
+      product.urlKey = this.generateUrlKey(updateProductDto.name);
+    }
+
+    const updatedProduct = await this.productRepository.save(product);
+    return this.toResponseDto(updatedProduct);
+  }
+
+  /**
+   * Soft delete a product
+   */
+  async remove(id: string, userId?: string): Promise<void> {
+    const product = await this.productRepository.findOne({
+      where: { id, isDeleted: false },
+      relations: ['variants'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    // Check if product has variants
+    if (product.hasVariants()) {
+      throw new BadRequestException('Cannot delete product with variants. Delete variants first.');
+    }
+
+    // Soft delete
+    product.softDelete(userId);
+    await this.productRepository.save(product);
+
+    this.logger.log(`Product ${id} soft deleted by user ${userId}`);
+  }
+
+  /**
+   * Restore a soft deleted product
+   */
+  async restore(id: string): Promise<ProductResponseDto> {
+    const product = await this.productRepository.findOne({
+      where: { id, isDeleted: true },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Deleted product with ID ${id} not found`);
+    }
+
+    product.restore();
+    const restoredProduct = await this.productRepository.save(product);
+    
+    this.logger.log(`Product ${id} restored`);
+    return this.toResponseDto(restoredProduct);
+  }
+
+  /**
+   * Update product stock
+   */
+  async updateStock(
+    id: string,
+    quantity: number,
+    userId?: string,
+  ): Promise<ProductResponseDto> {
+    const product = await this.productRepository.findOne({
+      where: { id, isDeleted: false },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    if (!product.manageStock) {
+      throw new BadRequestException('Stock is not managed for this product');
+    }
+
+    product.updateStock(quantity);
+    product.updatedBy = userId;
+
+    const updatedProduct = await this.productRepository.save(product);
+    
+    this.logger.log(`Stock updated for product ${id}: ${quantity}`);
+    return this.toResponseDto(updatedProduct);
   }
 
   /**
    * Bulk update product status
    */
-  async bulkUpdateStatus(bulkUpdateDto: BulkUpdateStatusDto): Promise<BulkOperationResponse> {
-    const { productIds, status } = bulkUpdateDto;
+  async bulkUpdateStatus(
+    ids: string[],
+    status: ProductStatus,
+    userId?: string,
+  ): Promise<number> {
+    const result = await this.productRepository.update(
+      { id: In(ids), isDeleted: false },
+      { status, updatedBy: userId },
+    );
 
-    try {
-      const result = await this.productRepository.update(
-        { id: In(productIds) },
-        { status },
-      );
-
-      return {
-        success: true,
-        processedCount: result.affected || 0,
-        failedCount: productIds.length - (result.affected || 0),
-      };
-    } catch (error) {
-      this.logger.error(`Bulk status update failed: ${error.message}`, error.stack);
-      return {
-        success: false,
-        processedCount: 0,
-        failedCount: productIds.length,
-        errors: [{ productId: 'all', error: error.message }],
-      };
-    }
+    this.logger.log(`Bulk status update: ${result.affected} products updated to ${status}`);
+    return result.affected || 0;
   }
 
   /**
-   * Bulk update product visibility
+   * Get low stock products
    */
-  async bulkUpdateVisibility(
-    bulkUpdateDto: BulkUpdateVisibilityDto,
-  ): Promise<BulkOperationResponse> {
-    const { productIds, isVisible } = bulkUpdateDto;
-
-    try {
-      const result = await this.productRepository.update(
-        { id: In(productIds) },
-        { isVisible },
-      );
-
-      return {
-        success: true,
-        processedCount: result.affected || 0,
-        failedCount: productIds.length - (result.affected || 0),
-      };
-    } catch (error) {
-      this.logger.error(`Bulk visibility update failed: ${error.message}`, error.stack);
-      return {
-        success: false,
-        processedCount: 0,
-        failedCount: productIds.length,
-        errors: [{ productId: 'all', error: error.message }],
-      };
-    }
-  }
-
-  /**
-   * Duplicate a product
-   */
-  async duplicate(id: string, newSku: string, userId: string): Promise<ProductResponse> {
-    const sourceProduct = await this.findOne(id);
-
-    const createDto: CreateProductDto = {
-      sku: newSku,
-      type: sourceProduct.type,
-      status: ProductStatus.DRAFT,
-      quantity: sourceProduct.quantity,
-      trackInventory: sourceProduct.trackInventory,
-      minQuantity: sourceProduct.minQuantity,
-      maxQuantity: sourceProduct.maxQuantity,
-      price: sourceProduct.price,
-      comparePrice: sourceProduct.comparePrice,
-      costPrice: sourceProduct.costPrice,
-      weight: sourceProduct.weight,
-      weightUnit: sourceProduct.weightUnit,
-      length: sourceProduct.length,
-      width: sourceProduct.width,
-      height: sourceProduct.height,
-      dimensionUnit: sourceProduct.dimensionUnit,
-      isVisible: false, // Start as hidden
-      isFeatured: sourceProduct.isFeatured,
-      sortOrder: sourceProduct.sortOrder,
-      metadata: sourceProduct.metadata,
-      customFields: sourceProduct.customFields,
-      locales: sourceProduct.locales?.map((locale) => ({
-        localeCode: locale.localeCode,
-        name: `${locale.name} (Copy)`,
-        description: locale.description,
-        shortDescription: locale.shortDescription,
-        metaTitle: locale.metaTitle,
-        metaDescription: locale.metaDescription,
-        metaKeywords: locale.metaKeywords,
-        urlKey: locale.urlKey ? `${locale.urlKey}-copy` : null,
-        features: locale.features,
-        specifications: locale.specifications,
-      })),
-    };
-
-    return this.create(createDto, userId);
-  }
-
-  /**
-   * Update product inventory
-   */
-  async updateInventory(
-    id: string,
-    quantity: number,
-    operation: 'set' | 'increment' | 'decrement' = 'set',
-  ): Promise<ProductResponse> {
-    const product = await this.productRepository.findOne({ where: { id } });
-
-    if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
-    }
-
-    if (!product.trackInventory) {
-      throw new BadRequestException(`Product ${product.sku} does not track inventory`);
-    }
-
-    let newQuantity: number;
-
-    switch (operation) {
-      case 'increment':
-        newQuantity = product.quantity + quantity;
-        break;
-      case 'decrement':
-        newQuantity = product.quantity - quantity;
-        if (newQuantity < 0) {
-          throw new BadRequestException(`Insufficient inventory for product ${product.sku}`);
-        }
-        break;
-      default:
-        newQuantity = quantity;
-    }
-
-    product.quantity = newQuantity;
-    await this.productRepository.save(product);
-
-    return this.transformToResponse(product);
-  }
-
-  /**
-   * Get product statistics
-   */
-  async getStatistics(): Promise<any> {
-    const totalProducts = await this.productRepository.count();
-    const publishedProducts = await this.productRepository.count({
-      where: { status: ProductStatus.PUBLISHED },
-    });
-    const draftProducts = await this.productRepository.count({
-      where: { status: ProductStatus.DRAFT },
-    });
-    const outOfStock = await this.productRepository.count({
-      where: { inStock: false, trackInventory: true },
-    });
-    const lowStock = await this.productRepository
+  async getLowStockProducts(): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository
       .createQueryBuilder('product')
-      .where('product.trackInventory = true')
-      .andWhere('product.quantity > 0')
-      .andWhere('product.quantity <= product.minQuantity')
-      .getCount();
+      .where('product.manageStock = :manageStock', { manageStock: true })
+      .andWhere('product.lowStockThreshold IS NOT NULL')
+      .andWhere('product.quantity <= product.lowStockThreshold')
+      .andWhere('product.isDeleted = :isDeleted', { isDeleted: false })
+      .getMany();
 
-    return {
-      total: totalProducts,
-      published: publishedProducts,
-      draft: draftProducts,
-      outOfStock,
-      lowStock,
-      byType: await this.getProductCountByType(),
-      byStatus: await this.getProductCountByStatus(),
-    };
+    return products.map(product => this.toResponseDto(product));
   }
 
   /**
-   * Helper: Get product count by type
+   * Get featured products
    */
-  private async getProductCountByType() {
-    const result = await this.productRepository
-      .createQueryBuilder('product')
-      .select('product.type', 'type')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('product.type')
-      .getRawMany();
+  async getFeaturedProducts(limit = 10): Promise<ProductResponseDto[]> {
+    const products = await this.productRepository.find({
+      where: {
+        isFeatured: true,
+        isVisible: true,
+        isActive: true,
+        isDeleted: false,
+        status: ProductStatus.PUBLISHED,
+      },
+      order: { sortOrder: 'ASC', createdAt: 'DESC' },
+      take: limit,
+    });
 
-    return result.reduce((acc, item) => {
-      acc[item.type] = parseInt(item.count, 10);
-      return acc;
-    }, {});
+    return products.map(product => this.toResponseDto(product));
   }
 
   /**
-   * Helper: Get product count by status
+   * Helper: Generate URL key from name
    */
-  private async getProductCountByStatus() {
-    const result = await this.productRepository
-      .createQueryBuilder('product')
-      .select('product.status', 'status')
-      .addSelect('COUNT(*)', 'count')
-      .groupBy('product.status')
-      .getRawMany();
-
-    return result.reduce((acc, item) => {
-      acc[item.status] = parseInt(item.count, 10);
-      return acc;
-    }, {});
+  private generateUrlKey(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
   }
 
   /**
-   * Helper: Transform entity to response DTO
+   * Helper: Convert entity to response DTO
    */
-  private transformToResponse(product: Product): ProductResponse {
-    const primaryImage = product.media?.find((m) => m.isPrimary)?.url;
-    const defaultLocale = product.locales?.find((l) => l.localeCode === 'en') || product.locales?.[0];
+  private toResponseDto(product: Product): ProductResponseDto {
+    const dto = plainToInstance(ProductResponseDto, product, {
+      excludeExtraneousValues: true,
+    });
 
-    return {
-      ...product,
-      primaryImage,
-      defaultName: defaultLocale?.name,
-      defaultDescription: defaultLocale?.description,
-    } as ProductResponse;
+    // Add calculated fields
+    dto.effectivePrice = product.getEffectivePrice();
+    dto.isOnSale = product.isOnSale();
+    dto.isLowStock = product.isLowStock();
+    dto.hasVariants = product.hasVariants();
+    dto.isVariant = product.isVariant();
+    dto.isAvailable = product.isAvailable();
+
+    return dto;
   }
 }

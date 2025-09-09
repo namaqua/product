@@ -1,29 +1,78 @@
-# 🛍️ PIM - Product Information Management System
+# PIM (Product Information Management) System
 
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
-[![NestJS](https://img.shields.io/badge/NestJS-10.0-red)](https://nestjs.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Required-blue)](https://www.docker.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+A modern, scalable Product Information Management system built with NestJS, PostgreSQL, and React. This enterprise-grade solution provides comprehensive product data management with dynamic attributes, hierarchical categorization, and flexible workflows.
 
-A modern, scalable Product Information Management system built with NestJS and PostgreSQL. Features multi-language support, variant management, and a RESTful API.
+## 🚀 Features
 
-## ✨ Features
+### Core Functionality
+- **Dynamic Product Management**: 40+ product fields with variant support
+- **Hierarchical Categories**: Nested Set Model for efficient tree operations  
+- **Flexible Attributes**: EAV pattern supporting 13 attribute types
+- **Inventory Tracking**: Real-time stock management with low-stock alerts
+- **Role-Based Access**: Multi-tier authorization (Admin, Manager, User)
+- **Bulk Operations**: Efficient handling of large datasets
 
-- 🌍 **Multi-language Support** - Store product information in multiple languages
-- 📦 **Product Variants** - Manage different versions of products
-- 🏷️ **Flexible Attributes** - Dynamic product attributes system
-- 🖼️ **Media Management** - Handle product images and videos
-- 🔐 **JWT Authentication** - Secure API endpoints (configurable)
-- 📊 **Advanced Filtering** - Search, sort, and filter products
-- 🚀 **High Performance** - Optimized queries and caching ready
-- 🐳 **Docker Ready** - Complete Docker setup included
+### Technical Highlights
+- **54 RESTful API Endpoints**: Comprehensive API coverage
+- **JWT Authentication**: Secure token-based auth with refresh tokens
+- **Docker Infrastructure**: Containerized development environment
+- **TypeORM Integration**: Advanced ORM with migrations and audit logging
+- **Swagger Documentation**: Auto-generated API documentation
+- **Production Ready**: Error handling, validation, and logging
+
+## 🛠️ Technology Stack
+
+### Backend
+- **Framework**: NestJS v10
+- **Database**: PostgreSQL 15
+- **ORM**: TypeORM
+- **Authentication**: JWT + Passport
+- **Validation**: class-validator & class-transformer
+- **Documentation**: Swagger/OpenAPI
+
+### Frontend
+- **Framework**: React 18 with TypeScript
+- **UI Library**: Tailwind CSS v3.4
+- **Build Tool**: Vite
+- **State Management**: Zustand
+- **Data Fetching**: React Query + Axios
+- **Components**: Tailwind Pro components
+
+### Infrastructure
+- **Containerization**: Docker & Docker Compose
+- **Development**: Hot reload with nodemon
+- **Testing**: Jest + Supertest
+- **Code Quality**: ESLint + Prettier
+
+## 📦 Project Structure
+
+```
+product/
+├── pim/                    # Backend application (NestJS)
+│   ├── src/
+│   │   ├── modules/        # Feature modules
+│   │   │   ├── auth/       # Authentication & authorization
+│   │   │   ├── users/      # User management
+│   │   │   ├── products/   # Product management
+│   │   │   ├── categories/ # Category hierarchy
+│   │   │   └── attributes/ # Dynamic attributes (EAV)
+│   │   ├── common/         # Shared utilities
+│   │   └── config/         # Configuration
+│   └── test/               # Test suites
+├── pim-admin/              # Frontend application (React)
+│   ├── src/
+│   │   ├── components/     # Reusable components
+│   │   ├── features/       # Feature modules
+│   │   ├── hooks/          # Custom hooks
+│   │   └── services/       # API services
+├── pimdocs/                # Documentation
+├── shell-scripts/          # Development scripts
+└── docker-compose.yml      # Docker configuration
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-
 - Node.js 18+
 - Docker Desktop
 - Git
@@ -32,18 +81,16 @@ A modern, scalable Product Information Management system built with NestJS and P
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/pim-backend.git
-cd pim-backend
+git clone git@github.com:namaqua/product.git
+cd product
 ```
 
-2. **Start the database**
+2. **Start Docker services**
 ```bash
-./start-pim.sh
-# or
 docker-compose up -d
 ```
 
-3. **Install dependencies**
+3. **Install backend dependencies**
 ```bash
 cd pim
 npm install
@@ -52,161 +99,134 @@ npm install
 4. **Configure environment**
 ```bash
 cp .env.example .env
-# Edit .env with your settings (default works for development)
+# Edit .env with your configuration
 ```
 
-5. **Start the application**
+5. **Start backend**
 ```bash
 npm run start:dev
 ```
 
-6. **Test the API**
+6. **Install frontend dependencies** (in new terminal)
 ```bash
-curl http://localhost:3010/health
+cd pim-admin
+npm install
 ```
 
-## 📡 API Endpoints
-
-### Products
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/products` | List all products |
-| GET | `/api/v1/products/:id` | Get product by ID |
-| GET | `/api/v1/products/sku/:sku` | Get product by SKU |
-| GET | `/api/v1/products/statistics` | Get product statistics |
-| POST | `/api/v1/products` | Create new product |
-| PATCH | `/api/v1/products/:id` | Update product |
-| DELETE | `/api/v1/products/:id` | Delete product |
-
-### Query Parameters
-- `includeLocales=true` - Include translations
-- `includeMedia=true` - Include images
-- `page=1&limit=20` - Pagination
-- `sortBy=createdAt&sortOrder=DESC` - Sorting
-
-### Example Request
+7. **Start frontend**
 ```bash
-curl 'http://localhost:3010/api/v1/products?includeLocales=true&page=1&limit=10'
+npm run dev
 ```
 
-## 🗄️ Database Schema
+### Access Points
+- **Backend API**: http://localhost:3010
+- **Frontend**: http://localhost:5173
+- **API Documentation**: http://localhost:3010/api/docs
+- **Health Check**: http://localhost:3010/health
 
-The system uses a normalized database structure with the following key tables:
+## 📊 API Modules
 
-- **products** - Core product data (no name field - uses locales)
-- **product_locales** - Localized names and descriptions
-- **product_attributes** - Dynamic attributes
-- **product_media** - Images and videos
-- **product_categories** - Category associations
-- **product_variants** - Product variations
-- **users** - User management
+### Authentication (8 endpoints)
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - User logout
+- `GET /auth/profile` - Get current user
+- `PATCH /auth/profile` - Update profile
+- `POST /auth/forgot-password` - Request password reset
+- `POST /auth/reset-password` - Reset password
 
-## 🐳 Docker Configuration
+### Products (11 endpoints)
+- `GET /products` - List products with filtering
+- `GET /products/:id` - Get product details
+- `POST /products` - Create product
+- `PATCH /products/:id` - Update product
+- `DELETE /products/:id` - Soft delete product
+- `POST /products/:id/restore` - Restore deleted product
+- `GET /products/low-stock` - Get low stock products
+- `GET /products/featured` - Get featured products
+- `POST /products/bulk` - Bulk operations
+- `PATCH /products/:id/inventory` - Update inventory
+- `GET /products/sku/:sku` - Find by SKU
 
-### Services
-- **PostgreSQL** - Port 5433 (avoids conflicts)
-- **Redis** - Port 6380 (optional, for caching)
+### Categories (15 endpoints)
+- Full CRUD operations
+- Tree navigation (ancestors, descendants, siblings)
+- Breadcrumb generation
+- Move operations for reorganization
+- Featured and menu categories
 
-### Commands
-```bash
-# Start services
-docker-compose up -d
-
-# Stop services
-docker-compose down
-
-# View logs
-docker-compose logs -f
-
-# Reset database
-docker-compose down -v
-```
+### Attributes (14 endpoints)
+- Attribute and group management
+- Dynamic value assignment
+- Filterable attributes for faceted search
+- Bulk value operations
+- Validation rules
 
 ## 🔧 Development
 
-### Project Structure
-```
-pim-backend/
-├── pim/                    # NestJS application
-│   ├── src/
-│   │   ├── modules/        # Feature modules
-│   │   │   ├── products/   # Product management
-│   │   │   ├── auth/       # Authentication
-│   │   │   └── users/      # User management
-│   │   └── config/         # Configuration
-│   └── test/               # Tests
-├── scripts/                # Database scripts
-├── docker-compose.yml      # Docker configuration
-└── docs/                   # Documentation
-```
-
-### Available Scripts
+### Running Tests
 ```bash
-npm run start:dev    # Start in development mode
-npm run build        # Build for production
-npm run start:prod   # Start production build
-npm run test         # Run tests
-npm run test:e2e     # Run end-to-end tests
-npm run test:cov     # Generate test coverage
+# Backend tests
+cd pim
+npm run test
+npm run test:e2e
+
+# Test specific module
+cd shell-scripts
+./test-attributes-module.sh
 ```
 
-## 📊 Sample Data
-
-The system comes with 6 sample products:
-
-| SKU | Product | Price | Stock |
-|-----|---------|-------|-------|
-| LAPTOP-001 | Professional Laptop Pro 15" | $1,299.99 | 50 |
-| PHONE-001 | SmartPhone X Pro 256GB | $899.99 | 100 |
-| HEADPHONES-001 | Wireless Noise-Canceling Headphones | $349.99 | 200 |
-| TABLET-001 | Digital Tablet Pro 11" | $599.99 | 75 |
-| WATCH-001 | Smart Fitness Watch | $399.99 | 150 |
-| CAMERA-001 | Professional DSLR Camera | $2,499.99 | 25 |
-
-## 🔐 Authentication
-
-Authentication is temporarily disabled for development. To enable:
-
-1. Edit `src/modules/products/products.controller.ts`
-2. Uncomment `@UseGuards(JwtAuthGuard, RolesGuard)`
-3. Use the auth endpoints to get tokens
-
-### Auth Endpoints
+### Database Management
 ```bash
-# Register
-POST /api/v1/auth/register
+# Connect to database
+docker exec -it postgres-pim psql -U pim_user -d pim_dev
 
-# Login
-POST /api/v1/auth/login
+# Run migrations
+npm run migration:run
 
-# Use token
-curl -H "Authorization: Bearer <token>" /api/v1/products
+# Generate migration
+npm run migration:generate -- -n MigrationName
 ```
 
-## 🚨 Troubleshooting
+### Code Quality
+```bash
+# Lint code
+npm run lint
 
-### Common Issues
+# Format code
+npm run format
 
-**Products API returns empty array**
-- Check database port is 5433 in `.env`
-- Verify PostgreSQL is running: `docker ps`
+# Type check
+npm run type-check
+```
 
-**Port conflicts**
-- PIM uses port 5433 for PostgreSQL
-- Backend API runs on port 3010
+## 📈 Performance
 
-**Authentication errors**
-- Authentication is disabled by default
-- Check ProductsController for guard status
+- **Nested Set Model**: O(1) tree operations without recursion
+- **Indexed Queries**: Strategic indexing on frequently queried fields
+- **Bulk Operations**: Efficient handling of large datasets
+- **Connection Pooling**: Optimized database connections
+- **Response Caching**: Redis integration ready
 
-See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions.
+## 🔒 Security
+
+- **JWT Authentication**: Secure token-based authentication
+- **Role-Based Access**: Granular permission system
+- **Input Validation**: Comprehensive DTO validation
+- **SQL Injection Protection**: TypeORM parameterized queries
+- **XSS Protection**: Input sanitization
+- **Rate Limiting**: Ready for implementation
 
 ## 📚 Documentation
 
-- [Quick Reference](QUICK_REFERENCE.md) - Common commands
-- [Troubleshooting](TROUBLESHOOTING.md) - Problem solutions
-- [Tasks](TASKS.md) - Development roadmap
-- [API Documentation](http://localhost:3010/api/docs) - Swagger (when enabled)
+Comprehensive documentation is available in the `/pimdocs` directory:
+
+- **Architecture Overview**: System design and patterns
+- **API Specifications**: Complete endpoint documentation
+- **Domain Model**: Database schema and relationships
+- **Implementation Roadmap**: 20-week development plan
+- **Module Documentation**: Detailed module guides
 
 ## 🤝 Contributing
 
@@ -218,19 +238,59 @@ See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for detailed solutions.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary and confidential.
 
-## 👥 Authors
+## 👥 Team
 
-- **Colin Roets** - Initial work
+- **Backend Development**: NestJS, TypeORM, PostgreSQL
+- **Frontend Development**: React, TypeScript, Tailwind CSS
+- **DevOps**: Docker, CI/CD pipeline
+- **Architecture**: Domain-driven design, Modular monolith
 
-## 🙏 Acknowledgments
+## 📊 Project Status
 
-- NestJS team for the amazing framework
-- PostgreSQL for the robust database
-- Docker for containerization
-- All contributors and testers
+- **Phase 1**: Foundation - 56% Complete ✅
+- **Current Sprint**: Backend core modules
+- **Next Priority**: Frontend integration
+- **Timeline**: 20-week implementation plan
+- **Progress**: 18/94 tasks completed (19.1%)
+
+## 🚀 Roadmap
+
+### ✅ Completed
+- Environment setup
+- Authentication system
+- Product management
+- Category hierarchy
+- Dynamic attributes
+
+### 🔄 In Progress
+- Frontend integration
+- Media management
+- Import/Export
+
+### 📅 Upcoming
+- Workflow engine
+- Multi-language support
+- Channel syndication
+- Advanced search
+- Analytics dashboard
+
+## 💡 Key Features Coming Soon
+
+- **AI-Powered Enrichment**: Automatic product descriptions
+- **Image Recognition**: Auto-tagging and categorization
+- **Elasticsearch Integration**: Advanced search capabilities
+- **Real-time Collaboration**: Multi-user editing
+- **Mobile App**: iOS/Android companion apps
+
+## 📞 Support
+
+For questions or issues:
+- Check the documentation in `/pimdocs`
+- Review the troubleshooting guide
+- Open an issue on GitHub
 
 ---
 
-**Built with ❤️ using NestJS and PostgreSQL**
+Built with ❤️ using NestJS and React

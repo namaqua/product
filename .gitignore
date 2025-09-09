@@ -93,6 +93,6 @@ uploads/
 backup/
 backups/
 
-# Shell scripts (if you want to keep them private)
-# shell-scripts/
-# Uncomment above if you don't want to share shell scripts
+# Shell scripts (kept private/local only)
+shell-scripts/
+*.sh

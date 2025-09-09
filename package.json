@@ -36,5 +36,9 @@
   },
   "author": "Colin Roets",
   "license": "PRIVATE",
-  "homepage": "https://github.com/namaqua/product#readme"
+  "homepage": "https://github.com/namaqua/product#readme",
+  "dependencies": {
+    "@nestjs/swagger": "^7.4.2",
+    "swagger-ui-express": "^5.0.1"
+  }
 }
