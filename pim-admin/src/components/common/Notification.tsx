@@ -1,5 +1,3 @@
-'use client';
-
 import { Fragment, useEffect, useState } from 'react';
 import { Transition } from '@headlessui/react';
 import {
@@ -9,7 +7,7 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { classNames } from '@/utils/classNames';
+import { classNames } from '../../utils/classNames';
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 

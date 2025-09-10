@@ -17,7 +17,11 @@ import {
   MoveCategoryDto,
 } from './dto';
 import { plainToInstance } from 'class-transformer';
-import { PaginatedResponseDto, createPaginatedResponse } from '../../common/dto';
+import { 
+  CollectionResponse, 
+  ResponseHelpers,
+  ActionResponseDto 
+} from '../../common/dto';
 
 @Injectable()
 export class CategoriesService {
@@ -35,7 +39,7 @@ export class CategoriesService {
   async create(
     createCategoryDto: CreateCategoryDto,
     userId?: string,
-  ): Promise<CategoryResponseDto> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     this.logger.log(`Creating category: ${createCategoryDto.name}`);
 
     // Check if slug already exists
@@ -107,14 +111,14 @@ export class CategoriesService {
       const savedCategory = await categoryRepo.save(category);
       this.logger.log(`Category created with ID: ${savedCategory.id}`);
 
-      return this.toResponseDto(savedCategory);
+      return ActionResponseDto.create(this.toResponseDto(savedCategory));
     });
   }
 
   /**
    * Find all categories with filtering and pagination
    */
-  async findAll(query: CategoryQueryDto): Promise<PaginatedResponseDto<CategoryResponseDto>> {
+  async findAll(query: CategoryQueryDto): Promise<CollectionResponse<CategoryResponseDto>> {
     const { page = 1, limit = 20, sortBy = 'left', sortOrder = 'ASC' } = query;
 
     const queryBuilder = this.categoryRepository.createQueryBuilder('category');
@@ -167,19 +171,24 @@ export class CategoriesService {
     // Transform to DTOs
     const dtos = items.map(item => this.toResponseDto(item));
 
-    return createPaginatedResponse(dtos, page, limit, total);
+    // Return standardized response
+    return ResponseHelpers.wrapPaginated([dtos, total], page, limit);
   }
 
   /**
    * Get category tree structure
    */
-  async getTree(): Promise<CategoryTreeDto[]> {
+  async getTree(): Promise<CollectionResponse<CategoryTreeDto>> {
     const categories = await this.categoryRepository.find({
       where: { isDeleted: false },
       order: { left: 'ASC' },
     });
 
-    return this.buildTree(categories);
+    const tree = this.buildTree(categories);
+    return ResponseHelpers.wrapCollection(tree, {
+      totalItems: tree.length,
+      itemCount: tree.length
+    });
   }
 
   /**
@@ -197,7 +206,8 @@ export class CategoriesService {
     const dto = this.toResponseDto(category);
 
     if (includeAncestors) {
-      dto.ancestors = await this.getAncestors(category);
+      const ancestorsResponse = await this.getAncestors(category);
+      dto.ancestors = ancestorsResponse.items;
     }
 
     return dto;
@@ -225,7 +235,7 @@ export class CategoriesService {
     id: string,
     updateCategoryDto: UpdateCategoryDto,
     userId?: string,
-  ): Promise<CategoryResponseDto> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     const category = await this.categoryRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -249,13 +259,13 @@ export class CategoriesService {
     category.updatedBy = userId;
 
     const updatedCategory = await this.categoryRepository.save(category);
-    return this.toResponseDto(updatedCategory);
+    return ActionResponseDto.update(this.toResponseDto(updatedCategory));
   }
 
   /**
    * Move a category to a new parent (updates nested set values)
    */
-  async move(id: string, moveCategoryDto: MoveCategoryDto, userId?: string): Promise<CategoryResponseDto> {
+  async move(id: string, moveCategoryDto: MoveCategoryDto, userId?: string): Promise<ActionResponseDto<CategoryResponseDto>> {
     return await this.dataSource.transaction(async manager => {
       const categoryRepo = manager.getRepository(Category);
 
@@ -329,14 +339,14 @@ export class CategoriesService {
       const movedCategory = await categoryRepo.save(category);
       this.logger.log(`Category ${id} moved successfully`);
 
-      return this.toResponseDto(movedCategory);
+      return ActionResponseDto.update(this.toResponseDto(movedCategory));
     });
   }
 
   /**
    * Delete a category (soft delete)
    */
-  async remove(id: string, userId?: string): Promise<void> {
+  async remove(id: string, userId?: string): Promise<ActionResponseDto<CategoryResponseDto>> {
     const category = await this.categoryRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -360,12 +370,37 @@ export class CategoriesService {
     await this.categoryRepository.save(category);
 
     this.logger.log(`Category ${id} soft deleted`);
+    const dto = this.toResponseDto(category);
+    return ActionResponseDto.delete(dto);
   }
+
+  /**
+   * Restore a soft deleted category
+   */
+  async restore(id: string, userId?: string): Promise<ActionResponseDto<CategoryResponseDto>> {
+    const category = await this.categoryRepository.findOne({
+      where: { id, isDeleted: true },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Deleted category with ID ${id} not found`);
+    }
+
+    category.restore();
+    category.updatedBy = userId;
+    const restoredCategory = await this.categoryRepository.save(category);
+    
+    this.logger.log(`Category ${id} restored`);
+    const dto = this.toResponseDto(restoredCategory);
+    return new ActionResponseDto(dto, 'Restored successfully');
+  }
+
+
 
   /**
    * Get category ancestors (path from root to category)
    */
-  async getAncestors(category: Category): Promise<CategoryResponseDto[]> {
+  async getAncestors(category: Category): Promise<CollectionResponse<CategoryResponseDto>> {
     const ancestors = await this.categoryRepository.find({
       where: {
         left: LessThanOrEqual(category.left),
@@ -375,15 +410,35 @@ export class CategoriesService {
       order: { left: 'ASC' },
     });
 
-    return ancestors
+    const items = ancestors
       .filter(a => a.id !== category.id)
       .map(a => this.toResponseDto(a));
+    
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
+  }
+
+  /**
+   * Get category ancestors by ID (wrapper for controller)
+   */
+  async getAncestorsById(id: string): Promise<CollectionResponse<CategoryResponseDto>> {
+    const category = await this.categoryRepository.findOne({
+      where: { id, isDeleted: false },
+    });
+
+    if (!category) {
+      throw new NotFoundException(`Category with ID ${id} not found`);
+    }
+
+    return this.getAncestors(category);
   }
 
   /**
    * Get category descendants (all children at any level)
    */
-  async getDescendants(id: string): Promise<CategoryResponseDto[]> {
+  async getDescendants(id: string): Promise<CollectionResponse<CategoryResponseDto>> {
     const category = await this.categoryRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -401,27 +456,36 @@ export class CategoriesService {
       order: { left: 'ASC' },
     });
 
-    return descendants
+    const items = descendants
       .filter(d => d.id !== category.id)
       .map(d => this.toResponseDto(d));
+    
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**
    * Get direct children of a category
    */
-  async getChildren(id: string): Promise<CategoryResponseDto[]> {
+  async getChildren(id: string): Promise<CollectionResponse<CategoryResponseDto>> {
     const children = await this.categoryRepository.find({
       where: { parentId: id, isDeleted: false },
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
 
-    return children.map(child => this.toResponseDto(child));
+    const items = children.map(child => this.toResponseDto(child));
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**
    * Get breadcrumb path for a category
    */
-  async getBreadcrumb(id: string): Promise<{ id: string; name: string; slug: string }[]> {
+  async getBreadcrumb(id: string): Promise<CollectionResponse<{ id: string; name: string; slug: string }>> {
     const category = await this.categoryRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -439,11 +503,16 @@ export class CategoriesService {
       order: { left: 'ASC' },
     });
 
-    return ancestors.map(a => ({
+    const breadcrumbItems = ancestors.map(a => ({
       id: a.id,
       name: a.name,
       slug: a.slug,
     }));
+
+    return ResponseHelpers.wrapCollection(breadcrumbItems, {
+      totalItems: breadcrumbItems.length,
+      itemCount: breadcrumbItems.length
+    });
   }
 
   /**

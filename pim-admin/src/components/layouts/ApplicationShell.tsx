@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, Fragment } from 'react';
-import { Dialog, Transition } from '@headlessui/react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Dialog, Transition, Menu } from '@headlessui/react';
 import {
   Bars3Icon,
   XMarkIcon,
@@ -15,54 +16,59 @@ import {
   GlobeAltIcon,
   Cog6ToothIcon,
   UsersIcon,
+  ChevronDownIcon,
+  ArrowRightOnRectangleIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid';
+import { useAuthStore } from '../../stores/auth.store';
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon, current: true },
-  { name: 'Products', href: '/products', icon: CubeIcon, current: false },
-  { name: 'Categories', href: '/categories', icon: FolderIcon, current: false },
-  { name: 'Attributes', href: '/attributes', icon: TagIcon, current: false },
-  { name: 'Media', href: '/media', icon: PhotoIcon, current: false },
-  { name: 'Workflows', href: '/workflows', icon: ClipboardDocumentListIcon, current: false },
-  { name: 'Import/Export', href: '/import-export', icon: ArrowPathIcon, current: false },
-  { name: 'Channels', href: '/channels', icon: GlobeAltIcon, current: false },
+const dashboardNavigation = [
+  { name: 'Dashboard', href: '/', icon: HomeIcon },
+];
+
+const productEngineNavigation = [
+  { name: 'Products', href: '/products', icon: CubeIcon },
+  { name: 'Categories', href: '/categories', icon: FolderIcon },
+  { name: 'Attributes', href: '/attributes', icon: TagIcon },
+  { name: 'Media', href: '/media', icon: PhotoIcon },
+  { name: 'Workflows', href: '/workflows', icon: ClipboardDocumentListIcon },
+  { name: 'Import/Export', href: '/import-export', icon: ArrowPathIcon },
+  { name: 'Channels', href: '/channels', icon: GlobeAltIcon },
+];
+
+const subscriptionEngineNavigation = [
+  // Add subscription-related navigation items here when ready
+  // For now, this section is empty but ready for future items
 ];
 
 const adminNavigation = [
-  { name: 'Users', href: '/admin/users', icon: UsersIcon, current: false },
-  { name: 'Settings', href: '/admin/settings', icon: Cog6ToothIcon, current: false },
+  { name: 'Users', href: '/users', icon: UsersIcon },
+  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
 ];
-
-// Uncomment when user menu is implemented
-// const userNavigation = [
-//   { name: 'Your Profile', href: '/profile' },
-//   { name: 'Settings', href: '/settings' },
-//   { name: 'Sign out', href: '/logout' },
-// ];
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
 }
 
-interface ApplicationShellProps {
-  children: React.ReactNode;
-  currentPath?: string;
-}
-
-export default function ApplicationShell({ children, currentPath = '/' }: ApplicationShellProps) {
+export default function ApplicationShell() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Update current navigation item based on path
-  const updatedNavigation = navigation.map((item) => ({
-    ...item,
-    current: item.href === currentPath,
-  }));
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
-  const updatedAdminNavigation = adminNavigation.map((item) => ({
-    ...item,
-    current: item.href === currentPath,
-  }));
+  // Determine current path for navigation highlighting
+  const isCurrentPath = (href: string) => {
+    if (href === '/') {
+      return location.pathname === '/' || location.pathname === '/dashboard';
+    }
+    return location.pathname.startsWith(href);
+  };
 
   return (
     <>
@@ -115,72 +121,154 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                   </Transition.Child>
 
                   {/* Mobile Sidebar content */}
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-4">
+                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-900 px-6 pb-4">
                     <div className="flex h-16 shrink-0 items-center">
                       <div className="flex items-center space-x-2">
                         <div className="flex-shrink-0">
-                          <CubeIcon className="h-8 w-8 text-accent-500" aria-hidden="true" />
+                          <Cog6ToothIcon className="h-8 w-8 text-navy-800" aria-hidden="true" />
                         </div>
-                        <span className="text-xl font-bold text-navy-800">Our Products</span>
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">My Engines</span>
                       </div>
                     </div>
                     <nav className="flex flex-1 flex-col">
                       <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                        {/* Dashboard Section */}
                         <li>
                           <ul role="list" className="-mx-2 space-y-1">
-                            {updatedNavigation.map((item) => (
+                            {dashboardNavigation.map((item) => (
                               <li key={item.name}>
-                                <a
-                                  href={item.href}
+                                <Link
+                                  to={item.href}
+                                  onClick={() => setSidebarOpen(false)}
                                   className={classNames(
-                                    item.current
-                                      ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
-                                      : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
+                                    isCurrentPath(item.href)
+                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
                                     'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      item.current
-                                        ? 'text-navy-800'
-                                        : 'text-gray-400 group-hover:text-navy-700',
+                                      isCurrentPath(item.href)
+                                        ? 'text-navy-800 dark:text-navy-300'
+                                        : 'text-gray-400 group-hover:text-navy-800',
                                       'h-6 w-6 shrink-0',
                                     )}
                                     aria-hidden="true"
                                   />
                                   {item.name}
-                                </a>
+                                </Link>
                               </li>
                             ))}
                           </ul>
                         </li>
+                        
+                        {/* Product Engine Section */}
                         <li>
-                          <div className="text-xs font-semibold leading-6 text-gray-400">
-                            Administration
+                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Product Engine</span>
                           </div>
                           <ul role="list" className="-mx-2 mt-2 space-y-1">
-                            {updatedAdminNavigation.map((item) => (
+                            {productEngineNavigation.map((item) => (
                               <li key={item.name}>
-                                <a
-                                  href={item.href}
+                                <Link
+                                  to={item.href}
+                                  onClick={() => setSidebarOpen(false)}
                                   className={classNames(
-                                    item.current
-                                      ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
-                                      : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
+                                    isCurrentPath(item.href)
+                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
                                     'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                                   )}
                                 >
                                   <item.icon
                                     className={classNames(
-                                      item.current
-                                        ? 'text-navy-800'
-                                        : 'text-gray-400 group-hover:text-navy-700',
+                                      isCurrentPath(item.href)
+                                        ? 'text-navy-800 dark:text-navy-300'
+                                        : 'text-gray-400 group-hover:text-navy-800',
                                       'h-6 w-6 shrink-0',
                                     )}
                                     aria-hidden="true"
                                   />
                                   {item.name}
-                                </a>
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                        
+                        {/* Subscription Engine Section */}
+                        <li>
+                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Subscription Engine</span>
+                          </div>
+                          {subscriptionEngineNavigation.length > 0 ? (
+                            <ul role="list" className="-mx-2 mt-2 space-y-1">
+                              {subscriptionEngineNavigation.map((item) => (
+                                <li key={item.name}>
+                                  <Link
+                                    to={item.href}
+                                    onClick={() => setSidebarOpen(false)}
+                                    className={classNames(
+                                      isCurrentPath(item.href)
+                                      ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                                      : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
+                                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
+                                    )}
+                                  >
+                                    <item.icon
+                                      className={classNames(
+                                        isCurrentPath(item.href)
+                                          ? 'text-navy-800 dark:text-navy-300'
+                                          : 'text-gray-400 group-hover:text-navy-800',
+                                        'h-6 w-6 shrink-0',
+                                      )}
+                                      aria-hidden="true"
+                                    />
+                                    {item.name}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="-mx-2 mt-2 px-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                              Coming soon...
+                            </p>
+                          )}
+                        </li>
+                        
+                        {/* Administration Section */}
+                        <li>
+                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Administration</span>
+                          </div>
+                          <ul role="list" className="-mx-2 mt-2 space-y-1">
+                            {adminNavigation.map((item) => (
+                              <li key={item.name}>
+                                <Link
+                                  to={item.href}
+                                  onClick={() => setSidebarOpen(false)}
+                                  className={classNames(
+                                    isCurrentPath(item.href)
+                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
+                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
+                                  )}
+                                >
+                                  <item.icon
+                                    className={classNames(
+                                      isCurrentPath(item.href)
+                                        ? 'text-navy-800 dark:text-navy-300'
+                                        : 'text-gray-400 group-hover:text-navy-800',
+                                      'h-6 w-6 shrink-0',
+                                    )}
+                                    aria-hidden="true"
+                                  />
+                                  {item.name}
+                                </Link>
                               </li>
                             ))}
                           </ul>
@@ -196,87 +284,153 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
 
         {/* Static sidebar for desktop */}
         <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 pb-4">
+          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 pb-4">
             <div className="flex h-16 shrink-0 items-center">
               <div className="flex items-center space-x-2">
                 <div className="flex-shrink-0">
-                  <CubeIcon className="h-8 w-8 text-accent-500" aria-hidden="true" />
+                  <Cog6ToothIcon className="h-8 w-8 text-navy-800" aria-hidden="true" />
                 </div>
-                <span className="text-xl font-bold text-navy-800">Our Products</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white">My Engines</span>
               </div>
             </div>
             <nav className="flex flex-1 flex-col">
               <ul role="list" className="flex flex-1 flex-col gap-y-7">
+                {/* Dashboard Section */}
                 <li>
                   <ul role="list" className="-mx-2 space-y-1">
-                    {updatedNavigation.map((item) => (
+                    {dashboardNavigation.map((item) => (
                       <li key={item.name}>
-                        <a
-                          href={item.href}
+                        <Link
+                          to={item.href}
                           className={classNames(
-                            item.current
-                              ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
-                              : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
+                            isCurrentPath(item.href)
+                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              item.current
-                                ? 'text-navy-800'
-                                : 'text-gray-400 group-hover:text-navy-700',
+                              isCurrentPath(item.href)
+                                ? 'text-navy-800 dark:text-navy-300'
+                                : 'text-gray-400 group-hover:text-navy-800',
                               'h-6 w-6 shrink-0',
                             )}
                             aria-hidden="true"
                           />
                           {item.name}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 </li>
+                
+                {/* Product Engine Section */}
                 <li>
-                  <div className="text-xs font-semibold leading-6 text-gray-400">
-                    Administration
+                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                    <span>Product Engine</span>
                   </div>
                   <ul role="list" className="-mx-2 mt-2 space-y-1">
-                    {updatedAdminNavigation.map((item) => (
+                    {productEngineNavigation.map((item) => (
                       <li key={item.name}>
-                        <a
-                          href={item.href}
+                        <Link
+                          to={item.href}
                           className={classNames(
-                            item.current
-                              ? 'bg-navy-50 text-navy-800 border-l-4 border-accent-500 -ml-2 pl-2'
-                              : 'text-gray-700 hover:text-navy-700 hover:bg-gray-50',
+                            isCurrentPath(item.href)
+                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
                             'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
                           )}
                         >
                           <item.icon
                             className={classNames(
-                              item.current
-                                ? 'text-navy-800'
-                                : 'text-gray-400 group-hover:text-navy-700',
+                              isCurrentPath(item.href)
+                                ? 'text-navy-800 dark:text-navy-300'
+                                : 'text-gray-400 group-hover:text-navy-800',
                               'h-6 w-6 shrink-0',
                             )}
                             aria-hidden="true"
                           />
                           {item.name}
-                        </a>
+                        </Link>
                       </li>
                     ))}
                   </ul>
                 </li>
-                <li className="mt-auto">
-                  <a
-                    href="/profile"
-                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-700 hover:bg-gray-50 hover:text-navy-700"
-                  >
-                    <Cog6ToothIcon
-                      className="h-6 w-6 shrink-0 text-gray-400 group-hover:text-navy-700"
-                      aria-hidden="true"
-                    />
-                    Settings
-                  </a>
+                
+                {/* Subscription Engine Section */}
+                <li>
+                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                    <span>Subscription Engine</span>
+                  </div>
+                  {subscriptionEngineNavigation.length > 0 ? (
+                    <ul role="list" className="-mx-2 mt-2 space-y-1">
+                      {subscriptionEngineNavigation.map((item) => (
+                        <li key={item.name}>
+                          <Link
+                            to={item.href}
+                            className={classNames(
+                              isCurrentPath(item.href)
+                                ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                                : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
+                              'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
+                            )}
+                          >
+                            <item.icon
+                              className={classNames(
+                                isCurrentPath(item.href)
+                                  ? 'text-navy-800 dark:text-navy-300'
+                                  : 'text-gray-400 group-hover:text-navy-800',
+                                'h-6 w-6 shrink-0',
+                              )}
+                              aria-hidden="true"
+                            />
+                            {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="-mx-2 mt-2 px-2 text-xs text-gray-500 dark:text-gray-400 italic">
+                      Coming soon...
+                    </p>
+                  )}
+                </li>
+                
+                {/* Administration Section */}
+                <li>
+                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
+                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                    <span>Administration</span>
+                  </div>
+                  <ul role="list" className="-mx-2 mt-2 space-y-1">
+                    {adminNavigation.map((item) => (
+                      <li key={item.name}>
+                        <Link
+                          to={item.href}
+                          className={classNames(
+                            isCurrentPath(item.href)
+                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
+                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
+                          )}
+                        >
+                          <item.icon
+                            className={classNames(
+                              isCurrentPath(item.href)
+                                ? 'text-navy-800 dark:text-navy-300'
+                                : 'text-gray-400 group-hover:text-navy-800',
+                              'h-6 w-6 shrink-0',
+                            )}
+                            aria-hidden="true"
+                          />
+                          {item.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
               </ul>
             </nav>
@@ -285,10 +439,10 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
 
         <div className="lg:pl-72">
           {/* Top header bar */}
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
             <button
               type="button"
-              className="-m-2.5 p-2.5 text-gray-700 lg:hidden"
+              className="-m-2.5 p-2.5 text-gray-700 dark:text-gray-300 lg:hidden"
               onClick={() => setSidebarOpen(true)}
             >
               <span className="sr-only">Open sidebar</span>
@@ -296,7 +450,7 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
             </button>
 
             {/* Separator */}
-            <div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 lg:hidden" aria-hidden="true" />
 
             <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
               <form className="relative flex flex-1" action="#" method="GET">
@@ -309,7 +463,7 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                 />
                 <input
                   id="search-field"
-                  className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm"
+                  className="block h-full w-full border-0 py-0 pl-8 pr-0 text-gray-900 dark:text-white bg-transparent placeholder:text-gray-400 focus:ring-0 sm:text-sm"
                   placeholder="Search..."
                   type="search"
                   name="search"
@@ -322,28 +476,94 @@ export default function ApplicationShell({ children, currentPath = '/' }: Applic
                 </button>
 
                 {/* Separator */}
-                <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" />
+                <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
 
-                {/* Profile dropdown - simplified for now */}
-                <div className="flex items-center">
-                  <button type="button" className="-m-1.5 flex items-center p-1.5">
+                {/* Profile dropdown */}
+                <Menu as="div" className="relative">
+                  <Menu.Button className="-m-1.5 flex items-center p-1.5">
                     <span className="sr-only">Open user menu</span>
+                    <UserCircleIcon className="h-8 w-8 text-gray-400" aria-hidden="true" />
                     <span className="hidden lg:flex lg:items-center">
                       <span
-                        className="ml-4 text-sm font-semibold leading-6 text-gray-900"
+                        className="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-white"
                         aria-hidden="true"
                       >
-                        User Name
+                        {user ? `${user.firstName} ${user.lastName}` : 'User'}
                       </span>
+                      <ChevronDownIcon
+                        className="ml-2 h-5 w-5 text-gray-400"
+                        aria-hidden="true"
+                      />
                     </span>
-                  </button>
-                </div>
+                  </Menu.Button>
+                  <Transition
+                    as={Fragment}
+                    enter="transition ease-out duration-100"
+                    enterFrom="transform opacity-0 scale-95"
+                    enterTo="transform opacity-100 scale-100"
+                    leave="transition ease-in duration-75"
+                    leaveFrom="transform opacity-100 scale-100"
+                    leaveTo="transform opacity-0 scale-95"
+                  >
+                    <Menu.Items className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/profile"
+                            className={classNames(
+                              active ? 'bg-gray-50 dark:bg-gray-700' : '',
+                              'block px-3 py-1 text-sm leading-6 text-gray-900 dark:text-white'
+                            )}
+                          >
+                            <div className="flex items-center">
+                              <UserCircleIcon className="mr-3 h-5 w-5 text-gray-400" />
+                              Your profile
+                            </div>
+                          </Link>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/settings"
+                            className={classNames(
+                              active ? 'bg-gray-50 dark:bg-gray-700' : '',
+                              'block px-3 py-1 text-sm leading-6 text-gray-900 dark:text-white'
+                            )}
+                          >
+                            <div className="flex items-center">
+                              <Cog6ToothIcon className="mr-3 h-5 w-5 text-gray-400" />
+                              Settings
+                            </div>
+                          </Link>
+                        )}
+                      </Menu.Item>
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={handleLogout}
+                            className={classNames(
+                              active ? 'bg-gray-50 dark:bg-gray-700' : '',
+                              'block w-full text-left px-3 py-1 text-sm leading-6 text-gray-900 dark:text-white'
+                            )}
+                          >
+                            <div className="flex items-center">
+                              <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5 text-gray-400" />
+                              Sign out
+                            </div>
+                          </button>
+                        )}
+                      </Menu.Item>
+                    </Menu.Items>
+                  </Transition>
+                </Menu>
               </div>
             </div>
           </div>
 
-          <main className="py-10">
-            <div className="px-4 sm:px-6 lg:px-8">{children}</div>
+          <main className="py-10 bg-gray-50 dark:bg-gray-900 min-h-screen">
+            <Outlet />
           </main>
         </div>
       </div>

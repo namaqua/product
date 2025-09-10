@@ -1,24 +1,29 @@
-'use client';
-
 import { Fragment, ReactNode } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { classNames } from '@/utils/classNames';
+
+function classNames(...classes: (string | undefined | null | false)[]) {
+  return classes.filter(Boolean).join(' ');
+}
 
 interface ModalProps {
   open: boolean;
   onClose: (value: boolean) => void;
   title?: string;
-  children: ReactNode;
+  description?: string;
+  children?: ReactNode;
+  actions?: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   showCloseButton?: boolean;
 }
 
-export default function Modal({
+export function Modal({
   open,
   onClose,
   title,
+  description,
   children,
+  actions,
   size = 'md',
   showCloseButton = true,
 }: ModalProps) {
@@ -58,7 +63,7 @@ export default function Modal({
             >
               <Dialog.Panel
                 className={classNames(
-                  'relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:p-6',
+                  'relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:p-6',
                   sizeClasses[size],
                 )}
               >
@@ -66,7 +71,7 @@ export default function Modal({
                   <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
                     <button
                       type="button"
-                      className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                      className="rounded-md bg-white dark:bg-gray-800 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                       onClick={() => onClose(false)}
                     >
                       <span className="sr-only">Close</span>
@@ -74,15 +79,35 @@ export default function Modal({
                     </button>
                   </div>
                 )}
-                {title && (
-                  <Dialog.Title
-                    as="h3"
-                    className="text-lg font-semibold leading-6 text-gray-900 mb-4"
-                  >
-                    {title}
-                  </Dialog.Title>
-                )}
-                {children}
+                
+                <div>
+                  {title && (
+                    <Dialog.Title
+                      as="h3"
+                      className="text-lg font-semibold leading-6 text-gray-900 dark:text-white mb-2"
+                    >
+                      {title}
+                    </Dialog.Title>
+                  )}
+                  
+                  {description && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      {description}
+                    </p>
+                  )}
+                  
+                  {children && (
+                    <div className="mt-4">
+                      {children}
+                    </div>
+                  )}
+                  
+                  {actions && (
+                    <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse gap-3">
+                      {actions}
+                    </div>
+                  )}
+                </div>
               </Dialog.Panel>
             </Transition.Child>
           </div>
@@ -91,3 +116,5 @@ export default function Modal({
     </Transition.Root>
   );
 }
+
+export default Modal;

@@ -15,7 +15,11 @@ import {
   ProductResponseDto,
 } from './dto';
 import { plainToInstance } from 'class-transformer';
-import { PaginatedResponseDto, createPaginatedResponse } from '../../common/dto';
+import { 
+  CollectionResponse, 
+  ActionResponseDto,
+  ResponseHelpers 
+} from '../../common/dto';
 
 @Injectable()
 export class ProductsService {
@@ -32,7 +36,7 @@ export class ProductsService {
   async create(
     createProductDto: CreateProductDto,
     userId?: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     this.logger.log(`Creating product with SKU: ${createProductDto.sku}`);
 
     // Check if SKU already exists
@@ -73,76 +77,73 @@ export class ProductsService {
     }
 
     const savedProduct = await this.productRepository.save(product);
-    return this.toResponseDto(savedProduct);
+    const dto = this.toResponseDto(savedProduct);
+    return ActionResponseDto.create(dto);
   }
 
   /**
    * Find all products with filtering and pagination
    */
-  async findAll(query: ProductQueryDto): Promise<PaginatedResponseDto<ProductResponseDto>> {
+  async findAll(query: ProductQueryDto): Promise<CollectionResponse<ProductResponseDto>> {
     const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'DESC', includeVariants = false } = query;
 
-    const where: FindOptionsWhere<Product> | FindOptionsWhere<Product>[] = {};
+    // Build query using QueryBuilder from the start
+    let queryBuilder = this.productRepository.createQueryBuilder('product');
+    
+    // Apply soft delete filter
+    queryBuilder.where('product.isDeleted = :isDeleted', { isDeleted: false });
 
-    // Build search conditions
+    // Search conditions
     if (query.search) {
-      where.name = Like(`%${query.search}%`);
-      // Could also search in description, but TypeORM doesn't support OR easily in FindOptionsWhere
-      // For complex queries, we'd use QueryBuilder
+      queryBuilder.andWhere(
+        '(product.name LIKE :search OR product.description LIKE :search OR product.sku LIKE :search)',
+        { search: `%${query.search}%` }
+      );
     }
 
     if (query.sku) {
-      where.sku = query.sku;
+      queryBuilder.andWhere('product.sku = :sku', { sku: query.sku });
     }
 
     if (query.type) {
-      where.type = query.type;
+      queryBuilder.andWhere('product.type = :type', { type: query.type });
     }
 
     if (query.status) {
-      where.status = query.status;
+      queryBuilder.andWhere('product.status = :status', { status: query.status });
     }
 
     if (query.brand) {
-      where.brand = query.brand;
+      queryBuilder.andWhere('product.brand = :brand', { brand: query.brand });
     }
 
     if (query.manufacturer) {
-      where.manufacturer = query.manufacturer;
+      queryBuilder.andWhere('product.manufacturer = :manufacturer', { manufacturer: query.manufacturer });
     }
 
+    // Handle parentId filtering
     if (query.parentId) {
-      where.parentId = query.parentId;
+      queryBuilder.andWhere('product.parentId = :parentId', { parentId: query.parentId });
     } else if (!includeVariants) {
       // By default, don't include variants unless specifically requested
-      where.parentId = IsNull();
+      queryBuilder.andWhere('product.parentId IS NULL');
     }
 
     if (query.inStock !== undefined) {
-      where.inStock = query.inStock;
+      queryBuilder.andWhere('product.inStock = :inStock', { inStock: query.inStock });
     }
 
     if (query.isFeatured !== undefined) {
-      where.isFeatured = query.isFeatured;
+      queryBuilder.andWhere('product.isFeatured = :isFeatured', { isFeatured: query.isFeatured });
     }
 
     if (query.isVisible !== undefined) {
-      where.isVisible = query.isVisible;
+      queryBuilder.andWhere('product.isVisible = :isVisible', { isVisible: query.isVisible });
     }
 
     if (query.isActive !== undefined) {
-      where.isActive = query.isActive;
+      queryBuilder.andWhere('product.isActive = :isActive', { isActive: query.isActive });
     }
-
-    // Price range filter (requires QueryBuilder for complex conditions)
-    let queryBuilder = this.productRepository.createQueryBuilder('product');
-    
-    // Apply basic where conditions
-    Object.keys(where).forEach(key => {
-      if (where[key as keyof typeof where] !== undefined) {
-        queryBuilder.andWhere(`product.${key} = :${key}`, { [key]: where[key as keyof typeof where] });
-      }
-    });
 
     // Apply price range
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {
@@ -163,9 +164,6 @@ export class ProductsService {
       queryBuilder.andWhere('product.tags && :tags', { tags: query.tags });
     }
 
-    // Apply soft delete filter
-    queryBuilder.andWhere('product.isDeleted = :isDeleted', { isDeleted: false });
-
     // Add relations if needed
     if (includeVariants) {
       queryBuilder.leftJoinAndSelect('product.variants', 'variant');
@@ -185,7 +183,7 @@ export class ProductsService {
     // Transform to DTOs
     const dtos = items.map(item => this.toResponseDto(item));
 
-    return createPaginatedResponse(dtos, page, limit, total);
+    return ResponseHelpers.wrapPaginated([dtos, total], page, limit);
   }
 
   /**
@@ -228,7 +226,7 @@ export class ProductsService {
     id: string,
     updateProductDto: UpdateProductDto,
     userId?: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -278,13 +276,14 @@ export class ProductsService {
     }
 
     const updatedProduct = await this.productRepository.save(product);
-    return this.toResponseDto(updatedProduct);
+    const dto = this.toResponseDto(updatedProduct);
+    return ActionResponseDto.update(dto);
   }
 
   /**
    * Soft delete a product
    */
-  async remove(id: string, userId?: string): Promise<void> {
+  async remove(id: string, userId?: string): Promise<ActionResponseDto<ProductResponseDto>> {
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: false },
       relations: ['variants'],
@@ -304,12 +303,14 @@ export class ProductsService {
     await this.productRepository.save(product);
 
     this.logger.log(`Product ${id} soft deleted by user ${userId}`);
+    const dto = this.toResponseDto(product);
+    return ActionResponseDto.delete(dto);
   }
 
   /**
    * Restore a soft deleted product
    */
-  async restore(id: string): Promise<ProductResponseDto> {
+  async restore(id: string): Promise<ActionResponseDto<ProductResponseDto>> {
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: true },
     });
@@ -322,7 +323,8 @@ export class ProductsService {
     const restoredProduct = await this.productRepository.save(product);
     
     this.logger.log(`Product ${id} restored`);
-    return this.toResponseDto(restoredProduct);
+    const dto = this.toResponseDto(restoredProduct);
+    return new ActionResponseDto(dto, 'Restored successfully');
   }
 
   /**
@@ -332,7 +334,7 @@ export class ProductsService {
     id: string,
     quantity: number,
     userId?: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -351,7 +353,8 @@ export class ProductsService {
     const updatedProduct = await this.productRepository.save(product);
     
     this.logger.log(`Stock updated for product ${id}: ${quantity}`);
-    return this.toResponseDto(updatedProduct);
+    const dto = this.toResponseDto(updatedProduct);
+    return new ActionResponseDto(dto, 'Stock updated successfully');
   }
 
   /**
@@ -361,20 +364,24 @@ export class ProductsService {
     ids: string[],
     status: ProductStatus,
     userId?: string,
-  ): Promise<number> {
+  ): Promise<ActionResponseDto<{ affected: number }>> {
     const result = await this.productRepository.update(
       { id: In(ids), isDeleted: false },
       { status, updatedBy: userId },
     );
 
     this.logger.log(`Bulk status update: ${result.affected} products updated to ${status}`);
-    return result.affected || 0;
+    const affected = result.affected || 0;
+    return new ActionResponseDto(
+      { affected },
+      `${affected} products updated successfully`
+    );
   }
 
   /**
    * Get low stock products
    */
-  async getLowStockProducts(): Promise<ProductResponseDto[]> {
+  async getLowStockProducts(): Promise<CollectionResponse<ProductResponseDto>> {
     const products = await this.productRepository
       .createQueryBuilder('product')
       .where('product.manageStock = :manageStock', { manageStock: true })
@@ -383,26 +390,38 @@ export class ProductsService {
       .andWhere('product.isDeleted = :isDeleted', { isDeleted: false })
       .getMany();
 
-    return products.map(product => this.toResponseDto(product));
+    const dtos = products.map(product => this.toResponseDto(product));
+    return ResponseHelpers.wrapCollection(dtos, {
+      totalItems: dtos.length,
+      itemCount: dtos.length
+    });
   }
 
   /**
    * Get featured products
    */
-  async getFeaturedProducts(limit = 10): Promise<ProductResponseDto[]> {
-    const products = await this.productRepository.find({
-      where: {
-        isFeatured: true,
-        isVisible: true,
-        isActive: true,
-        isDeleted: false,
-        status: ProductStatus.PUBLISHED,
-      },
-      order: { sortOrder: 'ASC', createdAt: 'DESC' },
-      take: limit,
-    });
+  async getFeaturedProducts(limit = 10): Promise<CollectionResponse<ProductResponseDto>> {
+    // Ensure limit is a number
+    const numericLimit = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+    const safeLimit = isNaN(numericLimit) ? 10 : Math.max(1, Math.min(100, numericLimit));
 
-    return products.map(product => this.toResponseDto(product));
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .where('product.isFeatured = :isFeatured', { isFeatured: true })
+      .andWhere('product.isVisible = :isVisible', { isVisible: true })
+      .andWhere('product.isActive = :isActive', { isActive: true })
+      .andWhere('product.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('product.status = :status', { status: ProductStatus.PUBLISHED })
+      .orderBy('product.sortOrder', 'ASC')
+      .addOrderBy('product.createdAt', 'DESC')
+      .take(safeLimit)
+      .getMany();
+
+    const dtos = products.map(product => this.toResponseDto(product));
+    return ResponseHelpers.wrapCollection(dtos, {
+      totalItems: dtos.length,
+      itemCount: dtos.length
+    });
   }
 
   /**

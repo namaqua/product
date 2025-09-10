@@ -1,4 +1,4 @@
-// Export all DTOs from a single entry point
+export * from './collection-response.dto';
+export * from './action-response.dto';
 export * from './pagination.dto';
-export * from './search.dto';
 export * from './response.dto';

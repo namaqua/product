@@ -36,7 +36,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
-import { PaginatedResponseDto } from '../../common/dto';
+import { 
+  CollectionResponse as CollectionResponseDto,
+  ActionResponseDto 
+} from '../../common/dto';
 
 @ApiTags('Attributes')
 @Controller('attributes')
@@ -61,7 +64,7 @@ export class AttributesController {
   async create(
     @Body() createAttributeDto: CreateAttributeDto,
     @CurrentUser('id') userId: string,
-  ): Promise<AttributeResponseDto> {
+  ): Promise<ActionResponseDto<AttributeResponseDto>> {
     return this.attributesService.create(createAttributeDto, userId);
   }
 
@@ -73,7 +76,7 @@ export class AttributesController {
   })
   async findAll(
     @Query() query: AttributeQueryDto,
-  ): Promise<PaginatedResponseDto<AttributeResponseDto>> {
+  ): Promise<CollectionResponseDto<AttributeResponseDto>> {
     return this.attributesService.findAll(query);
   }
 
@@ -84,7 +87,7 @@ export class AttributesController {
     description: 'Filterable attributes retrieved successfully',
     type: [AttributeResponseDto],
   })
-  async getFilterableAttributes(): Promise<AttributeResponseDto[]> {
+  async getFilterableAttributes(): Promise<CollectionResponseDto<AttributeResponseDto>> {
     return this.attributesService.getFilterableAttributes();
   }
 
@@ -95,7 +98,7 @@ export class AttributesController {
     description: 'Attribute groups retrieved successfully',
     type: [AttributeGroupResponseDto],
   })
-  async findAllGroups(): Promise<AttributeGroupResponseDto[]> {
+  async findAllGroups(): Promise<CollectionResponseDto<AttributeGroupResponseDto>> {
     return this.attributesService.findAllGroups();
   }
 
@@ -112,7 +115,7 @@ export class AttributesController {
   async createGroup(
     @Body() createGroupDto: CreateAttributeGroupDto,
     @CurrentUser('id') userId: string,
-  ): Promise<AttributeGroupResponseDto> {
+  ): Promise<ActionResponseDto<AttributeGroupResponseDto>> {
     return this.attributesService.createGroup(createGroupDto, userId);
   }
 
@@ -126,7 +129,7 @@ export class AttributesController {
   })
   async getAttributesByGroup(
     @Param('groupId', ParseUUIDPipe) groupId: string,
-  ): Promise<AttributeResponseDto[]> {
+  ): Promise<CollectionResponseDto<AttributeResponseDto>> {
     return this.attributesService.getAttributesByGroup(groupId);
   }
 
@@ -181,7 +184,7 @@ export class AttributesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateAttributeDto: UpdateAttributeDto,
     @CurrentUser('id') userId: string,
-  ): Promise<AttributeResponseDto> {
+  ): Promise<ActionResponseDto<AttributeResponseDto>> {
     return this.attributesService.update(id, updateAttributeDto, userId);
   }
 
@@ -189,12 +192,13 @@ export class AttributesController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete an attribute' })
   @ApiParam({ name: 'id', description: 'Attribute ID' })
   @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
+    status: HttpStatus.OK,
     description: 'Attribute deleted successfully',
+    type: AttributeResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -207,7 +211,7 @@ export class AttributesController {
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,
-  ): Promise<void> {
+  ): Promise<ActionResponseDto<AttributeResponseDto>> {
     return this.attributesService.remove(id, userId);
   }
 
@@ -227,7 +231,7 @@ export class AttributesController {
     @Param('productId', ParseUUIDPipe) productId: string,
     @Body() setValueDto: SetAttributeValueDto,
     @CurrentUser('id') userId: string,
-  ): Promise<AttributeValueResponseDto> {
+  ): Promise<ActionResponseDto<AttributeValueResponseDto>> {
     return this.attributesService.setAttributeValue(productId, setValueDto, userId);
   }
 
@@ -244,7 +248,7 @@ export class AttributesController {
   async bulkSetAttributeValues(
     @Body() bulkSetDto: BulkSetAttributeValuesDto,
     @CurrentUser('id') userId: string,
-  ): Promise<AttributeValueResponseDto[]> {
+  ): Promise<ActionResponseDto<{affected: number}>> {
     return this.attributesService.bulkSetAttributeValues(bulkSetDto, userId);
   }
 
@@ -259,7 +263,7 @@ export class AttributesController {
   async getProductAttributeValues(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Query('locale') locale?: string,
-  ): Promise<AttributeValueResponseDto[]> {
+  ): Promise<CollectionResponseDto<AttributeValueResponseDto>> {
     return this.attributesService.getProductAttributeValues(productId, locale);
   }
 
@@ -267,19 +271,20 @@ export class AttributesController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete attribute value for a product' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiParam({ name: 'attributeId', description: 'Attribute ID' })
   @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
+    status: HttpStatus.OK,
     description: 'Attribute value deleted successfully',
+    type: AttributeValueResponseDto,
   })
   async deleteAttributeValue(
     @Param('productId', ParseUUIDPipe) productId: string,
     @Param('attributeId', ParseUUIDPipe) attributeId: string,
     @Query('locale') locale: string = 'en',
-  ): Promise<void> {
+  ): Promise<ActionResponseDto<AttributeValueResponseDto>> {
     return this.attributesService.deleteAttributeValue(productId, attributeId, locale);
   }
 }

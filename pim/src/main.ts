@@ -15,9 +15,11 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
+  // Enable CORS - Allow frontend access
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://127.0.0.1:5173'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
     credentials: true,
   });
 
@@ -53,6 +55,7 @@ async function bootstrap() {
     .addTag('Users', 'User management endpoints')
     .addTag('Products', 'Product management endpoints')
     .addTag('Categories', 'Category management endpoints')
+    .addTag('Attributes', 'Attribute management endpoints')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
@@ -65,5 +68,6 @@ async function bootstrap() {
   console.log(`🏥 Health check: http://localhost:${port}/health`);
   console.log(`📡 API endpoints: http://localhost:${port}/api/v1`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+  console.log(`🌐 CORS enabled for: http://localhost:5173`);
 }
 bootstrap();

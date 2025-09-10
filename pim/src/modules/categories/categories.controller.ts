@@ -34,7 +34,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
-import { PaginatedResponseDto } from '../../common/dto';
+import { PaginatedResponseDto, CollectionResponse, ActionResponseDto } from '../../common/dto';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -63,7 +63,7 @@ export class CategoriesController {
   async create(
     @Body() createCategoryDto: CreateCategoryDto,
     @CurrentUser('id') userId: string,
-  ): Promise<CategoryResponseDto> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     return this.categoriesService.create(createCategoryDto, userId);
   }
 
@@ -75,7 +75,7 @@ export class CategoriesController {
   })
   async findAll(
     @Query() query: CategoryQueryDto,
-  ): Promise<PaginatedResponseDto<CategoryResponseDto>> {
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
     return this.categoriesService.findAll(query);
   }
 
@@ -86,7 +86,7 @@ export class CategoriesController {
     description: 'Category tree retrieved successfully',
     type: [CategoryTreeDto],
   })
-  async getTree(): Promise<CategoryTreeDto[]> {
+  async getTree(): Promise<CollectionResponse<CategoryTreeDto>> {
     return this.categoriesService.getTree();
   }
 
@@ -100,14 +100,13 @@ export class CategoriesController {
   })
   async getFeatured(
     @Query('limit') limit = 10,
-  ): Promise<CategoryResponseDto[]> {
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
     const query = new CategoryQueryDto();
     query.isFeatured = true;
     query.isVisible = true;
     query.limit = limit;
     query.page = 1;
-    const result = await this.categoriesService.findAll(query);
-    return result.data;
+    return this.categoriesService.findAll(query);
   }
 
   @Get('menu')
@@ -117,14 +116,13 @@ export class CategoriesController {
     description: 'Menu categories retrieved successfully',
     type: [CategoryTreeDto],
   })
-  async getMenuCategories(): Promise<CategoryTreeDto[]> {
+  async getMenuCategories(): Promise<CollectionResponse<CategoryTreeDto>> {
     const query = new CategoryQueryDto();
     query.showInMenu = true;
     query.isVisible = true;
     query.limit = 100;
     query.page = 1;
-    const result = await this.categoriesService.findAll(query);
-    // Build tree from flat list
+    // Return tree structure for menu categories
     return this.categoriesService.getTree();
   }
 
@@ -135,13 +133,12 @@ export class CategoriesController {
     description: 'Root categories retrieved successfully',
     type: [CategoryResponseDto],
   })
-  async getRoots(): Promise<CategoryResponseDto[]> {
+  async getRoots(): Promise<CollectionResponse<CategoryResponseDto>> {
     const query = new CategoryQueryDto();
     query.parentId = null;
     query.page = 1;
     query.limit = 100;
-    const result = await this.categoriesService.findAll(query);
-    return result.data;
+    return this.categoriesService.findAll(query);
   }
 
   @Get('slug/:slug')
@@ -199,9 +196,8 @@ export class CategoriesController {
   })
   async getAncestors(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CategoryResponseDto[]> {
-    const category = await this.categoriesService.findOne(id);
-    return this.categoriesService.getAncestors(category as any);
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
+    return this.categoriesService.getAncestorsById(id);
   }
 
   @Get(':id/descendants')
@@ -218,7 +214,7 @@ export class CategoriesController {
   })
   async getDescendants(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CategoryResponseDto[]> {
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
     return this.categoriesService.getDescendants(id);
   }
 
@@ -232,7 +228,7 @@ export class CategoriesController {
   })
   async getChildren(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CategoryResponseDto[]> {
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
     return this.categoriesService.getChildren(id);
   }
 
@@ -242,17 +238,6 @@ export class CategoriesController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Breadcrumb retrieved successfully',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string' },
-          name: { type: 'string' },
-          slug: { type: 'string' },
-        },
-      },
-    },
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -260,7 +245,7 @@ export class CategoriesController {
   })
   async getBreadcrumb(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ id: string; name: string; slug: string }[]> {
+  ): Promise<CollectionResponse<{ id: string; name: string; slug: string }>> {
     return this.categoriesService.getBreadcrumb(id);
   }
 
@@ -287,7 +272,7 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCategoryDto: UpdateCategoryDto,
     @CurrentUser('id') userId: string,
-  ): Promise<CategoryResponseDto> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     return this.categoriesService.update(id, updateCategoryDto, userId);
   }
 
@@ -315,7 +300,7 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() moveCategoryDto: MoveCategoryDto,
     @CurrentUser('id') userId: string,
-  ): Promise<CategoryResponseDto> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     return this.categoriesService.move(id, moveCategoryDto, userId);
   }
 
@@ -323,12 +308,13 @@ export class CategoriesController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete a category' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   @ApiResponse({
-    status: HttpStatus.NO_CONTENT,
+    status: HttpStatus.OK,
     description: 'Category deleted successfully',
+    type: CategoryResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
@@ -341,7 +327,7 @@ export class CategoriesController {
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,
-  ): Promise<void> {
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
     return this.categoriesService.remove(id, userId);
   }
 
@@ -362,8 +348,8 @@ export class CategoriesController {
   })
   async restore(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CategoryResponseDto> {
-    // This would need to be implemented in the service
-    throw new Error('Restore not yet implemented');
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<CategoryResponseDto>> {
+    return this.categoriesService.restore(id, userId);
   }
 }

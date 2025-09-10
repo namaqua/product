@@ -21,6 +21,17 @@ export class TransformInterceptor<T> implements NestInterceptor<T, ApiResponse<T
           return data;
         }
 
+        // Check if this is an auth response (login/register/refresh) - don't wrap these
+        if (data && typeof data === 'object') {
+          // Auth response patterns that should NOT be wrapped
+          const hasAuthTokens = 'accessToken' in data && 'refreshToken' in data;
+          const hasOnlyTokens = 'accessToken' in data && 'refreshToken' in data && !('user' in data);
+          
+          if (hasAuthTokens || hasOnlyTokens) {
+            return data; // Return auth responses unwrapped
+          }
+        }
+
         // If data has a specific structure for pagination, handle it
         if (data && typeof data === 'object' && 'data' in data && 'meta' in data) {
           return ApiResponse.success(data.data, undefined, data.meta);

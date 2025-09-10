@@ -7,34 +7,34 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Navy Blue - Primary color palette
+        // Bright Blue - Primary color palette (based on #0000FF)
         primary: {
-          50: '#eff6ff',   // Lightest blue
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',  // Mid blue
-          600: '#2563eb',
-          700: '#1d4ed8',  // Strong blue
-          800: '#1e40af',  // Navy blue (main)
-          900: '#1e3a8a',  // Dark navy
-          950: '#172554',  // Darkest navy
+          50: '#e6f0ff',   // Lightest blue
+          100: '#ccddff',
+          200: '#99bbff',
+          300: '#6699ff',
+          400: '#3377ff',
+          500: '#0055ff',  // Mid bright blue
+          600: '#0044dd',
+          700: '#0033bb',  // Strong blue
+          800: '#0000ff',  // Main bright blue (#0000FF)
+          900: '#0000cc',  // Darker blue
+          950: '#000099',  // Darkest blue
         },
         
-        // True Navy - Alternative darker scale
+        // Navy/Bright Blue - Using brighter blue tones
         navy: {
-          50: '#f0f4f8',
-          100: '#d9e2ec',
-          200: '#bcccdc',
-          300: '#9fb3c8',
-          400: '#829ab1',
-          500: '#627d98',
-          600: '#486581',
-          700: '#334e68',
-          800: '#243b53',  // Core navy
-          900: '#102a43',  // Deep navy
-          950: '#0a1929',  // Midnight navy
+          50: '#e6f0ff',
+          100: '#ccddff',
+          200: '#99bbff',
+          300: '#6699ff',
+          400: '#3377ff',
+          500: '#0055ff',
+          600: '#0044dd',
+          700: '#0033bb',
+          800: '#0000ff',  // Core bright blue (#0000FF)
+          900: '#0000cc',  // Deep blue
+          950: '#000099',  // Midnight blue
         },
         
         // Orange - Accent/Pop color
@@ -110,15 +110,16 @@ export default {
       
       // You can also add custom shadows that match your color scheme
       boxShadow: {
-        'navy': '0 10px 15px -3px rgba(30, 58, 138, 0.1), 0 4px 6px -2px rgba(30, 58, 138, 0.05)',
+        'navy': '0 10px 15px -3px rgba(0, 0, 255, 0.1), 0 4px 6px -2px rgba(0, 0, 255, 0.05)',
         'orange': '0 10px 15px -3px rgba(249, 115, 22, 0.1), 0 4px 6px -2px rgba(249, 115, 22, 0.05)',
+        'bright-blue': '0 0 20px rgba(0, 0, 255, 0.3), 0 0 40px rgba(0, 0, 255, 0.1)',
       },
       
       // Custom background patterns (optional)
       backgroundImage: {
-        'gradient-navy': 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
+        'gradient-navy': 'linear-gradient(135deg, #0000cc 0%, #0000ff 100%)',
         'gradient-orange': 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-        'gradient-navy-orange': 'linear-gradient(135deg, #1e3a8a 0%, #f97316 100%)',
+        'gradient-navy-orange': 'linear-gradient(135deg, #0000ff 0%, #f97316 100%)',
       }
     },
   },

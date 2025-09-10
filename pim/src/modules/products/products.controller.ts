@@ -34,7 +34,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
-import { PaginatedResponseDto } from '../../common/dto';
+import { 
+  CollectionResponseDto,
+  ActionResponseDto 
+} from '../../common/dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -52,7 +55,7 @@ export class ProductsController {
   async create(
     @Body() createProductDto: CreateProductDto,
     @CurrentUser('id') userId: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.create(createProductDto, userId);
   }
 
@@ -61,7 +64,7 @@ export class ProductsController {
   @ApiResponse({ status: HttpStatus.OK, description: 'Products retrieved successfully' })
   async findAll(
     @Query() query: ProductQueryDto,
-  ): Promise<PaginatedResponseDto<ProductResponseDto>> {
+  ): Promise<CollectionResponseDto<ProductResponseDto>> {
     return this.productsService.findAll(query);
   }
 
@@ -70,8 +73,9 @@ export class ProductsController {
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of products to return' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Featured products retrieved successfully', type: [ProductResponseDto] })
   async getFeaturedProducts(
-    @Query('limit') limit?: number,
-  ): Promise<ProductResponseDto[]> {
+    @Query('limit') limitParam?: string,
+  ): Promise<CollectionResponseDto<ProductResponseDto>> {
+    const limit = limitParam ? parseInt(limitParam, 10) : 10;
     return this.productsService.getFeaturedProducts(limit);
   }
 
@@ -79,7 +83,7 @@ export class ProductsController {
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get products with low stock' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Low stock products retrieved successfully', type: [ProductResponseDto] })
-  async getLowStockProducts(): Promise<ProductResponseDto[]> {
+  async getLowStockProducts(): Promise<CollectionResponseDto<ProductResponseDto>> {
     return this.productsService.getLowStockProducts();
   }
 
@@ -116,7 +120,7 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser('id') userId: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.update(id, updateProductDto, userId);
   }
 
@@ -140,7 +144,7 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('quantity') quantity: number,
     @CurrentUser('id') userId: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.updateStock(id, quantity, userId);
   }
 
@@ -163,23 +167,22 @@ export class ProductsController {
     @Body('ids') ids: string[],
     @Body('status') status: ProductStatus,
     @CurrentUser('id') userId: string,
-  ): Promise<{ affected: number }> {
-    const affected = await this.productsService.bulkUpdateStatus(ids, status, userId);
-    return { affected };
+  ): Promise<ActionResponseDto<{ affected: number }>> {
+    return this.productsService.bulkUpdateStatus(ids, status, userId);
   }
 
   @Delete(':id')
   @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Soft delete a product' })
   @ApiParam({ name: 'id', description: 'Product ID' })
-  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: 'Product deleted successfully' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Product deleted successfully' })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
   @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Cannot delete product with variants' })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser('id') userId: string,
-  ): Promise<void> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.remove(id, userId);
   }
 
@@ -191,7 +194,7 @@ export class ProductsController {
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Deleted product not found' })
   async restore(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ProductResponseDto> {
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.restore(id);
   }
 }

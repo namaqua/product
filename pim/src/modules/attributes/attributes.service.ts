@@ -23,7 +23,11 @@ import {
   AttributeGroupResponseDto,
   AttributeValueResponseDto,
 } from './dto';
-import { PaginatedResponseDto, createPaginatedResponse } from '../../common/dto';
+import { 
+  CollectionResponse, 
+  ResponseHelpers,
+  ActionResponseDto 
+} from '../../common/dto';
 
 @Injectable()
 export class AttributesService {
@@ -44,7 +48,7 @@ export class AttributesService {
   async create(
     createAttributeDto: CreateAttributeDto,
     userId: string,
-  ): Promise<AttributeResponseDto> {
+  ): Promise<ActionResponseDto<AttributeResponseDto>> {
     // Check if code already exists
     const existing = await this.attributeRepository.findOne({
       where: { code: createAttributeDto.code },
@@ -72,7 +76,7 @@ export class AttributesService {
     }
 
     const saved = await this.attributeRepository.save(attribute);
-    return this.toResponseDto(saved);
+    return ActionResponseDto.create(this.toResponseDto(saved));
   }
 
   /**
@@ -80,7 +84,7 @@ export class AttributesService {
    */
   async findAll(
     query: AttributeQueryDto,
-  ): Promise<PaginatedResponseDto<AttributeResponseDto>> {
+  ): Promise<CollectionResponse<AttributeResponseDto>> {
     const queryBuilder = this.attributeRepository
       .createQueryBuilder('attribute')
       .leftJoinAndSelect('attribute.group', 'group')
@@ -136,7 +140,7 @@ export class AttributesService {
       .getManyAndCount();
 
     const data = items.map((item) => this.toResponseDto(item));
-    return createPaginatedResponse(data, query.page, query.limit, total);
+    return ResponseHelpers.wrapPaginated([data, total], query.page, query.limit);
   }
 
   /**
@@ -178,7 +182,7 @@ export class AttributesService {
     id: string,
     updateAttributeDto: UpdateAttributeDto,
     userId: string,
-  ): Promise<AttributeResponseDto> {
+  ): Promise<ActionResponseDto<AttributeResponseDto>> {
     const attribute = await this.attributeRepository.findOne({
       where: { id, isDeleted: false },
       relations: ['options'],
@@ -212,13 +216,13 @@ export class AttributesService {
     }
 
     const saved = await this.attributeRepository.save(attribute);
-    return this.toResponseDto(saved);
+    return ActionResponseDto.update(this.toResponseDto(saved));
   }
 
   /**
    * Soft delete an attribute
    */
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: string, userId: string): Promise<ActionResponseDto<AttributeResponseDto>> {
     const attribute = await this.attributeRepository.findOne({
       where: { id, isDeleted: false },
     });
@@ -239,7 +243,8 @@ export class AttributesService {
     }
 
     attribute.softDelete(userId);
-    await this.attributeRepository.save(attribute);
+    const deletedAttribute = await this.attributeRepository.save(attribute);
+    return ActionResponseDto.delete(this.toResponseDto(deletedAttribute));
   }
 
   /**
@@ -248,7 +253,7 @@ export class AttributesService {
   async createGroup(
     createGroupDto: CreateAttributeGroupDto,
     userId: string,
-  ): Promise<AttributeGroupResponseDto> {
+  ): Promise<ActionResponseDto<AttributeGroupResponseDto>> {
     // Check if code exists
     const existing = await this.groupRepository.findOne({
       where: { code: createGroupDto.code },
@@ -265,20 +270,24 @@ export class AttributesService {
     });
 
     const saved = await this.groupRepository.save(group);
-    return this.toGroupResponseDto(saved);
+    return ActionResponseDto.create(this.toGroupResponseDto(saved));
   }
 
   /**
    * Get all attribute groups
    */
-  async findAllGroups(): Promise<AttributeGroupResponseDto[]> {
+  async findAllGroups(): Promise<CollectionResponse<AttributeGroupResponseDto>> {
     const groups = await this.groupRepository.find({
       where: { isDeleted: false },
       relations: ['attributes'],
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
 
-    return groups.map((group) => this.toGroupResponseDto(group));
+    const items = groups.map((group) => this.toGroupResponseDto(group));
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**
@@ -288,7 +297,7 @@ export class AttributesService {
     productId: string,
     setValueDto: SetAttributeValueDto,
     userId: string,
-  ): Promise<AttributeValueResponseDto> {
+  ): Promise<ActionResponseDto<AttributeValueResponseDto>> {
     // Get attribute
     const attribute = await this.attributeRepository.findOne({
       where: { id: setValueDto.attributeId, isDeleted: false },
@@ -327,7 +336,7 @@ export class AttributesService {
     attributeValue.updatedBy = userId;
 
     const saved = await this.valueRepository.save(attributeValue);
-    return this.toValueResponseDto(saved, attribute);
+    return ActionResponseDto.create(this.toValueResponseDto(saved, attribute));
   }
 
   /**
@@ -336,19 +345,27 @@ export class AttributesService {
   async bulkSetAttributeValues(
     bulkSetDto: BulkSetAttributeValuesDto,
     userId: string,
-  ): Promise<AttributeValueResponseDto[]> {
-    const results: AttributeValueResponseDto[] = [];
+  ): Promise<ActionResponseDto<{affected: number}>> {
+    let successful = 0;
 
     for (const valueDto of bulkSetDto.values) {
-      const result = await this.setAttributeValue(
-        bulkSetDto.productId,
-        valueDto,
-        userId,
-      );
-      results.push(result);
+      try {
+        await this.setAttributeValue(
+          bulkSetDto.productId,
+          valueDto,
+          userId,
+        );
+        successful++;
+      } catch (error) {
+        // Continue processing other values even if one fails
+        console.error(`Failed to set attribute value: ${error.message}`);
+      }
     }
 
-    return results;
+    return new ActionResponseDto(
+      { affected: successful },
+      `Successfully set ${successful} of ${bulkSetDto.values.length} attribute values`
+    );
   }
 
   /**
@@ -357,7 +374,7 @@ export class AttributesService {
   async getProductAttributeValues(
     productId: string,
     locale?: string,
-  ): Promise<AttributeValueResponseDto[]> {
+  ): Promise<CollectionResponse<AttributeValueResponseDto>> {
     const queryBuilder = this.valueRepository
       .createQueryBuilder('value')
       .leftJoinAndSelect('value.attribute', 'attribute')
@@ -369,7 +386,11 @@ export class AttributesService {
 
     const values = await queryBuilder.getMany();
 
-    return values.map((value) => this.toValueResponseDto(value, value.attribute));
+    const items = values.map((value) => this.toValueResponseDto(value, value.attribute));
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**
@@ -379,42 +400,61 @@ export class AttributesService {
     productId: string,
     attributeId: string,
     locale: string = 'en',
-  ): Promise<void> {
+  ): Promise<ActionResponseDto<AttributeValueResponseDto>> {
+    // First, get the value with attribute details for response
+    const attributeValue = await this.valueRepository.findOne({
+      where: { productId, attributeId, locale },
+      relations: ['attribute']
+    });
+
+    if (!attributeValue) {
+      throw new NotFoundException('Attribute value not found');
+    }
+
+    const responseDto = this.toValueResponseDto(attributeValue, attributeValue.attribute);
+
+    // Now delete it
     const result = await this.valueRepository.delete({
       productId,
       attributeId,
       locale,
     });
 
-    if (result.affected === 0) {
-      throw new NotFoundException('Attribute value not found');
-    }
+    return ActionResponseDto.delete(responseDto);
   }
 
   /**
    * Get attributes by group
    */
-  async getAttributesByGroup(groupId: string): Promise<AttributeResponseDto[]> {
+  async getAttributesByGroup(groupId: string): Promise<CollectionResponse<AttributeResponseDto>> {
     const attributes = await this.attributeRepository.find({
       where: { groupId, isDeleted: false },
       relations: ['options'],
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
 
-    return attributes.map((attr) => this.toResponseDto(attr));
+    const items = attributes.map((attr) => this.toResponseDto(attr));
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**
    * Get filterable attributes for product listing
    */
-  async getFilterableAttributes(): Promise<AttributeResponseDto[]> {
+  async getFilterableAttributes(): Promise<CollectionResponse<AttributeResponseDto>> {
     const attributes = await this.attributeRepository.find({
       where: { isFilterable: true, isDeleted: false, isActive: true },
       relations: ['options'],
       order: { sortOrder: 'ASC', name: 'ASC' },
     });
 
-    return attributes.map((attr) => this.toResponseDto(attr));
+    const items = attributes.map((attr) => this.toResponseDto(attr));
+    return ResponseHelpers.wrapCollection(items, {
+      totalItems: items.length,
+      itemCount: items.length
+    });
   }
 
   /**

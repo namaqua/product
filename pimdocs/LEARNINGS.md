@@ -210,6 +210,386 @@ products: Product[];
 
 ---
 
+### 9. Backend Response Structure Mismatch with Frontend
+**Issue:** Frontend shows "No access token received" error despite backend returning 200 status and tokens.
+
+**Problem:** NestJS TransformInterceptor wraps all responses in a standardized structure, but frontend expects data at root level.
+
+**Backend Response Structure (with TransformInterceptor):**
+```json
+{
+    "success": true,
+    "data": {
+        "accessToken": "...",
+        "refreshToken": "...",
+        "user": {...}
+    },
+    "timestamp": "2025-09-09T12:35:12.806Z"
+}
+```
+
+**Frontend Expected Structure:**
+```json
+{
+    "accessToken": "...",
+    "refreshToken": "...",
+    "user": {...}
+}
+```
+
+**Solution:** Update all frontend services to handle wrapped responses:
+```typescript
+// In all service methods
+const response = await api.post('/auth/login', credentials);
+
+// Handle wrapped response structure from backend
+const data = response.data.data || response.data;
+const { accessToken, refreshToken, user } = data;
+```
+
+**Debugging Approach:**
+1. Test with curl first - it bypasses browser CORS and shows raw response
+2. Add "Test Backend" button to login form that uses fetch() to show exact response
+3. Check browser console Network tab for actual response structure
+4. Use shell scripts to debug response format independently
+
+**Key Learning:** 
+- Always verify the exact response structure when connecting frontend to backend
+- TransformInterceptor in NestJS wraps ALL responses - frontend must unwrap them
+- Debug API integration issues with curl/shell scripts first, then browser
+- When backend returns 200 but frontend fails, it's often a response structure mismatch
+
+**Prevention:**
+- Document the exact API response format in API specifications
+- Consider if TransformInterceptor is needed for all endpoints
+- Create TypeScript interfaces that match actual response structure
+- Test with tools like Postman/curl before frontend integration
+
+---
+
+### 10. NestJS Validation Pipe with forbidNonWhitelisted
+**Issue:** Products creation returns "Validation failed" error despite correct data.
+
+**Problem:** The validation pipe configuration has `forbidNonWhitelisted: true` which rejects any properties not explicitly defined in the DTO.
+
+**Example:**
+```typescript
+// validation.pipe.ts configuration
+new NestValidationPipe({
+  forbidNonWhitelisted: true, // Rejects unknown properties!
+  whitelist: true,
+  transform: true
+});
+
+// CreateProductDto defines allowed fields
+// inStock is NOT in the DTO (calculated from quantity)
+
+// ❌ WRONG - Will fail validation
+{"sku":"TEST-001","name":"Test","inStock":true}
+
+// ✅ CORRECT - Only DTO fields
+{"sku":"TEST-001","name":"Test","quantity":10}
+```
+
+**Solution:**
+1. Only send fields that exist in the DTO
+2. Let the backend calculate derived fields (inStock from quantity)
+3. Use enum values in lowercase ("simple" not "SIMPLE")
+
+**Key Learning:** 
+- Always check the DTO to see what fields are allowed
+- `forbidNonWhitelisted: true` means ONLY DTO fields are accepted
+- Derived fields like `inStock` are set by the backend logic, not the API
+
+---
+
+### 11. Authentication Token Field Names
+**Issue:** Script fails with "Failed to login" despite backend returning 200 and tokens.
+
+**Problem:** Token extraction scripts were looking for `access_token` but backend returns `accessToken` (camelCase).
+
+**Solution:** Handle both formats in scripts:
+```python
+# In shell scripts, handle both formats
+token = data.get('accessToken', '') or data.get('access_token', '')
+```
+
+**Key Learning:** 
+- Backend returns `accessToken` (camelCase)
+- Always check actual response format before parsing
+- Handle both snake_case and camelCase for compatibility
+
+---
+
+### 12. Product DTO Field Mapping
+**Issue:** "property compareAtPrice should not exist" validation error when creating products.
+
+**Problem:** Frontend and scripts were using e-commerce standard field names that don't match backend DTOs.
+
+**Field Mappings:**
+```typescript
+// ❌ WRONG - Frontend/common names
+compareAtPrice, featured, inStock
+
+// ✅ CORRECT - Backend DTO fields
+specialPrice, isFeatured, (inStock is calculated)
+```
+
+**Complete Field Map:**
+- `compareAtPrice` → `specialPrice` 
+- `featured` → `isFeatured`
+- `inStock` → Don't send (calculated from quantity)
+- `trackInventory` → `manageStock`
+
+**Key Learning:** 
+- Always check actual DTO definitions when validation fails
+- Backend DTOs may use different naming than industry standards
+- `forbidNonWhitelisted: true` means ONLY exact DTO fields accepted
+
+---
+
+### 13. Working User Credentials
+**Issue:** Confusion about which admin user to use and what password works.
+
+**Solution:** Use existing users in database:
+```bash
+# Working credentials (verified Sept 9, 2025)
+Email: admin@test.com
+Password: Admin123!
+Role: admin
+
+# Also exists
+admin@example.com (admin role)
+product-test@example.com (manager role)
+```
+
+**Key Learning:** 
+- Check database for existing users before creating new ones
+- Document working credentials in CONTINUITY_PROMPT.md
+- Frontend login form should be pre-filled with working credentials
+
+---
+
+### 14. Category DTO Field Names (IMPORTANT)
+**Issue:** "property isActive should not exist" and "metaKeywords must be a string" errors when creating categories.
+
+**Problem:** Category DTO uses different field names than expected:
+- Frontend assumed `isActive` but backend uses `isVisible`
+- Frontend sent `metaKeywords` as array but backend expects string
+- Backend has `forbidNonWhitelisted: true` - rejects unknown fields
+
+**Correct Category Fields:**
+```typescript
+// ❌ WRONG - Common assumptions
+isActive: true,              // Field doesn't exist
+metaKeywords: ["tech", "gadgets"]  // Must be string
+
+// ✅ CORRECT - Actual DTO fields
+isVisible: true,              // Visibility control
+showInMenu: true,            // Menu display
+isFeatured: false,           // Featured flag
+metaKeywords: "tech, gadgets"  // Comma-separated string
+```
+
+**Complete Category DTO Fields:**
+- `name` (required)
+- `slug` (optional, auto-generated)
+- `description`
+- `parentId` (UUID or undefined for root)
+- `sortOrder` (number)
+- `isVisible` (NOT isActive)
+- `showInMenu`
+- `isFeatured`
+- `metaTitle`
+- `metaDescription`
+- `metaKeywords` (string, not array)
+- `imageUrl`
+- `bannerUrl`
+- `defaultAttributes` (object)
+- `requiredAttributes` (string array)
+
+**Key Learning:**
+- Always check actual DTOs in backend code
+- Frontend can show keywords as tags but must send as string
+- Map `isActive` (frontend) to `isVisible` (backend)
+- Test with curl/scripts first to verify field names
+
+---
+
+### 15. Category Duplicate Slug Error (409 Conflict)
+**Issue:** "Duplicate entry detected" error when creating categories with test script.
+
+**Problem:** Backend enforces unique slugs for categories. If you don't provide a slug, it auto-generates one from the name. Running test scripts multiple times creates conflicts.
+
+**Error Example:**
+```json
+{
+  "statusCode": 409,
+  "message": "Duplicate entry detected",
+  "details": {"field": "slug"}
+}
+```
+
+**Solutions:**
+
+1. **Check Before Creating:**
+```bash
+# Check if category exists first
+EXISTS=$(curl -s GET /categories | jq '.items[] | select(.slug=="electronics")')
+if [ -z "$EXISTS" ]; then
+  # Create only if doesn't exist
+fi
+```
+
+2. **Use Unique Slugs:**
+```json
+{
+  "name": "Electronics",
+  "slug": "electronics-$(date +%s)"
+}
+```
+
+3. **Let Backend Generate:**
+```json
+{
+  "name": "Electronics Test 1234"
+  // Don't include slug, backend will generate from name
+}
+```
+
+4. **Clean Up Duplicates:**
+```bash
+./cleanup-categories.sh  # Interactive cleanup tool
+./view-categories.sh     # View current state
+```
+
+**Key Learning:**
+- Categories must have unique slugs
+- Test scripts should check for existing data
+- Use timestamps for unique test data
+- Provide cleanup scripts for test data
+
+**Prevention:**
+- Always check if data exists before creating
+- Use `setup-categories.sh` which handles duplicates
+- Clean up test data after testing
+- Use unique names/slugs for test categories
+
+---
+
+### 16. JSON Formatting in Bash Scripts (Critical)
+**Issue:** "Bad control character in string literal in JSON" error when sending requests via curl.
+
+**Problem:** Two issues cause this error:
+1. Multi-line JSON strings include literal newline characters
+2. Special characters (apostrophes, quotes) aren't escaped by bash
+
+**❌ WRONG - Bash string substitution doesn't escape special chars:**
+```bash
+# Problem 1: Multi-line JSON includes newlines
+JSON_DATA="{
+    \"name\": \"$name\"
+}"
+
+# Problem 2: Apostrophes break JSON
+NAME="Men's Clothing"
+JSON="{\"name\":\"$NAME\"}"  # Results in: {"name":"Men's Clothing"}
+# The apostrophe in Men's is NOT escaped!
+```
+
+**✅ CORRECT - Use jq to build JSON (handles ALL escaping):**
+```bash
+# BEST SOLUTION: jq properly escapes everything
+NAME="Men's Clothing"
+DESC="100% "Pure" Cotton"  # Even quotes!
+
+JSON=$(jq -n \
+  --arg name "$NAME" \
+  --arg desc "$DESC" \
+  --arg parent "$PARENT_ID" \
+  '{name: $name, description: $desc, parentId: $parent}')
+
+curl -d "$JSON"  # Works perfectly!
+```
+
+**Error Examples:**
+- "Bad control character in string literal at position 65"
+- Names with apostrophes: "Men's", "Children's"
+- Descriptions with quotes: '12" monitor'
+- Any special characters: &, <, >, \n, \t
+
+**Key Learning:**
+- Bash doesn't escape JSON special characters
+- Apostrophes/quotes in data break simple string substitution  
+- **ALWAYS use jq to build JSON** when variables might contain special chars
+- jq automatically escapes: quotes, apostrophes, newlines, backslashes
+
+**Prevention:**
+- Never use bash string substitution for JSON with user data
+- Always test with: `echo "$JSON" | jq .`
+- Use jq for ALL JSON construction in scripts
+
+---
+
+### 17. Category API Response Format Variations
+**Issue:** Scripts fail with "Cannot index array with string 'items'" when parsing category responses.
+
+**Problem:** The category API endpoints return different response structures:
+- `/categories` with pagination returns: `{data: {items: [...], meta: {...}}}`
+- `/categories/tree` returns: `{data: [...]}` or just `[...]`
+- Error responses vary in structure
+
+**Solution:** Handle multiple response formats in scripts:
+```bash
+# Extract items from different structures
+ITEMS=$(echo "$RESPONSE" | jq '.data.items // .data // .items // .' 2>/dev/null)
+
+# Handle tree responses
+TREE=$(echo "$RESPONSE" | jq '.data[] // .[] // .' 2>/dev/null)
+
+# Get total count from various locations
+TOTAL=$(echo "$RESPONSE" | jq -r '.data.meta.totalItems // .meta.totalItems // (.data | length) // 0')
+```
+
+**Key Learning:**
+- Always test API response format before parsing
+- Handle both wrapped (.data) and unwrapped responses
+- Tree endpoints may return arrays directly
+- Use jq's `//` operator for fallback parsing
+
+**Prevention:**
+- Create debug scripts to check response formats first
+- Use flexible jq queries with multiple fallbacks
+- Test with curl to see raw response structure
+
+---
+
+### 18. Category Parent ID Validation
+**Issue:** "Validation failed" when creating subcategories with parentId.
+
+**Problem:** Parent ID must be:
+- A valid UUID that exists in the database
+- Not an empty string (use null or omit for root categories)
+- Passed as a string in JSON, not a number
+
+**Solution:**
+```bash
+# Check if parent ID is valid before using
+if [ ! -z "$PARENT_ID" ] && [ "$PARENT_ID" != "null" ]; then
+    JSON=$(jq -n --arg p "$PARENT_ID" '{parentId: $p, ...}')
+else
+    # Omit parentId for root categories
+    JSON=$(jq -n '{name: "...", ...}')
+fi
+```
+
+**Key Learning:**
+- Empty string parentId causes validation failure
+- Always validate parent exists before creating children
+- Use null or omit field for root categories
+
+---
+
 ## 🟡 Important Patterns
 
 ### Shell Script Organization
@@ -366,6 +746,15 @@ docker-compose up -d  # Start containers
 docker-compose restart  # Restart if issues
 ```
 
+### Vite React Dependencies Error
+```bash
+# Clear Vite cache and reinstall
+cd /Users/colinroets/dev/projects/product/pim-admin
+rm -rf node_modules/.vite .vite node_modules package-lock.json
+npm install
+npm run dev -- --force
+```
+
 ---
 
 ## 📝 Configuration References
@@ -385,7 +774,7 @@ docker-compose restart  # Restart if issues
 ### API Conventions
 - Base path: `/api/v1`
 - Auth header: `Authorization: Bearer <token>`
-- Response format: JSON
+- Response format: JSON (wrapped in success/data structure)
 - Pagination: `?page=1&limit=20`
 
 ---
@@ -441,5 +830,5 @@ When starting a new session:
 
 ---
 
-*Last Updated: September 2025*
+*Last Updated: September 9, 2025*
 *Keep this document updated with new learnings!*

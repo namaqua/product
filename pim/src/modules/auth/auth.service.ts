@@ -8,6 +8,7 @@ import { User, UserStatus } from '../users/entities/user.entity';
 import { CreateUserDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from '../users/dto/user.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 import { randomBytes } from 'crypto';
+import { ActionResponseDto } from '../../common/dto';
 
 export interface AuthTokens {
   accessToken: string;
@@ -105,10 +106,15 @@ export class AuthService {
   /**
    * Logout user
    */
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string): Promise<ActionResponseDto<{ message: string }>> {
     await this.userRepository.update(userId, {
       refreshToken: null,
     });
+    
+    return new ActionResponseDto(
+      { message: 'Logged out successfully' },
+      'Logged out successfully'
+    );
   }
 
   /**
@@ -139,7 +145,7 @@ export class AuthService {
   /**
    * Change password
    */
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<void> {
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<ActionResponseDto<{ message: string }>> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -157,38 +163,46 @@ export class AuthService {
     // Update password
     user.password = changePasswordDto.newPassword;
     await this.userRepository.save(user);
+    
+    return new ActionResponseDto(
+      { message: 'Password changed successfully' },
+      'Password changed successfully'
+    );
   }
 
   /**
    * Request password reset
    */
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<ActionResponseDto<{ message: string }>> {
     const user = await this.userRepository.findOne({
       where: { email: forgotPasswordDto.email },
     });
 
-    if (!user) {
-      // Don't reveal if user exists
-      return;
+    if (user) {
+      // Generate reset token
+      const resetToken = this.generateToken();
+      const resetExpires = new Date();
+      resetExpires.setHours(resetExpires.getHours() + 1); // 1 hour expiry
+
+      user.resetPasswordToken = resetToken;
+      user.resetPasswordExpires = resetExpires;
+      await this.userRepository.save(user);
+
+      // TODO: Send password reset email
+      console.log(`Password reset token for ${user.email}: ${resetToken}`);
     }
-
-    // Generate reset token
-    const resetToken = this.generateToken();
-    const resetExpires = new Date();
-    resetExpires.setHours(resetExpires.getHours() + 1); // 1 hour expiry
-
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetExpires;
-    await this.userRepository.save(user);
-
-    // TODO: Send password reset email
-    console.log(`Password reset token for ${user.email}: ${resetToken}`);
+    
+    // Always return the same message to prevent email enumeration
+    return new ActionResponseDto(
+      { message: 'If the email exists, a password reset link has been sent' },
+      'If the email exists, a password reset link has been sent'
+    );
   }
 
   /**
    * Reset password with token
    */
-  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<void> {
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<ActionResponseDto<{ message: string }>> {
     const user = await this.userRepository.findOne({
       where: {
         resetPasswordToken: resetPasswordDto.token,
@@ -204,12 +218,17 @@ export class AuthService {
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
     await this.userRepository.save(user);
+    
+    return new ActionResponseDto(
+      { message: 'Password reset successfully' },
+      'Password reset successfully'
+    );
   }
 
   /**
    * Verify email
    */
-  async verifyEmail(token: string): Promise<void> {
+  async verifyEmail(token: string): Promise<ActionResponseDto<{ message: string }>> {
     const user = await this.userRepository.findOne({
       where: {
         emailVerificationToken: token,
@@ -224,6 +243,11 @@ export class AuthService {
     user.emailVerificationToken = null;
     user.status = UserStatus.ACTIVE;
     await this.userRepository.save(user);
+    
+    return new ActionResponseDto(
+      { message: 'Email verified successfully' },
+      'Email verified successfully'
+    );
   }
 
   /**
