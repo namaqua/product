@@ -6,30 +6,40 @@ import * as z from 'zod';
 import productService from '../../services/product.service';
 import categoryService from '../../services/category.service';
 import { Category } from '../../types/api.types';
+import MediaUpload from '../../components/media/MediaUpload';
+import { Media } from '../../services/media.service';
 
-// Validation schema matching backend expectations
+// Validation schema matching backend expectations exactly
 const productSchema = z.object({
-  sku: z.string().min(1, 'SKU is required').max(100),
+  sku: z.string().min(3, 'SKU must be at least 3 characters').max(100),
   name: z.string().min(1, 'Name is required').max(255),
   description: z.string().optional(),
   shortDescription: z.string().optional(),
   status: z.enum(['draft', 'published', 'archived', 'pending_review', 'approved']),
-  type: z.enum(['simple', 'configurable', 'bundle', 'virtual', 'grouped', 'downloadable']),
+  type: z.enum(['simple', 'configurable', 'bundle', 'virtual']),
   price: z.number().min(0).optional().nullable(),
   specialPrice: z.number().min(0).optional().nullable(),
   cost: z.number().min(0).optional().nullable(),
-  barcode: z.string().optional(),
+  barcode: z.string().max(50).optional(),
   manageStock: z.boolean(),
   quantity: z.number().int().min(0).optional(),
   weight: z.number().min(0).optional(),
-  weightUnit: z.string().optional(),
+  length: z.number().min(0).optional(),
+  width: z.number().min(0).optional(),
+  height: z.number().min(0).optional(),
   isFeatured: z.boolean(),
   isVisible: z.boolean(),
-  metaTitle: z.string().optional(),
+  metaTitle: z.string().max(255).optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.string().optional(),
-  categoryIds: z.array(z.string()).optional(),
-  brandId: z.string().optional(),
+  urlKey: z.string().max(255).optional(),
+  brand: z.string().max(255).optional(),
+  manufacturer: z.string().max(255).optional(),
+  mpn: z.string().max(100).optional(),
+  tags: z.array(z.string()).optional(),
+  features: z.array(z.string()).optional(),
+  specifications: z.record(z.any()).optional(),
+  attributes: z.record(z.any()).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -40,6 +50,8 @@ export default function ProductCreate() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
 
   const {
     register,
@@ -87,16 +99,28 @@ export default function ProductCreate() {
       setError(null);
       setSuccessMessage(null);
       
-      console.log('Creating product with:', data);
+      // Clean the data - remove any empty optional fields
+      const cleanData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          acc[key as keyof ProductFormData] = value;
+        }
+        return acc;
+      }, {} as ProductFormData);
       
-      const response = await productService.createProduct(data);
+      console.log('Creating product with cleaned data:', cleanData);
+      
+      const response = await productService.createProduct(cleanData);
       
       // Handle new API response format (ActionResponseDto)
-      // Response structure: { success: true, data: { item: product, message: "Created successfully" }, timestamp: "..." }
       console.log('Product created:', response);
       
       const createdProduct = response.data?.item || response.item;
       const message = response.data?.message || 'Product created successfully!';
+      
+      // Store the created product ID for media association
+      if (createdProduct?.id) {
+        setCreatedProductId(createdProduct.id);
+      }
       
       setSuccessMessage(message);
       
@@ -108,10 +132,30 @@ export default function ProductCreate() {
     } catch (err: any) {
       console.error('Failed to create product:', err);
       const errorMessage = err.response?.data?.message || err.message || 'Failed to create product';
-      setError(errorMessage);
+      const errorDetails = err.response?.data?.errors;
+      
+      if (errorDetails) {
+        console.error('Validation errors:', errorDetails);
+        const errorList = Object.entries(errorDetails)
+          .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+          .join('\n');
+        setError(`Validation failed:\n${errorList}`);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle media upload completion
+  const handleMediaUpload = (media: Media[]) => {
+    setUploadedMedia(prev => [...prev, ...media]);
+  };
+
+  // Handle media removal
+  const handleMediaRemove = (mediaId: string) => {
+    setUploadedMedia(prev => prev.filter(m => m.id !== mediaId));
   };
 
   // Generate a unique SKU
@@ -129,7 +173,7 @@ export default function ProductCreate() {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg whitespace-pre-line">
           {error}
         </div>
       )}
@@ -213,9 +257,31 @@ export default function ProductCreate() {
                 <option value="configurable">Configurable</option>
                 <option value="bundle">Bundle</option>
                 <option value="virtual">Virtual</option>
-                <option value="grouped">Grouped</option>
-                <option value="downloadable">Downloadable</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Brand
+              </label>
+              <input
+                {...register('brand')}
+                type="text"
+                placeholder="e.g., Sony"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Manufacturer
+              </label>
+              <input
+                {...register('manufacturer')}
+                type="text"
+                placeholder="e.g., Sony Corporation"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           </div>
 
@@ -278,6 +344,27 @@ export default function ProductCreate() {
           </div>
         </div>
 
+        {/* Media Upload Section */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium mb-4">Product Images & Media</h2>
+          <MediaUpload
+            productId={createdProductId || undefined}
+            existingMedia={uploadedMedia}
+            onUploadComplete={handleMediaUpload}
+            onMediaRemove={handleMediaRemove}
+            multiple={true}
+            maxFiles={10}
+            acceptedFileTypes={{
+              'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
+            }}
+            maxFileSize={5 * 1024 * 1024} // 5MB
+          />
+          <p className="mt-2 text-sm text-gray-500">
+            Upload product images. The first image will be set as the primary image.
+            Supported formats: JPEG, PNG, GIF, WebP (max 5MB each)
+          </p>
+        </div>
+
         {/* Pricing & Inventory */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium mb-4">Pricing & Inventory</h2>
@@ -309,7 +396,7 @@ export default function ProductCreate() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Special Price (Compare at)
+                Special Price
               </label>
               <Controller
                 name="specialPrice"
@@ -360,10 +447,22 @@ export default function ProductCreate() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                MPN (Part Number)
+              </label>
+              <input
+                {...register('mpn')}
+                type="text"
+                placeholder="Optional"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Weight
+                Weight (kg)
               </label>
               <Controller
                 name="weight"
@@ -381,21 +480,70 @@ export default function ProductCreate() {
                 )}
               />
             </div>
-            
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mt-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Weight Unit
+                Length (cm)
               </label>
-              <select
-                {...register('weightUnit')}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select unit</option>
-                <option value="kg">Kilograms (kg)</option>
-                <option value="lb">Pounds (lb)</option>
-                <option value="g">Grams (g)</option>
-                <option value="oz">Ounces (oz)</option>
-              </select>
+              <Controller
+                name="length"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                    value={field.value || ''}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Width (cm)
+              </label>
+              <Controller
+                name="width"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                    value={field.value || ''}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Height (cm)
+              </label>
+              <Controller
+                name="height"
+                control={control}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                    value={field.value || ''}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                )}
+              />
             </div>
           </div>
 
@@ -440,38 +588,13 @@ export default function ProductCreate() {
           </div>
         </div>
 
-        {/* Categories */}
+        {/* Note about Categories */}
         {categories.length > 0 && (
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Categories</h2>
-            <Controller
-              name="categoryIds"
-              control={control}
-              render={({ field }) => (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {categories.map((category) => (
-                    <label key={category.id} className="flex items-center">
-                      <input
-                        type="checkbox"
-                        value={category.id}
-                        checked={field.value?.includes(category.id) || false}
-                        onChange={(e) => {
-                          const categoryId = e.target.value;
-                          const currentIds = field.value || [];
-                          if (e.target.checked) {
-                            field.onChange([...currentIds, categoryId]);
-                          } else {
-                            field.onChange(currentIds.filter(id => id !== categoryId));
-                          }
-                        }}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{category.name}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> Category assignment will be available after the product is created. 
+              You can assign categories by editing the product after creation.
+            </p>
           </div>
         )}
 
@@ -480,6 +603,19 @@ export default function ProductCreate() {
           <h2 className="text-lg font-medium mb-4">SEO</h2>
           
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                URL Key (slug)
+              </label>
+              <input
+                {...register('urlKey')}
+                type="text"
+                placeholder="product-url-slug"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">Leave empty to auto-generate from product name</p>
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Meta Title

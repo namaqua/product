@@ -6,6 +6,11 @@ export default {
   ],
   theme: {
     extend: {
+      // Custom font family with Noto Sans as primary
+      fontFamily: {
+        sans: ['Noto Sans', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', 'monospace'],
+      },
       colors: {
         // Bright Blue - Primary color palette (based on #0000FF)
         primary: {

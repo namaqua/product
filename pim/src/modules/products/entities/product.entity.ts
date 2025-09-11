@@ -2,6 +2,7 @@ import { Entity, Column, Index, OneToMany, ManyToOne, ManyToMany, JoinColumn, Jo
 import { SoftDeleteEntity } from '../../../common/entities';
 import { Category } from '../../categories/entities/category.entity';
 import { AttributeValue } from '../../attributes/entities/attribute-value.entity';
+import { Media } from '../../media/entities/media.entity';
 
 export enum ProductType {
   SIMPLE = 'simple',
@@ -242,6 +243,10 @@ export class Product extends SoftDeleteEntity {
   // Attribute values (EAV pattern)
   @OneToMany(() => AttributeValue, (value) => value.product)
   attributeValues: AttributeValue[];
+
+  // Media relationships
+  @ManyToMany(() => Media, (media) => media.products)
+  media: Media[];
 
   // Additional data
   @Column({

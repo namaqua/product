@@ -74,6 +74,22 @@ class ProductService {
   }
 
   /**
+   * Archive product
+   */
+  async archiveProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
+    const response = await api.patch(`/products/${id}`, { status: 'archived' });
+    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+  }
+
+  /**
+   * Unarchive product
+   */
+  async unarchiveProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
+    const response = await api.patch(`/products/${id}`, { status: 'draft' });
+    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+  }
+
+  /**
    * Bulk delete products
    */
   async bulkDelete(ids: string[]): Promise<ActionResponse<any>> {
@@ -82,11 +98,45 @@ class ProductService {
   }
 
   /**
-   * Duplicate product
+   * Duplicate product (implemented in frontend using existing endpoints)
    */
   async duplicateProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
-    const response = await api.post(`/products/${id}/duplicate`);
-    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    try {
+      // Step 1: Get the existing product
+      const existingProduct = await this.getProduct(id);
+      
+      // Step 2: Create a copy with modified SKU and name
+      const timestamp = Date.now();
+      const duplicateData: CreateProductDto = {
+        sku: `${existingProduct.sku}-COPY-${timestamp}`,
+        name: `${existingProduct.name} (Copy)`,
+        description: existingProduct.description,
+        shortDescription: existingProduct.shortDescription,
+        status: 'draft', // Always set duplicates to draft
+        type: existingProduct.type || 'simple',
+        price: existingProduct.price ? parseFloat(existingProduct.price.toString()) : undefined,
+        specialPrice: existingProduct.specialPrice ? parseFloat(existingProduct.specialPrice.toString()) : undefined,
+        cost: existingProduct.cost ? parseFloat(existingProduct.cost.toString()) : undefined,
+        barcode: existingProduct.barcode,
+        quantity: existingProduct.quantity || 0,
+        isFeatured: existingProduct.isFeatured || false,
+        isVisible: existingProduct.isVisible !== false,
+        manageStock: existingProduct.manageStock !== false,
+        metaTitle: existingProduct.metaTitle,
+        metaDescription: existingProduct.metaDescription,
+        metaKeywords: existingProduct.metaKeywords,
+        weight: existingProduct.weight,
+        weightUnit: existingProduct.weightUnit,
+        brandId: existingProduct.brandId,
+        // Note: categoryIds would need to be extracted from existingProduct.categories if needed
+      };
+      
+      // Step 3: Create the new product
+      return await this.createProduct(duplicateData);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to duplicate product:', error);
+      throw error;
+    }
   }
 
   /**

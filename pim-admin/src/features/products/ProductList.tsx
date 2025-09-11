@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import productService from '../../services/product.service';
 import { Product, PaginatedResponse } from '../../types/api.types';
+import { 
+  PlusIcon, 
+  EyeIcon, 
+  PencilIcon, 
+  TrashIcon,
+  DocumentDuplicateIcon,
+  ArchiveBoxIcon
+} from '@heroicons/react/24/outline';
 
 export default function ProductList() {
   const navigate = useNavigate();
@@ -28,12 +36,32 @@ export default function ProductList() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
       try {
         await productService.deleteProduct(id);
         fetchProducts();
       } catch (err) {
         console.error('Error deleting product:', err);
+      }
+    }
+  };
+
+  const handleDuplicate = async (id: string) => {
+    try {
+      const duplicated = await productService.duplicateProduct(id);
+      navigate(`/products/${duplicated.id}/edit`);
+    } catch (err) {
+      console.error('Error duplicating product:', err);
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    if (confirm('Are you sure you want to archive this product?')) {
+      try {
+        await productService.archiveProduct(id);
+        fetchProducts();
+      } catch (err) {
+        console.error('Error archiving product:', err);
       }
     }
   };
@@ -61,11 +89,17 @@ export default function ProductList() {
   return (
     <div className="p-6">
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Products</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Products</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Manage your product catalog and inventory
+          </p>
+        </div>
         <button 
           onClick={() => navigate('/products/new')}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 inline-flex items-center gap-2"
         >
+          <PlusIcon className="w-4 h-4" />
           Add Product
         </button>
       </div>
@@ -107,12 +141,17 @@ export default function ProductList() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {products.map((product) => (
-                <tr key={product.id}>
+                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {product.sku}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {product.name}
+                    <button
+                      onClick={() => navigate(`/products/${product.id}`)}
+                      className="text-blue-600 hover:text-blue-900 hover:underline font-medium text-left"
+                    >
+                      {product.name}
+                    </button>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -129,18 +168,43 @@ export default function ProductList() {
                     {product.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => navigate(`/products/${product.id}/edit`)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => navigate(`/products/${product.id}`)}
+                        className="p-1 text-gray-600 hover:text-gray-900 transition-colors"
+                        title="View Details"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => navigate(`/products/${product.id}/edit`)}
+                        className="p-1 text-blue-600 hover:text-blue-900 transition-colors"
+                        title="Edit Product"
+                      >
+                        <PencilIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDuplicate(product.id)}
+                        className="p-1 text-indigo-600 hover:text-indigo-900 transition-colors"
+                        title="Duplicate Product"
+                      >
+                        <DocumentDuplicateIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleArchive(product.id)}
+                        className="p-1 text-yellow-600 hover:text-yellow-900 transition-colors"
+                        title="Archive Product"
+                      >
+                        <ArchiveBoxIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        className="p-1 text-red-600 hover:text-red-900 transition-colors"
+                        title="Delete Product"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

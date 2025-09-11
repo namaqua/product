@@ -3,6 +3,8 @@
 ## Overview
 This document captures important learnings, gotchas, and solutions discovered during the PIM project development. Reference this to avoid repeating past issues.
 
+**Last Updated:** September 11, 2025 - 14:50 CEST
+
 ---
 
 ## 🔴 Critical Learnings
@@ -353,7 +355,7 @@ specialPrice, isFeatured, (inStock is calculated)
 
 **Solution:** Use existing users in database:
 ```bash
-# Working credentials (verified Sept 9, 2025)
+# Working credentials (verified Sept 11, 2025)
 Email: admin@test.com
 Password: Admin123!
 Role: admin
@@ -587,6 +589,175 @@ fi
 - Empty string parentId causes validation failure
 - Always validate parent exists before creating children
 - Use null or omit field for root categories
+
+---
+
+### 19. Product Field Mapping (Frontend vs Backend)
+**Issue:** Product Edit form fails with "Validation failed" error despite sending correct-looking data.
+
+**Problem:** Frontend and backend use different field names for the same properties, and backend has `forbidNonWhitelisted: true` which rejects unknown fields.
+
+**Critical Field Mappings:**
+```typescript
+// Frontend Form Fields → Backend DTO Fields
+featured → isFeatured          // Boolean flag
+compareAtPrice → specialPrice   // Sale price
+inventoryQuantity → quantity    // Stock amount
+slug → urlKey                   // URL path segment
+
+// Enum values must be lowercase
+status: 'DRAFT' → 'draft'
+type: 'SIMPLE' → 'simple'
+```
+
+**Complete Mapping Table:**
+| Frontend/UI | Backend API | Notes |
+|------------|-------------|-------|
+| `featured` | `isFeatured` | Boolean |
+| `compareAtPrice` | `specialPrice` | Number/null |
+| `inventoryQuantity` | `quantity` | Integer |
+| `slug` | `urlKey` | String |
+| `status` | `status` | Must be lowercase |
+| `type` | `type` | Must be lowercase |
+
+**Solution in Product Edit:**
+```typescript
+// Map form data to backend format
+const updateData = {
+  sku: formData.sku,
+  name: formData.name,
+  status: formData.status.toLowerCase(),  // Ensure lowercase
+  type: formData.type.toLowerCase(),      // Ensure lowercase
+  isFeatured: formData.featured,          // Map field name
+  quantity: parseInt(formData.quantity),
+  // Only send non-empty optional fields
+  ...(formData.description?.trim() && { description: formData.description.trim() }),
+  ...(formData.compareAtPrice && { specialPrice: parseFloat(formData.compareAtPrice) })
+};
+```
+
+**Key Learning:**
+- Always check backend DTOs for exact field names
+- Map UI-friendly names to backend names before sending
+- Empty strings should not be sent for optional fields
+- Enums must be lowercase for backend validation
+
+---
+
+### 20. Implementing Features Without Backend Changes
+**Issue:** Backend doesn't have `/products/{id}/duplicate` endpoint but we need duplicate functionality.
+
+**Problem:** Backend API is sacrosanct (cannot be modified), but frontend needs features.
+
+**Solution:** Implement complex features in frontend using existing endpoints:
+```typescript
+// Duplicate product using GET + POST
+async duplicateProduct(id: string) {
+  // Step 1: Get existing product
+  const existing = await this.getProduct(id);
+  
+  // Step 2: Modify for duplicate
+  const duplicate = {
+    ...existing,
+    sku: `${existing.sku}-COPY-${Date.now()}`,
+    name: `${existing.name} (Copy)`,
+    status: 'draft'
+  };
+  
+  // Step 3: Create new product
+  return await this.createProduct(duplicate);
+}
+```
+
+**Key Learning:**
+- Frontend can orchestrate multiple API calls for complex features
+- Don't always need backend endpoints for every action
+- Keep backend simple, add complexity in frontend when appropriate
+
+---
+
+### 21. User-Friendly Error Messages
+**Issue:** Technical error messages like "PATCH /api/v1/products/123 - 400 Bad Request" confuse users.
+
+**Problem:** Exposing technical details (HTTP methods, endpoints, status codes) in UI.
+
+**Solution:** Transform technical errors into user-friendly messages:
+```typescript
+// ❌ WRONG - Technical jargon
+alert('Failed to PATCH product via /api/v1/products');
+
+// ✅ CORRECT - User-friendly
+setSuccessMessage('Product archived successfully.');
+setError('Unable to archive product. Please try again.');
+```
+
+**Message Guidelines:**
+- Success: "[Action] successfully" (e.g., "Product duplicated successfully")
+- Error: "Unable to [action]. Please try again."
+- Never mention: HTTP methods, endpoints, status codes, "payload", "request"
+- Use notifications instead of browser alerts
+
+**Key Learning:**
+- Keep technical details in console.log for developers
+- UI messages should be in user's language, not developer's
+- Auto-dismiss messages after 3-5 seconds
+- Use icons and colors for better visual feedback
+
+---
+
+### 22. Media Image Display Issues (Black Squares) - FIXED Sept 11, 2025
+**Issue:** Images upload successfully but display as black squares in ProductEdit and ProductDetails views.
+
+**Problem:** Test scripts were creating corrupted/malformed 1x1 pixel JPEG files (285-332 bytes) that displayed as black:
+```bash
+# These test images were essentially blank
+066373aa-e5d4-48da-a043-1f9dffc41572.jpg (285 bytes) - Black square
+0795ecb8-7722-42c8-b5f5-dd4155058eec.jpg (285 bytes) - Black square
+```
+
+**Root Cause:**
+1. Test scripts used malformed JPEG hex data to create tiny test images
+2. Backend served these correctly, but they were genuinely black/blank images
+3. The media functionality was working perfectly - just displaying bad test data
+
+**Solution:**
+1. **Replace test images with real ones:**
+```bash
+# Download real images from Lorem Picsum
+curl -L "https://picsum.photos/800/800" -o product-image.jpg
+
+# Or use placeholder services
+curl -L "https://via.placeholder.com/800x800" -o placeholder.jpg
+```
+
+2. **Check file sizes - real images should be > 10KB:**
+```bash
+# Find real vs test images
+ls -la uploads/*.jpg | awk '$5 > 10000 {print $9, $5}'
+```
+
+3. **Upload real images through the UI or API:**
+- Use MediaUpload component in ProductEdit
+- Drag & drop real product images
+- Images now display correctly
+
+**Key Learning:**
+- Always use real images for testing (not tiny hex-generated files)
+- Check file sizes - images < 1KB are likely corrupted
+- Backend static file serving was working correctly all along
+- The MediaUpload component and gallery were functioning properly
+
+**Prevention:**
+- Use placeholder image services for test data
+- Download sample images from free stock photo sites
+- Never create test images with raw hex data
+- Verify uploaded images are viewable before debugging display issues
+
+**Debugging Steps:**
+1. Check image URL accessibility: `curl -I http://localhost:3010/uploads/image.jpg`
+2. Verify file size: `ls -la uploads/` (should be > 10KB for real images)
+3. Test direct browser access to image URL
+4. Clear browser cache if images were previously cached as black
 
 ---
 
@@ -830,5 +1001,5 @@ When starting a new session:
 
 ---
 
-*Last Updated: September 9, 2025*
+*Last Updated: September 11, 2025 - 14:50 CEST*
 *Keep this document updated with new learnings!*

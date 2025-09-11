@@ -11,6 +11,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { AttributesModule } from './modules/attributes/attributes.module';
     ProductsModule,
     CategoriesModule,
     AttributesModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseHealthService, AuditSubscriber],

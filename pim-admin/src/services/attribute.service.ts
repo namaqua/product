@@ -1,165 +1,332 @@
-import api from './api';
-import {
-  Attribute,
-  AttributeGroup,
-  CreateAttributeDto,
-  UpdateAttributeDto,
-  PaginatedResponse,
-  AttributeType,
+import axios from 'axios';
+import authService from './auth.service';
+import { 
+  CollectionResponse, 
+  ActionResponse,
+  PaginationParams 
 } from '../types/api.types';
 
-export interface AttributeFilters {
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3010/api/v1';
+
+// Attribute type definitions
+export enum AttributeType {
+  TEXT = 'text',
+  NUMBER = 'number',
+  DECIMAL = 'decimal',
+  INTEGER = 'integer',
+  BOOLEAN = 'boolean',
+  SELECT = 'select',
+  MULTISELECT = 'multiselect',
+  DATE = 'date',
+  DATETIME = 'datetime',
+  PRICE = 'price',
+  URL = 'url',
+  EMAIL = 'email',
+  JSON = 'json'
+}
+
+export interface AttributeOption {
+  id?: string;
+  value: string;
+  label: string;
+  sortOrder: number;
+  color?: string | null;
+  icon?: string | null;
+  isDefault?: boolean;
+  metadata?: Record<string, any> | null;
+}
+
+export interface ValidationRule {
+  type: string;
+  value: any;
+  message?: string;
+}
+
+export interface Attribute {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  type: AttributeType;
+  groupId?: string | null;
+  groupName?: string;
+  options?: AttributeOption[];
+  isRequired: boolean;
+  isUnique: boolean;
+  validationRules?: ValidationRule[] | null;
+  defaultValue?: any;
+  sortOrder: number;
+  isVisibleInListing: boolean;
+  isVisibleInDetail: boolean;
+  isComparable: boolean;
+  isSearchable: boolean;
+  isFilterable: boolean;
+  isLocalizable: boolean;
+  helpText?: string | null;
+  placeholder?: string | null;
+  unit?: string | null;
+  uiConfig?: Record<string, any> | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttributeGroup {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  sortOrder: number;
+  isCollapsible: boolean;
+  isCollapsedByDefault: boolean;
+  icon?: string | null;
+  config?: Record<string, any> | null;
+  attributes?: Attribute[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAttributeDto {
+  code: string;
+  name: string;
+  description?: string;
+  type: AttributeType;
+  groupId?: string;
+  isRequired?: boolean;
+  isUnique?: boolean;
+  validationRules?: ValidationRule[];
+  defaultValue?: any;
+  sortOrder?: number;
+  isVisibleInListing?: boolean;
+  isVisibleInDetail?: boolean;
+  isComparable?: boolean;
+  isSearchable?: boolean;
+  isFilterable?: boolean;
+  isLocalizable?: boolean;
+  helpText?: string;
+  placeholder?: string;
+  unit?: string;
+  uiConfig?: Record<string, any>;
+}
+
+export interface UpdateAttributeDto extends Partial<CreateAttributeDto> {}
+
+export interface AttributeQueryParams extends PaginationParams {
   search?: string;
   type?: AttributeType;
   groupId?: string;
-  isRequired?: boolean;
   isFilterable?: boolean;
   isSearchable?: boolean;
-  isVariant?: boolean;
-  page?: number;
-  limit?: number;
+  isRequired?: boolean;
+  isActive?: boolean;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 class AttributeService {
-  async getAttributes(filters: AttributeFilters = {}): Promise<PaginatedResponse<Attribute>> {
-    const params = new URLSearchParams();
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        params.append(key, String(value));
-      }
+  private getAuthHeader() {
+    const token = authService.getTokens().accessToken;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  // Attributes CRUD
+  async getAttributes(params?: AttributeQueryParams): Promise<CollectionResponse<Attribute>> {
+    const response = await axios.get(`${API_URL}/attributes`, {
+      headers: this.getAuthHeader(),
+      params
     });
 
-    const response = await api.get(`/attributes?${params.toString()}`);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
+    // Handle wrapped response structure
+    const data = response.data.data || response.data;
+    return {
+      items: data.items || [],
+      meta: data.meta || {
+        totalItems: 0,
+        itemCount: 0,
+        page: 1,
+        totalPages: 1,
+        itemsPerPage: 20
+      }
+    };
   }
 
   async getAttribute(id: string): Promise<Attribute> {
-    const response = await api.get(`/attributes/${id}`);
-    // Handle wrapped response structure from backend
+    const response = await axios.get(`${API_URL}/attributes/${id}`, {
+      headers: this.getAuthHeader()
+    });
     return response.data.data || response.data;
   }
 
-  async getAttributeByCode(code: string): Promise<Attribute> {
-    const response = await api.get(`/attributes/code/${code}`);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
+  async createAttribute(data: CreateAttributeDto): Promise<ActionResponse<Attribute>> {
+    const response = await axios.post(
+      `${API_URL}/attributes`,
+      data,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute created successfully'
+    };
   }
 
-  async createAttribute(data: CreateAttributeDto): Promise<Attribute> {
-    const response = await api.post('/attributes', data);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
+  async updateAttribute(id: string, data: UpdateAttributeDto): Promise<ActionResponse<Attribute>> {
+    const response = await axios.patch(
+      `${API_URL}/attributes/${id}`,
+      data,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute updated successfully'
+    };
   }
 
-  async updateAttribute(id: string, data: UpdateAttributeDto): Promise<Attribute> {
-    const response = await api.patch(`/attributes/${id}`, data);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  async deleteAttribute(id: string): Promise<void> {
-    await api.delete(`/attributes/${id}`);
-  }
-
-  async bulkDelete(ids: string[]): Promise<void> {
-    await api.post('/attributes/bulk-delete', { ids });
-  }
-
-  async reorderAttributes(attributeIds: string[]): Promise<void> {
-    await api.post('/attributes/reorder', { attributeIds });
+  async deleteAttribute(id: string): Promise<ActionResponse<Attribute>> {
+    const response = await axios.delete(
+      `${API_URL}/attributes/${id}`,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute deleted successfully'
+    };
   }
 
   // Attribute Groups
-  async getAttributeGroups(): Promise<AttributeGroup[]> {
-    const response = await api.get('/attributes/groups');
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
+  async getAttributeGroups(): Promise<CollectionResponse<AttributeGroup>> {
+    const response = await axios.get(`${API_URL}/attributes/groups`, {
+      headers: this.getAuthHeader()
+    });
+
+    const data = response.data.data || response.data;
+    return {
+      items: data.items || [],
+      meta: data.meta || {
+        totalItems: data.items?.length || 0,
+        itemCount: data.items?.length || 0
+      }
+    };
   }
 
   async getAttributeGroup(id: string): Promise<AttributeGroup> {
-    const response = await api.get(`/attributes/groups/${id}`);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  async createAttributeGroup(data: { code: string; name: string; description?: string }): Promise<AttributeGroup> {
-    const response = await api.post('/attributes/groups', data);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  async updateAttributeGroup(id: string, data: Partial<{ code: string; name: string; description?: string }>): Promise<AttributeGroup> {
-    const response = await api.patch(`/attributes/groups/${id}`, data);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  async deleteAttributeGroup(id: string): Promise<void> {
-    await api.delete(`/attributes/groups/${id}`);
-  }
-
-  async getGroupAttributes(groupId: string): Promise<Attribute[]> {
-    const response = await api.get(`/attributes/groups/${groupId}/attributes`);
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  async assignToGroup(attributeIds: string[], groupId: string): Promise<void> {
-    await api.post(`/attributes/groups/${groupId}/assign`, { attributeIds });
-  }
-
-  async removeFromGroup(attributeIds: string[], groupId: string): Promise<void> {
-    await api.post(`/attributes/groups/${groupId}/remove`, { attributeIds });
-  }
-
-  // Validation
-  async validateAttributeValue(attributeId: string, value: any): Promise<{ valid: boolean; errors?: string[] }> {
-    const response = await api.post(`/attributes/${attributeId}/validate`, { value });
-    // Handle wrapped response structure from backend
-    return response.data.data || response.data;
-  }
-
-  // Export/Import
-  async exportAttributes(format: 'csv' | 'excel' = 'csv'): Promise<Blob> {
-    const response = await api.get(`/attributes/export?format=${format}`, {
-      responseType: 'blob',
+    const response = await axios.get(`${API_URL}/attributes/groups/${id}`, {
+      headers: this.getAuthHeader()
     });
-    return response.data;
-  }
-
-  async importAttributes(file: File): Promise<{ success: number; failed: number; errors: any[] }> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await api.post('/attributes/import', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    // Handle wrapped response structure from backend
     return response.data.data || response.data;
   }
 
-  // Get attribute types for forms
-  getAttributeTypes(): { value: AttributeType; label: string }[] {
-    return [
-      { value: AttributeType.TEXT, label: 'Text' },
-      { value: AttributeType.NUMBER, label: 'Number' },
-      { value: AttributeType.BOOLEAN, label: 'Boolean' },
-      { value: AttributeType.DATE, label: 'Date' },
-      { value: AttributeType.DATETIME, label: 'Date & Time' },
-      { value: AttributeType.SELECT, label: 'Select' },
-      { value: AttributeType.MULTISELECT, label: 'Multi-Select' },
-      { value: AttributeType.COLOR, label: 'Color' },
-      { value: AttributeType.IMAGE, label: 'Image' },
-      { value: AttributeType.FILE, label: 'File' },
-      { value: AttributeType.PRICE, label: 'Price' },
-      { value: AttributeType.WEIGHT, label: 'Weight' },
-      { value: AttributeType.DIMENSION, label: 'Dimension' },
-    ];
+  async createAttributeGroup(data: Partial<AttributeGroup>): Promise<ActionResponse<AttributeGroup>> {
+    const response = await axios.post(
+      `${API_URL}/attributes/groups`,
+      data,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute group created successfully'
+    };
+  }
+
+  async updateAttributeGroup(id: string, data: Partial<AttributeGroup>): Promise<ActionResponse<AttributeGroup>> {
+    const response = await axios.patch(
+      `${API_URL}/attributes/groups/${id}`,
+      data,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute group updated successfully'
+    };
+  }
+
+  async deleteAttributeGroup(id: string): Promise<ActionResponse<AttributeGroup>> {
+    const response = await axios.delete(
+      `${API_URL}/attributes/groups/${id}`,
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute group deleted successfully'
+    };
+  }
+
+  // Attribute Options (for select/multiselect)
+  async setAttributeOptions(attributeId: string, options: AttributeOption[]): Promise<ActionResponse<Attribute>> {
+    const response = await axios.put(
+      `${API_URL}/attributes/${attributeId}/options`,
+      { options },
+      { headers: this.getAuthHeader() }
+    );
+    
+    const result = response.data.data || response.data;
+    return {
+      item: result.item,
+      message: result.message || 'Attribute options updated successfully'
+    };
+  }
+
+  // Helper methods
+  getAttributeTypeLabel(type: AttributeType): string {
+    const labels: Record<AttributeType, string> = {
+      [AttributeType.TEXT]: 'Text',
+      [AttributeType.NUMBER]: 'Number',
+      [AttributeType.DECIMAL]: 'Decimal',
+      [AttributeType.INTEGER]: 'Integer',
+      [AttributeType.BOOLEAN]: 'Yes/No',
+      [AttributeType.SELECT]: 'Select (Single)',
+      [AttributeType.MULTISELECT]: 'Select (Multiple)',
+      [AttributeType.DATE]: 'Date',
+      [AttributeType.DATETIME]: 'Date & Time',
+      [AttributeType.PRICE]: 'Price',
+      [AttributeType.URL]: 'URL',
+      [AttributeType.EMAIL]: 'Email',
+      [AttributeType.JSON]: 'JSON'
+    };
+    return labels[type] || type;
+  }
+
+  getAttributeTypeIcon(type: AttributeType): string {
+    const icons: Record<AttributeType, string> = {
+      [AttributeType.TEXT]: '📝',
+      [AttributeType.NUMBER]: '🔢',
+      [AttributeType.DECIMAL]: '💯',
+      [AttributeType.INTEGER]: '#️⃣',
+      [AttributeType.BOOLEAN]: '✓',
+      [AttributeType.SELECT]: '▼',
+      [AttributeType.MULTISELECT]: '☑',
+      [AttributeType.DATE]: '📅',
+      [AttributeType.DATETIME]: '🕐',
+      [AttributeType.PRICE]: '💰',
+      [AttributeType.URL]: '🔗',
+      [AttributeType.EMAIL]: '✉️',
+      [AttributeType.JSON]: '{}'
+    };
+    return icons[type] || '📄';
+  }
+
+  generateAttributeCode(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '_')      // Replace spaces with underscores
+      .replace(/-+/g, '_')       // Replace hyphens with underscores
+      .replace(/_+/g, '_');      // Replace multiple underscores with single
   }
 }
 
-export default new AttributeService();
+export const attributeService = new AttributeService();
+export default attributeService;

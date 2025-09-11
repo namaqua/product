@@ -17,34 +17,74 @@ import {
   Cog6ToothIcon,
   UsersIcon,
   ChevronDownIcon,
+  ChevronRightIcon,
   ArrowRightOnRectangleIcon,
   UserCircleIcon,
+  CreditCardIcon,
+  ShoppingCartIcon,
+  RocketLaunchIcon,
 } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid';
 import { useAuthStore } from '../../stores/auth.store';
 
-const dashboardNavigation = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
-];
-
-const productEngineNavigation = [
-  { name: 'Products', href: '/products', icon: CubeIcon },
-  { name: 'Categories', href: '/categories', icon: FolderIcon },
-  { name: 'Attributes', href: '/attributes', icon: TagIcon },
-  { name: 'Media', href: '/media', icon: PhotoIcon },
-  { name: 'Workflows', href: '/workflows', icon: ClipboardDocumentListIcon },
-  { name: 'Import/Export', href: '/import-export', icon: ArrowPathIcon },
-  { name: 'Channels', href: '/channels', icon: GlobeAltIcon },
-];
-
-const subscriptionEngineNavigation = [
-  // Add subscription-related navigation items here when ready
-  // For now, this section is empty but ready for future items
-];
-
-const adminNavigation = [
-  { name: 'Users', href: '/users', icon: UsersIcon },
-  { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+// Navigation structure with sections
+const navigationSections = [
+  {
+    id: 'dashboard',
+    name: 'Dashboard',
+    icon: HomeIcon,
+    href: '/',
+    isSection: false,
+  },
+  {
+    id: 'product-engine',
+    name: 'Product Engine',
+    icon: CubeIcon,  // Same as Products
+    isSection: true,
+    items: [
+      { name: 'Products', href: '/products', icon: CubeIcon },
+      { name: 'Categories', href: '/categories', icon: FolderIcon },
+      { name: 'Attributes', href: '/attributes', icon: TagIcon },
+      { name: 'Media', href: '/media', icon: PhotoIcon },
+      { name: 'Workflows', href: '/workflows', icon: ClipboardDocumentListIcon },
+      { name: 'Import/Export', href: '/import-export', icon: ArrowPathIcon },
+      { name: 'Channels', href: '/channels', icon: GlobeAltIcon },
+    ],
+  },
+  {
+    id: 'subscription-engine',
+    name: 'Subscription Engine',
+    icon: CreditCardIcon,
+    isSection: true,
+    items: [
+      // Ready for future subscription items
+      // { name: 'Plans', href: '/plans', icon: ClipboardDocumentListIcon },
+      // { name: 'Subscribers', href: '/subscribers', icon: UsersIcon },
+      // { name: 'Billing', href: '/billing', icon: CreditCardIcon },
+    ],
+  },
+  {
+    id: 'marketplace-engine',
+    name: 'Marketplace Engine',
+    icon: ShoppingCartIcon,
+    isSection: true,
+    items: [
+      // Ready for future marketplace items
+      // { name: 'Vendors', href: '/vendors', icon: UsersIcon },
+      // { name: 'Orders', href: '/orders', icon: ClipboardDocumentListIcon },
+      // { name: 'Commissions', href: '/commissions', icon: CreditCardIcon },
+    ],
+  },
+  {
+    id: 'administration',
+    name: 'Administration',
+    icon: Cog6ToothIcon,
+    isSection: true,
+    items: [
+      { name: 'Users', href: '/users', icon: UsersIcon },
+      { name: 'Settings', href: '/settings', icon: Cog6ToothIcon },
+    ],
+  },
 ];
 
 function classNames(...classes: string[]) {
@@ -56,10 +96,26 @@ export default function ApplicationShell() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  // Track expanded sections - Product Engine and Administration expanded by default
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(['product-engine', 'administration'])
+  );
 
   const handleLogout = async () => {
     await logout();
     navigate('/login');
+  };
+
+  // Toggle section expansion
+  const toggleSection = (sectionId: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
   };
 
   // Determine current path for navigation highlighting
@@ -68,6 +124,97 @@ export default function ApplicationShell() {
       return location.pathname === '/' || location.pathname === '/dashboard';
     }
     return location.pathname.startsWith(href);
+  };
+
+  // Check if any item in a section is active
+  const isSectionActive = (section: any) => {
+    if (!section.isSection) return false;
+    return section.items?.some((item: any) => isCurrentPath(item.href)) || false;
+  };
+
+  // Render navigation item
+  const renderNavItem = (item: any, inSection: boolean = false) => (
+    <li key={item.name}>
+      <Link
+        to={item.href}
+        onClick={() => sidebarOpen && setSidebarOpen(false)}
+        className={classNames(
+          isCurrentPath(item.href)
+            ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
+            : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
+          'group flex gap-x-3 rounded-md p-2 text-sm leading-6',
+          inSection ? 'pl-11' : '' // Indent sub-items
+        )}
+      >
+        <item.icon
+          className={classNames(
+            isCurrentPath(item.href)
+              ? 'text-navy-800 dark:text-navy-300'
+              : 'text-gray-400 group-hover:text-navy-800',
+            'h-5 w-5 shrink-0',
+          )}
+          aria-hidden="true"
+        />
+        {item.name}
+      </Link>
+    </li>
+  );
+
+  // Render navigation section
+  const renderSection = (section: any) => {
+    const isExpanded = expandedSections.has(section.id);
+    const hasActiveItem = isSectionActive(section);
+
+    if (!section.isSection) {
+      // Render simple navigation item (like Dashboard)
+      return renderNavItem(section);
+    }
+
+    return (
+      <li key={section.id}>
+        <button
+          onClick={() => toggleSection(section.id)}
+          className={classNames(
+            hasActiveItem
+              ? 'bg-gray-50 dark:bg-gray-800/50 text-navy-800 dark:text-white'
+              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50',
+            'group flex w-full items-center gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 transition-colors'
+          )}
+        >
+          <section.icon
+            className={classNames(
+              hasActiveItem
+                ? 'text-navy-800 dark:text-navy-300'
+                : 'text-gray-400 group-hover:text-navy-600',
+              'h-6 w-6 shrink-0'
+            )}
+            aria-hidden="true"
+          />
+          <span className="flex-1 text-left">{section.name}</span>
+          {section.items && section.items.length > 0 && (
+            <>
+              {isExpanded ? (
+                <ChevronDownIcon className="h-4 w-4 text-gray-400" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4 text-gray-400" />
+              )}
+            </>
+          )}
+          {section.items && section.items.length === 0 && (
+            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+              Soon
+            </span>
+          )}
+        </button>
+        
+        {/* Render sub-items if expanded and has items */}
+        {isExpanded && section.items && section.items.length > 0 && (
+          <ul role="list" className="mt-1 space-y-1">
+            {section.items.map((item) => renderNavItem(item, true))}
+          </ul>
+        )}
+      </li>
+    );
   };
 
   return (
@@ -125,154 +272,14 @@ export default function ApplicationShell() {
                     <div className="flex h-16 shrink-0 items-center">
                       <div className="flex items-center space-x-2">
                         <div className="flex-shrink-0">
-                          <Cog6ToothIcon className="h-8 w-8 text-navy-800" aria-hidden="true" />
+                          <RocketLaunchIcon className="h-8 w-8 text-accent-500" aria-hidden="true" />
                         </div>
                         <span className="text-xl font-bold text-gray-900 dark:text-white">My Engines</span>
                       </div>
                     </div>
                     <nav className="flex flex-1 flex-col">
-                      <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                        {/* Dashboard Section */}
-                        <li>
-                          <ul role="list" className="-mx-2 space-y-1">
-                            {dashboardNavigation.map((item) => (
-                              <li key={item.name}>
-                                <Link
-                                  to={item.href}
-                                  onClick={() => setSidebarOpen(false)}
-                                  className={classNames(
-                                    isCurrentPath(item.href)
-                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                                  )}
-                                >
-                                  <item.icon
-                                    className={classNames(
-                                      isCurrentPath(item.href)
-                                        ? 'text-navy-800 dark:text-navy-300'
-                                        : 'text-gray-400 group-hover:text-navy-800',
-                                      'h-6 w-6 shrink-0',
-                                    )}
-                                    aria-hidden="true"
-                                  />
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                        
-                        {/* Product Engine Section */}
-                        <li>
-                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                            <span>Product Engine</span>
-                          </div>
-                          <ul role="list" className="-mx-2 mt-2 space-y-1">
-                            {productEngineNavigation.map((item) => (
-                              <li key={item.name}>
-                                <Link
-                                  to={item.href}
-                                  onClick={() => setSidebarOpen(false)}
-                                  className={classNames(
-                                    isCurrentPath(item.href)
-                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                                  )}
-                                >
-                                  <item.icon
-                                    className={classNames(
-                                      isCurrentPath(item.href)
-                                        ? 'text-navy-800 dark:text-navy-300'
-                                        : 'text-gray-400 group-hover:text-navy-800',
-                                      'h-6 w-6 shrink-0',
-                                    )}
-                                    aria-hidden="true"
-                                  />
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                        
-                        {/* Subscription Engine Section */}
-                        <li>
-                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                            <span>Subscription Engine</span>
-                          </div>
-                          {subscriptionEngineNavigation.length > 0 ? (
-                            <ul role="list" className="-mx-2 mt-2 space-y-1">
-                              {subscriptionEngineNavigation.map((item) => (
-                                <li key={item.name}>
-                                  <Link
-                                    to={item.href}
-                                    onClick={() => setSidebarOpen(false)}
-                                    className={classNames(
-                                      isCurrentPath(item.href)
-                                      ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                                      : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                                    )}
-                                  >
-                                    <item.icon
-                                      className={classNames(
-                                        isCurrentPath(item.href)
-                                          ? 'text-navy-800 dark:text-navy-300'
-                                          : 'text-gray-400 group-hover:text-navy-800',
-                                        'h-6 w-6 shrink-0',
-                                      )}
-                                      aria-hidden="true"
-                                    />
-                                    {item.name}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          ) : (
-                            <p className="-mx-2 mt-2 px-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                              Coming soon...
-                            </p>
-                          )}
-                        </li>
-                        
-                        {/* Administration Section */}
-                        <li>
-                          <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                            <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                            <span>Administration</span>
-                          </div>
-                          <ul role="list" className="-mx-2 mt-2 space-y-1">
-                            {adminNavigation.map((item) => (
-                              <li key={item.name}>
-                                <Link
-                                  to={item.href}
-                                  onClick={() => setSidebarOpen(false)}
-                                  className={classNames(
-                                    isCurrentPath(item.href)
-                                    ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                                    : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                                    'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                                  )}
-                                >
-                                  <item.icon
-                                    className={classNames(
-                                      isCurrentPath(item.href)
-                                        ? 'text-navy-800 dark:text-navy-300'
-                                        : 'text-gray-400 group-hover:text-navy-800',
-                                      'h-6 w-6 shrink-0',
-                                    )}
-                                    aria-hidden="true"
-                                  />
-                                  {item.name}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
+                      <ul role="list" className="flex flex-1 flex-col gap-y-4">
+                        {navigationSections.map(section => renderSection(section))}
                       </ul>
                     </nav>
                   </div>
@@ -288,150 +295,14 @@ export default function ApplicationShell() {
             <div className="flex h-16 shrink-0 items-center">
               <div className="flex items-center space-x-2">
                 <div className="flex-shrink-0">
-                  <Cog6ToothIcon className="h-8 w-8 text-navy-800" aria-hidden="true" />
+                  <RocketLaunchIcon className="h-8 w-8 text-accent-500" aria-hidden="true" />
                 </div>
                 <span className="text-xl font-bold text-gray-900 dark:text-white">My Engines</span>
               </div>
             </div>
             <nav className="flex flex-1 flex-col">
-              <ul role="list" className="flex flex-1 flex-col gap-y-7">
-                {/* Dashboard Section */}
-                <li>
-                  <ul role="list" className="-mx-2 space-y-1">
-                    {dashboardNavigation.map((item) => (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={classNames(
-                            isCurrentPath(item.href)
-                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                          )}
-                        >
-                          <item.icon
-                            className={classNames(
-                              isCurrentPath(item.href)
-                                ? 'text-navy-800 dark:text-navy-300'
-                                : 'text-gray-400 group-hover:text-navy-800',
-                              'h-6 w-6 shrink-0',
-                            )}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-                
-                {/* Product Engine Section */}
-                <li>
-                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                    <span>Product Engine</span>
-                  </div>
-                  <ul role="list" className="-mx-2 mt-2 space-y-1">
-                    {productEngineNavigation.map((item) => (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={classNames(
-                            isCurrentPath(item.href)
-                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                          )}
-                        >
-                          <item.icon
-                            className={classNames(
-                              isCurrentPath(item.href)
-                                ? 'text-navy-800 dark:text-navy-300'
-                                : 'text-gray-400 group-hover:text-navy-800',
-                              'h-6 w-6 shrink-0',
-                            )}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-                
-                {/* Subscription Engine Section */}
-                <li>
-                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                    <span>Subscription Engine</span>
-                  </div>
-                  {subscriptionEngineNavigation.length > 0 ? (
-                    <ul role="list" className="-mx-2 mt-2 space-y-1">
-                      {subscriptionEngineNavigation.map((item) => (
-                        <li key={item.name}>
-                          <Link
-                            to={item.href}
-                            className={classNames(
-                              isCurrentPath(item.href)
-                                ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                                : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                              'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                            )}
-                          >
-                            <item.icon
-                              className={classNames(
-                                isCurrentPath(item.href)
-                                  ? 'text-navy-800 dark:text-navy-300'
-                                  : 'text-gray-400 group-hover:text-navy-800',
-                                'h-6 w-6 shrink-0',
-                              )}
-                              aria-hidden="true"
-                            />
-                            {item.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="-mx-2 mt-2 px-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                      Coming soon...
-                    </p>
-                  )}
-                </li>
-                
-                {/* Administration Section */}
-                <li>
-                  <div className="flex items-center gap-x-2 text-xs font-semibold leading-6 text-accent-500">
-                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
-                    <span>Administration</span>
-                  </div>
-                  <ul role="list" className="-mx-2 mt-2 space-y-1">
-                    {adminNavigation.map((item) => (
-                      <li key={item.name}>
-                        <Link
-                          to={item.href}
-                          className={classNames(
-                            isCurrentPath(item.href)
-                              ? 'bg-navy-100 dark:bg-navy-900/30 text-navy-800 dark:text-white font-semibold'
-                              : 'text-gray-700 dark:text-gray-300 hover:text-navy-800 hover:bg-navy-50 dark:hover:bg-navy-900/20',
-                            'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold',
-                          )}
-                        >
-                          <item.icon
-                            className={classNames(
-                              isCurrentPath(item.href)
-                                ? 'text-navy-800 dark:text-navy-300'
-                                : 'text-gray-400 group-hover:text-navy-800',
-                              'h-6 w-6 shrink-0',
-                            )}
-                            aria-hidden="true"
-                          />
-                          {item.name}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </li>
+              <ul role="list" className="flex flex-1 flex-col gap-y-4">
+                {navigationSections.map(section => renderSection(section))}
               </ul>
             </nav>
           </div>

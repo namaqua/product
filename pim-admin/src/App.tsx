@@ -18,6 +18,11 @@ import ProductCreate from './features/products/ProductCreate';
 import ProductEdit from './features/products/ProductEdit';
 import ProductDetails from './features/products/ProductDetails';
 import CategoryManagement from './features/categories/CategoryManagement';
+import AttributeList from './features/attributes/AttributeList';
+import AttributeCreate from './features/attributes/AttributeCreate';
+import AttributeEdit from './features/attributes/AttributeEdit';
+import { AttributeOptions } from './features/attributes/AttributeOptions';
+import { AttributeGroups } from './features/attributes/AttributeGroups';
 
 // Stores
 import { useAuthStore } from './stores/auth.store';
@@ -71,19 +76,11 @@ function App() {
             <Route path="products/:id" element={<ProductDetails />} />
             <Route path="products/:id/edit" element={<ProductEdit />} />
             <Route path="categories" element={<CategoryManagement />} />
-            <Route path="attributes" element={
-              <div className="p-8">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h1 className="text-2xl font-bold mb-4">Attributes Management</h1>
-                  <p className="text-gray-600">Attribute management interface coming soon...</p>
-                  <div className="mt-6 p-4 bg-blue-50 rounded">
-                    <p className="text-sm text-blue-800">
-                      This page will allow you to manage product attributes, attribute sets, and attribute values.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            } />
+            <Route path="attributes" element={<AttributeList />} />
+            <Route path="attributes/new" element={<AttributeCreate />} />
+            <Route path="attributes/:id/edit" element={<AttributeEdit />} />
+            <Route path="attributes/:id/options" element={<AttributeOptions />} />
+            <Route path="attributes/groups" element={<AttributeGroups />} />
             <Route path="media" element={
               <div className="p-8">
                 <h1 className="text-2xl font-bold">Media Library</h1>
