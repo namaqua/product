@@ -6,7 +6,7 @@
 ```bash
 cd /Users/colinroets/dev/projects/product
 ./start-pim.sh
-cd pim && npm run start:dev
+cd engines && npm run start:dev
 ```
 
 ### Stop Everything
@@ -201,7 +201,7 @@ docker-compose down -v
 
 ### Clear Node Modules
 ```bash
-cd pim
+cd engines
 rm -rf node_modules package-lock.json
 npm install
 ```
@@ -210,11 +210,11 @@ npm install
 
 | File | Purpose |
 |------|---------|
-| `/pim/.env` | Environment variables |
+| `/engines/.env` | Environment variables |
 | `/docker-compose.yml` | Docker services configuration |
 | `/scripts/init-db.sql` | Database initialization |
-| `/pim/src/modules/products/` | Product module code |
-| `/pim/src/config/database.config.ts` | Database configuration |
+| `/engines/src/modules/products/` | Product module code |
+| `/engines/src/config/database.config.ts` | Database configuration |
 
 ## 🔗 Useful URLs
 
@@ -252,7 +252,7 @@ JWT_SECRET=your-secret-key-change-me-to-something-secure
 ./start-pim.sh
 
 # 2. Start backend
-cd pim && npm run start:dev
+cd engines && npm run start:dev
 
 # 3. Test health
 curl http://localhost:3010/health

@@ -23,7 +23,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - pim-network
+      - product-network
 
   # Redis for PIM (optional - for caching/sessions)
   redis-pim:
@@ -36,12 +36,12 @@ services:
       - redis_pim_data:/data
     command: redis-server --appendonly yes
     networks:
-      - pim-network
+      - product-network
 
 volumes:
   postgres_pim_data:
   redis_pim_data:
 
 networks:
-  pim-network:
+  product-network:
     driver: bridge

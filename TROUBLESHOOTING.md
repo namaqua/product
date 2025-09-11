@@ -64,11 +64,11 @@ lsof -i :5433
 docker exec postgres-pim psql -U pim_user -d pim_dev -c "SELECT COUNT(*) FROM products;"
 
 # 2. Verify .env has correct port
-grep DATABASE_PORT /Users/colinroets/dev/projects/product/pim/.env
+grep DATABASE_PORT /Users/colinroets/dev/projects/product/engines/.env
 # Should show: DATABASE_PORT=5433
 
 # 3. Restart backend
-cd pim && npm run start:dev
+cd engines && npm run start:dev
 ```
 
 ### "Port already in use"
@@ -116,7 +116,7 @@ docker-compose down -v
 docker rm -f postgres-pim 2>/dev/null
 
 # 3. Clear node modules
-cd pim
+cd engines
 rm -rf node_modules package-lock.json dist
 
 # 4. Reinstall and rebuild
@@ -126,7 +126,7 @@ npm run build
 # 5. Start fresh
 cd ..
 ./start-pim.sh
-cd pim && npm run start:dev
+cd engines && npm run start:dev
 ```
 
 ### Database Reset Only
@@ -146,7 +146,7 @@ npm run start:dev
 ### Clear TypeORM Cache
 ```bash
 # Sometimes TypeORM caches metadata
-cd pim
+cd engines
 rm -rf dist
 npm run build
 npm run start:dev
@@ -199,13 +199,13 @@ When things aren't working, check in this order:
 # Restart everything
 ./stop-pim.sh
 ./start-pim.sh
-cd pim && npm run start:dev
+cd engines && npm run start:dev
 ```
 
 ### "I changed the code but nothing happened"
 ```bash
 # Rebuild the backend
-cd pim
+cd engines
 npm run build
 npm run start:dev
 ```

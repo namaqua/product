@@ -24,7 +24,7 @@ cd /Users/colinroets/dev/projects/product
 # ============================================
 echo -e "${BLUE}📦 Setting up Backend (NestJS) code quality tools...${NC}"
 echo ""
-cd pim
+cd engines
 
 # Install Prettier and ESLint integration
 echo "Installing Prettier dependencies..."
@@ -230,14 +230,14 @@ cd ..
 # Add combined scripts to root package.json
 echo -e "${YELLOW}Adding monorepo lint and format scripts...${NC}"
 npm pkg set scripts.lint="npm run lint:backend && npm run lint:frontend"
-npm pkg set scripts.lint:backend="cd pim && npm run lint"
-npm pkg set scripts.lint:frontend="cd pim-admin && npm run lint"
+npm pkg set scripts.lint:backend="cd engines && npm run lint"
+npm pkg set scripts.lint:frontend="cd engines-admin && npm run lint"
 npm pkg set scripts.format="npm run format:backend && npm run format:frontend"
-npm pkg set scripts.format:backend="cd pim && npm run format"
-npm pkg set scripts.format:frontend="cd pim-admin && npm run format"
+npm pkg set scripts.format:backend="cd engines && npm run format"
+npm pkg set scripts.format:frontend="cd engines-admin && npm run format"
 npm pkg set scripts.format:check="npm run format:check:backend && npm run format:check:frontend"
-npm pkg set scripts.format:check:backend="cd pim && npm run format:check"
-npm pkg set scripts.format:check:frontend="cd pim-admin && npm run format:check"
+npm pkg set scripts.format:check:backend="cd engines && npm run format:check"
+npm pkg set scripts.format:check:frontend="cd engines-admin && npm run format:check"
 
 echo ""
 echo -e "${GREEN}════════════════════════════════════════${NC}"
@@ -251,11 +251,11 @@ echo "    npm run lint         - Lint both projects"
 echo "    npm run format       - Format both projects"
 echo "    npm run format:check - Check formatting"
 echo ""
-echo "  Backend only (cd pim):"
+echo "  Backend only (cd engines):"
 echo "    npm run lint         - Fix linting issues"
 echo "    npm run format       - Format code"
 echo ""
-echo "  Frontend only (cd pim-admin):"
+echo "  Frontend only (cd engines-admin):"
 echo "    npm run lint         - Fix linting issues"
 echo "    npm run format       - Format code"
 echo ""

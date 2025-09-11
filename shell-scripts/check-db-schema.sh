@@ -144,8 +144,8 @@ else
     echo -e "${GREEN}✅ Schema looks correct!${NC}"
     echo ""
     echo "If you're still having issues, check:"
-    echo "  1. Backend logs: cd pim && npm run start:dev"
-    echo "  2. Try seeding: cd pim && npm run seed"
+    echo "  1. Backend logs: cd engines && npm run start:dev"
+    echo "  2. Try seeding: cd engines && npm run seed"
 fi
 
 echo ""

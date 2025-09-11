@@ -21,7 +21,7 @@ cd /Users/colinroets/dev/projects/product
 
 # Test backend linting
 echo -e "${BLUE}Testing Backend Linting...${NC}"
-cd pim
+cd engines
 npm run lint
 BACKEND_RESULT=$?
 cd ..
@@ -36,7 +36,7 @@ echo ""
 
 # Test frontend linting
 echo -e "${BLUE}Testing Frontend Linting...${NC}"
-cd pim-admin
+cd engines-admin
 npm run lint
 FRONTEND_RESULT=$?
 cd ..

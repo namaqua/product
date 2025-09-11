@@ -92,7 +92,7 @@ docker-compose up -d
 
 3. **Install backend dependencies**
 ```bash
-cd pim
+cd engines
 npm install
 ```
 
@@ -109,7 +109,7 @@ npm run start:dev
 
 6. **Install frontend dependencies** (in new terminal)
 ```bash
-cd pim-admin
+cd engines-admin
 npm install
 ```
 
@@ -168,7 +168,7 @@ npm run dev
 ### Running Tests
 ```bash
 # Backend tests
-cd pim
+cd engines
 npm run test
 npm run test:e2e
 

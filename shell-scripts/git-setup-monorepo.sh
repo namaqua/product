@@ -90,7 +90,7 @@ A modern PIM system built with NestJS and React.
 
 ### Backend
 ```bash
-cd pim
+cd engines
 npm install
 npm run start:dev
 # Runs on http://localhost:3010
@@ -98,7 +98,7 @@ npm run start:dev
 
 ### Frontend
 ```bash
-cd pim-admin
+cd engines-admin
 npm install
 npm run dev
 # Runs on http://localhost:5173
@@ -226,5 +226,5 @@ echo ""
 echo "To clone this repository elsewhere:"
 echo "  git clone git@github.com:namaqua/product.git"
 echo "  cd product"
-echo "  cd pim && npm install"
+echo "  cd engines && npm install"
 echo "  cd ../pim-admin && npm install"

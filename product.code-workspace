@@ -2,15 +2,15 @@
   "folders": [
     {
       "name": "Backend (NestJS)",
-      "path": "pim"
+      "path": "engines"
     },
     {
       "name": "Frontend (React)",
-      "path": "pim-admin"
+      "path": "admin"
     },
     {
       "name": "Documentation",
-      "path": "pimdocs"
+      "path": "docs"
     },
     {
       "name": "Root",

@@ -48,9 +48,9 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 1. **Setup your development environment**
    ```bash
    git clone https://github.com/yourusername/pim-backend.git
-   cd pim-backend
+   cd engines-backend
    ./start-pim.sh
-   cd pim && npm install
+   cd engines && npm install
    ```
 
 2. **Create a feature branch**
