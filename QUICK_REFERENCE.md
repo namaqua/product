@@ -5,15 +5,21 @@
 ### Start Everything
 ```bash
 cd /Users/colinroets/dev/projects/product
-./start-pim.sh
-cd engines && npm run start:dev
+docker-compose up -d                    # Start PostgreSQL & Redis
+cd engines && npm run start:dev         # Start backend (port 3010)
+cd admin && npm run dev                 # Start frontend (port 5173)
+```
+
+### Quick Start (from root)
+```bash
+npm run dev                              # Starts both backend and frontend
 ```
 
 ### Stop Everything
 ```bash
 # Stop backend: Ctrl+C
-cd /Users/colinroets/dev/projects/product
-./stop-pim.sh
+# Stop frontend: Ctrl+C
+docker-compose down                      # Stop Docker services
 ```
 
 ## 🔍 Health Checks
@@ -29,6 +35,23 @@ docker ps | grep postgres-pim
 docker exec postgres-pim pg_isready -U pim_user -d pim_dev
 ```
 
+## 🌐 Access Points
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend** | http://localhost:5173 | React admin interface |
+| **Backend API** | http://localhost:3010/api/v1 | REST API |
+| **API Docs** | http://localhost:3010/api/docs | Swagger documentation |
+| **PostgreSQL** | localhost:5433 | Database |
+| **Redis** | localhost:6380 | Cache (optional) |
+
+## 🔑 Default Credentials
+
+```
+Email: admin@test.com
+Password: Admin123!
+```
+
 ## 📊 Database Commands
 
 ### Connect to Database
@@ -36,7 +59,7 @@ docker exec postgres-pim pg_isready -U pim_user -d pim_dev
 # Using Docker
 docker exec -it postgres-pim psql -U pim_user -d pim_dev
 
-# Using psql (if installed)
+# Using psql directly
 psql -h localhost -p 5433 -U pim_user -d pim_dev
 ```
 
@@ -45,14 +68,11 @@ psql -h localhost -p 5433 -U pim_user -d pim_dev
 -- Count products
 SELECT COUNT(*) FROM products;
 
--- View products with names
-SELECT p.sku, p.price, pl.name 
-FROM products p 
-JOIN product_locales pl ON p.id = pl."productId"
-WHERE pl."localeCode" = 'en';
+-- View products
+SELECT id, sku, name, price, quantity FROM products;
 
--- Check product status
-SELECT sku, status, "isVisible", quantity FROM products;
+-- Check users
+SELECT email, role, "isActive" FROM users;
 
 -- View all tables
 \dt
@@ -63,67 +83,64 @@ SELECT sku, status, "isVisible", quantity FROM products;
 
 ## 🌐 API Testing
 
-### Get Products (No Auth Required)
+### Authentication
 ```bash
-# Basic list
-curl http://localhost:3010/api/v1/products
-
-# With names
-curl 'http://localhost:3010/api/v1/products?includeLocales=true'
-
-# Pretty print
-curl -s http://localhost:3010/api/v1/products | python3 -m json.tool
-
-# Get single product
-curl http://localhost:3010/api/v1/products/sku/LAPTOP-001
-
-# Statistics
-curl http://localhost:3010/api/v1/products/statistics
-```
-
-### Authentication (When Enabled)
-```bash
-# Register user
-curl -X POST http://localhost:3010/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "Password123!",
-    "firstName": "John",
-    "lastName": "Doe"
-  }'
-
-# Login
+# Login to get token
 curl -X POST http://localhost:3010/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Password123!"}'
+  -d '{"email":"admin@test.com","password":"Admin123!"}'
 
-# Use token
+# Save token for reuse
 TOKEN="your-jwt-token-here"
-curl -H "Authorization: Bearer $TOKEN" http://localhost:3010/api/v1/products
+
+# Use token in requests
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:3010/api/v1/products
+```
+
+### Products API
+```bash
+# List products
+curl http://localhost:3010/api/v1/products
+
+# Get single product
+curl http://localhost:3010/api/v1/products/1
+
+# Create product (requires auth)
+curl -X POST http://localhost:3010/api/v1/products \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sku": "TEST-001",
+    "name": "Test Product",
+    "price": 99.99,
+    "quantity": 100
+  }'
+```
+
+### Categories API
+```bash
+# Get category tree
+curl http://localhost:3010/api/v1/categories/tree
+
+# Get root categories
+curl http://localhost:3010/api/v1/categories/roots
 ```
 
 ## 🐳 Docker Commands
 
 ### Container Management
 ```bash
-# List all containers
+# View running containers
 docker ps
 
-# List PIM containers
-docker ps | grep pim
-
 # View logs
-docker logs postgres-pim
 docker logs postgres-pim --tail 50 -f
 
-# Stop container
-docker stop postgres-pim
+# Restart containers
+docker-compose restart
 
-# Remove container
-docker rm postgres-pim
-
-# Clean up volumes (WARNING: Deletes data!)
+# Clean everything (WARNING: Deletes data!)
 docker-compose down -v
 ```
 
@@ -138,135 +155,186 @@ docker exec -i postgres-pim psql -U pim_user pim_dev < backup.sql
 
 ## 🔧 Development Commands
 
-### Backend Development
+### Backend (engines/)
 ```bash
-cd /Users/colinroets/dev/projects/product/pim
+cd engines
 
 # Install dependencies
 npm install
 
-# Run in development mode (with hot reload)
+# Run in development
 npm run start:dev
 
 # Build for production
 npm run build
 
-# Run production build
-npm run start:prod
-
 # Run tests
 npm run test
-npm run test:watch
-npm run test:cov
 
-# Generate migration
-npm run migration:generate -- -n MigrationName
+# Lint code
+npm run lint
 
-# Run migrations
-npm run migration:run
+# Format code
+npm run format
 ```
 
-### TypeORM Commands
+### Frontend (admin/)
 ```bash
-# Generate entity
-nest g class modules/products/entities/new-entity.entity
+cd admin
 
-# Clear cache
-npm run typeorm cache:clear
+# Install dependencies
+npm install
+
+# Run in development
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### Database Migrations
+```bash
+cd engines
+
+# Generate migration from entities
+npm run migration:generate -- -n MigrationName
+
+# Run pending migrations
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
 ```
 
 ## 🐛 Troubleshooting
 
-### Check What's Using Ports
+### Port Conflicts
 ```bash
-# Check specific port
+# Check what's using a port
+lsof -i :3010  # Backend
+lsof -i :5173  # Frontend
 lsof -i :5433  # PostgreSQL
-lsof -i :3010  # Backend API
 
-# Check all ports
-netstat -an | grep LISTEN
+# Kill process on port
+lsof -ti:3010 | xargs kill -9
 ```
 
-### Reset Database
+### Reset Everything
 ```bash
-# Stop everything
-./stop-pim.sh
-
-# Remove volume (deletes all data)
-docker-compose down -v
-
-# Start fresh
-./start-pim.sh
+# From project root
+docker-compose down -v                  # Remove containers and volumes
+rm -rf engines/node_modules admin/node_modules
+npm install                              # Reinstall all dependencies
+docker-compose up -d                    # Start fresh
 ```
 
-### Clear Node Modules
+### Debug Tools
+```javascript
+// Browser console commands
+debugAuth()                              // Check auth state
+localStorage.getItem('access_token')    // View JWT token
+localStorage.clear()                     // Clear all data
+```
+
+## 📁 Project Structure
+
+```
+/Users/colinroets/dev/projects/product/
+├── engines/                 # Backend (NestJS)
+│   ├── src/
+│   │   └── modules/        # Feature modules
+│   └── uploads/            # Media files
+├── admin/                   # Frontend (React)
+│   └── src/
+│       ├── components/     # UI components
+│       └── features/       # Feature modules
+├── docs/                    # Documentation
+├── shell-scripts/           # Automation scripts
+└── docker-compose.yml       # Docker config
+```
+
+## 🎯 Common Tasks
+
+### Test Authentication Flow
 ```bash
-cd engines
-rm -rf node_modules package-lock.json
-npm install
+./shell-scripts/test-auth-token.sh
 ```
 
-## 📁 Important Files
-
-| File | Purpose |
-|------|---------|
-| `/engines/.env` | Environment variables |
-| `/docker-compose.yml` | Docker services configuration |
-| `/scripts/init-db.sql` | Database initialization |
-| `/engines/src/modules/products/` | Product module code |
-| `/engines/src/config/database.config.ts` | Database configuration |
-
-## 🔗 Useful URLs
-
-| Service | URL |
-|---------|-----|
-| Backend API | http://localhost:3010 |
-| Health Check | http://localhost:3010/health |
-| Products API | http://localhost:3010/api/v1/products |
-| API Docs (when enabled) | http://localhost:3010/api/docs |
-| PostgreSQL | localhost:5433 |
-
-## 📝 Environment Variables
-
+### Test Product CRUD
 ```bash
-# Key variables in .env
-DATABASE_PORT=5433  # Not 5432!
-PORT=3010          # Backend port
-JWT_SECRET=your-secret-key-change-me-to-something-secure
+./shell-scripts/test-products-fix.sh
 ```
 
-## 🎯 Common Issues & Solutions
+### Upload Test Images
+```bash
+./shell-scripts/fix-test-images.sh
+```
 
-| Issue | Solution |
-|-------|----------|
-| Products API returns empty | Check DATABASE_PORT=5433 in .env |
-| Port 5432 conflict | Marketplace uses 5432, PIM uses 5433 |
-| Authentication errors | Auth is disabled in ProductsController |
-| Cannot connect to database | Run `./start-pim.sh` first |
-| TypeORM sync issues | synchronize is disabled in database.config.ts |
+### Push to GitHub
+```bash
+./shell-scripts/git-push.sh
+```
+
+## 📈 API Response Format
+
+All API responses follow this structure:
+```json
+{
+    "success": true,
+    "data": {
+        // Response data here
+    },
+    "timestamp": "2025-09-11T19:35:12.806Z"
+}
+```
+
+## 🔗 Module Endpoints
+
+| Module | Base Path | Key Endpoints |
+|--------|-----------|---------------|
+| Auth | `/api/v1/auth` | login, register, refresh, profile |
+| Products | `/api/v1/products` | CRUD, archive, duplicate |
+| Categories | `/api/v1/categories` | tree, roots, ancestors |
+| Attributes | `/api/v1/attributes` | CRUD, types, groups |
+| Media | `/api/v1/media` | upload, gallery |
+| Users | `/api/v1/users` | CRUD, roles |
+
+## 💡 Pro Tips
+
+1. **Always use port 5433** for PostgreSQL (not 5432)
+2. **JWT tokens expire** - use refresh endpoint
+3. **Use npm workspaces** - install from root directory
+4. **Check logs** for debugging: `docker logs postgres-pim`
+5. **Use shell scripts** for common tasks
+6. **Browser DevTools** - Network tab shows API calls
 
 ## 🏃 Quick Test Flow
 
 ```bash
-# 1. Start services
-./start-pim.sh
+# 1. Start everything
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d
+cd engines && npm run start:dev         # Terminal 1
+cd admin && npm run dev                 # Terminal 2
 
-# 2. Start backend
-cd engines && npm run start:dev
-
-# 3. Test health
+# 2. Test backend
 curl http://localhost:3010/health
 
-# 4. Get products
-curl http://localhost:3010/api/v1/products
+# 3. Login to frontend
+# http://localhost:5173
+# admin@test.com / Admin123!
 
-# 5. Check specific product
-curl http://localhost:3010/api/v1/products/sku/LAPTOP-001
+# 4. Test API
+curl http://localhost:3010/api/v1/products
 ```
 
 ---
 
 **Remember:** 
 - PostgreSQL runs on port **5433** (not 5432)
-- Authentication is **temporarily disabled**
-- All product names are in the **product_locales** table
+- Backend API prefix is `/api/v1`
+- Frontend uses **admin@test.com** for login
+- All media files stored in `engines/uploads/`
