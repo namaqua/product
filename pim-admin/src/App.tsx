@@ -23,6 +23,11 @@ import AttributeCreate from './features/attributes/AttributeCreate';
 import AttributeEdit from './features/attributes/AttributeEdit';
 import { AttributeOptions } from './features/attributes/AttributeOptions';
 import { AttributeGroups } from './features/attributes/AttributeGroups';
+import UserList from './features/users/UserList';
+import UserCreate from './features/users/UserCreate';
+import UserEdit from './features/users/UserEdit';
+import UserProfile from './features/users/UserProfile';
+import RoleManager from './features/users/RoleManager';
 
 // Stores
 import { useAuthStore } from './stores/auth.store';
@@ -105,19 +110,11 @@ function App() {
                 <p className="mt-2 text-gray-600">Channel management coming soon...</p>
               </div>
             } />
-            <Route path="users" element={
-              <div className="p-8">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h1 className="text-2xl font-bold mb-4">User Management</h1>
-                  <p className="text-gray-600">User management interface coming soon...</p>
-                  <div className="mt-6 p-4 bg-green-50 rounded">
-                    <p className="text-sm text-green-800">
-                      This page will allow you to manage users, roles, and permissions.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            } />
+            <Route path="users" element={<UserList />} />
+            <Route path="users/new" element={<UserCreate />} />
+            <Route path="users/:id" element={<UserProfile />} />
+            <Route path="users/:id/edit" element={<UserEdit />} />
+            <Route path="users/roles" element={<RoleManager />} />
             <Route path="settings" element={
               <div className="p-8">
                 <div className="bg-white rounded-lg shadow p-6">

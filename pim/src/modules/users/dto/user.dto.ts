@@ -1,4 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches, IsOptional } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, Matches, IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { UserRole } from '../entities/user.entity';
 
 export class CreateUserDto {
   @IsEmail()
@@ -26,6 +27,26 @@ export class CreateUserDto {
   @IsNotEmpty()
   @MaxLength(100)
   lastName: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  department?: string;
+
+  @IsString()
+  @IsOptional()
+  jobTitle?: string;
 }
 
 export class LoginDto {
@@ -65,10 +86,6 @@ export class ForgotPasswordDto {
 export class ResetPasswordDto {
   @IsString()
   @IsNotEmpty()
-  token: string;
-
-  @IsString()
-  @IsNotEmpty()
   @MinLength(8)
   @MaxLength(128)
   @Matches(
@@ -78,6 +95,10 @@ export class ResetPasswordDto {
     },
   )
   newPassword: string;
+
+  @IsString()
+  @IsOptional()
+  token?: string;  // Optional for admin reset
 }
 
 export class UpdateUserDto {
@@ -90,6 +111,26 @@ export class UpdateUserDto {
   @IsOptional()
   @MaxLength(100)
   lastName?: string;
+
+  @IsEnum(UserRole)
+  @IsOptional()
+  role?: UserRole;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
+
+  @IsString()
+  @IsOptional()
+  phoneNumber?: string;
+
+  @IsString()
+  @IsOptional()
+  department?: string;
+
+  @IsString()
+  @IsOptional()
+  jobTitle?: string;
 
   @IsOptional()
   preferences?: Record<string, any>;

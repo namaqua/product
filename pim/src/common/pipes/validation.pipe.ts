@@ -71,9 +71,13 @@ export function createValidationPipe(options?: {
 }): NestValidationPipe {
   return new NestValidationPipe({
     transform: options?.transform ?? true,
-    whitelist: options?.whitelist ?? true,
-    forbidNonWhitelisted: options?.forbidNonWhitelisted ?? true,
+    whitelist: options?.whitelist ?? false, // Changed to false to allow extra fields
+    forbidNonWhitelisted: options?.forbidNonWhitelisted ?? false, // Changed to false
     skipMissingProperties: options?.skipMissingProperties ?? false,
+    transformOptions: {
+      enableImplicitConversion: true, // This enables automatic type conversion
+      exposeDefaultValues: true,
+    },
     exceptionFactory: (errors: ValidationError[]) => {
       const messages = errors.reduce((acc, error) => {
         const property = error.property;
@@ -81,6 +85,8 @@ export function createValidationPipe(options?: {
         acc[property] = constraints;
         return acc;
       }, {});
+      
+      console.error('Validation errors:', messages); // Add logging to see what's failing
       
       return new BadRequestException({
         message: 'Validation failed',

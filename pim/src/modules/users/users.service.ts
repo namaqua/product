@@ -1,14 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, UserStatus } from './entities/user.entity';
-import { UpdateUserDto, UserResponseDto, UserStatsResponseDto, UserQueryDto } from './dto';
+import { CreateUserDto, UpdateUserDto, UserResponseDto, UserStatsResponseDto, UserQueryDto } from './dto';
 import { 
   CollectionResponse, 
   ResponseHelpers,
   ActionResponseDto 
 } from '../../common/dto';
 import { plainToInstance } from 'class-transformer';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -16,6 +17,32 @@ export class UsersService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
   ) {}
+
+  /**
+   * Create a new user
+   */
+  async create(createUserDto: CreateUserDto): Promise<ActionResponseDto<UserResponseDto>> {
+    // Check if user already exists
+    const existingUser = await this.findByEmail(createUserDto.email);
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    // Create new user
+    const user = this.userRepository.create({
+      ...createUserDto,
+      password: hashedPassword,
+      role: createUserDto.role || UserRole.VIEWER,
+      status: UserStatus.ACTIVE,
+      isActive: createUserDto.isActive !== false,
+    });
+
+    const savedUser = await this.userRepository.save(user);
+    return ActionResponseDto.create(this.toResponseDto(savedUser));
+  }
 
   /**
    * Find all users with filtering and pagination
@@ -41,9 +68,10 @@ export class UsersService {
       queryBuilder.andWhere('user.status = :status', { status: query.status });
     }
 
-    // Apply sorting
-    const sortField = `user.${query.sortBy}`;
-    queryBuilder.orderBy(sortField, query.sortOrder);
+    // Apply sorting - use finalSortOrder to handle both 'order' and 'sortOrder'
+    const sortField = `user.${query.sortBy || 'createdAt'}`;
+    const sortOrder = query.order || query.sortOrder || 'DESC';
+    queryBuilder.orderBy(sortField, sortOrder);
 
     // Apply pagination
     const [items, total] = await queryBuilder
@@ -111,6 +139,24 @@ export class UsersService {
     user.status = status;
     const savedUser = await this.userRepository.save(user);
     return ActionResponseDto.update(this.toResponseDto(savedUser));
+  }
+
+  /**
+   * Reset user password (admin action)
+   */
+  async resetPassword(id: string, newPassword: string): Promise<ActionResponseDto<{ message: string }>> {
+    const user = await this.findEntityById(id);
+    
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    
+    await this.userRepository.save(user);
+    
+    return {
+      item: { message: 'Password reset successfully' },
+      message: 'Password has been reset successfully',
+    };
   }
 
   /**

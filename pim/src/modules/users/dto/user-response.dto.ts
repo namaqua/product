@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { IsOptional, IsEnum, IsString, IsNumber, Min, Max } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsNumber, Min, Max, IsIn } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { UserRole, UserStatus } from '../entities/user.entity';
@@ -22,6 +22,15 @@ export class UserResponseDto {
 
   @Expose()
   status: UserStatus;
+
+  @Expose()
+  phoneNumber?: string;
+
+  @Expose()
+  department?: string;
+
+  @Expose()
+  jobTitle?: string;
 
   @Expose()
   isActive: boolean;
@@ -64,10 +73,14 @@ export class UserQueryDto {
     minimum: 1,
     default: 1,
   })
-  @IsNumber()
   @IsOptional()
-  @Min(1)
   @Type(() => Number)
+  @Transform(({ value }) => {
+    const num = parseInt(value, 10);
+    return isNaN(num) ? 1 : num;
+  })
+  @IsNumber()
+  @Min(1)
   page?: number = 1;
 
   @ApiPropertyOptional({
@@ -76,35 +89,40 @@ export class UserQueryDto {
     maximum: 100,
     default: 20,
   })
-  @IsNumber()
   @IsOptional()
+  @Type(() => Number)
+  @Transform(({ value }) => {
+    const num = parseInt(value, 10);
+    return isNaN(num) ? 20 : num;
+  })
+  @IsNumber()
   @Min(1)
   @Max(100)
-  @Type(() => Number)
   limit?: number = 20;
 
   @ApiPropertyOptional({
     description: 'Search by name or email',
     example: 'john',
   })
-  @IsString()
   @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || '')
   search?: string;
 
   @ApiPropertyOptional({
     enum: UserRole,
     description: 'Filter by user role',
   })
-  @IsEnum(UserRole)
   @IsOptional()
+  @IsEnum(UserRole)
   role?: UserRole;
 
   @ApiPropertyOptional({
     enum: UserStatus,
     description: 'Filter by user status',
   })
-  @IsEnum(UserStatus)
   @IsOptional()
+  @IsEnum(UserStatus)
   status?: UserStatus;
 
   @ApiPropertyOptional({
@@ -112,8 +130,9 @@ export class UserQueryDto {
     enum: ['firstName', 'lastName', 'email', 'role', 'status', 'createdAt', 'updatedAt', 'lastLoginAt'],
     default: 'createdAt',
   })
-  @IsString()
   @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || 'createdAt')
   sortBy?: string = 'createdAt';
 
   @ApiPropertyOptional({
@@ -121,28 +140,48 @@ export class UserQueryDto {
     enum: ['ASC', 'DESC'],
     default: 'DESC',
   })
-  @IsString()
   @IsOptional()
-  @Transform(({ value }) => value?.toUpperCase())
+  @Transform(({ value }) => {
+    const upper = (value || 'DESC').toUpperCase();
+    return upper === 'ASC' || upper === 'DESC' ? upper : 'DESC';
+  })
+  @IsIn(['ASC', 'DESC'])
   sortOrder?: 'ASC' | 'DESC' = 'DESC';
+
+  @ApiPropertyOptional({
+    description: 'Sort order (alternative name)',
+    enum: ['ASC', 'DESC'],
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    const upper = (value || '').toUpperCase();
+    return upper === 'ASC' || upper === 'DESC' ? upper : undefined;
+  })
+  @IsIn(['ASC', 'DESC'])
+  order?: 'ASC' | 'DESC';
 
   // Computed properties for pagination
   get skip(): number {
-    const pageNum = typeof this.page === 'string' ? parseInt(this.page, 10) : this.page;
-    const limitNum = typeof this.limit === 'string' ? parseInt(this.limit, 10) : this.limit;
-    return (pageNum - 1) * limitNum;
+    const pageNum = typeof this.page === 'string' ? parseInt(this.page as any, 10) : this.page;
+    const limitNum = typeof this.limit === 'string' ? parseInt(this.limit as any, 10) : this.limit;
+    return ((pageNum || 1) - 1) * (limitNum || 20);
   }
 
   get take(): number {
-    return typeof this.limit === 'string' ? parseInt(this.limit, 10) : this.limit;
+    return typeof this.limit === 'string' ? parseInt(this.limit as any, 10) : this.limit || 20;
   }
 
   // Ensure page and limit are numbers for service consumption
   get pageNum(): number {
-    return typeof this.page === 'string' ? parseInt(this.page, 10) || 1 : this.page || 1;
+    return typeof this.page === 'string' ? parseInt(this.page as any, 10) || 1 : this.page || 1;
   }
 
   get limitNum(): number {
-    return typeof this.limit === 'string' ? parseInt(this.limit, 10) || 20 : this.limit || 20;
+    return typeof this.limit === 'string' ? parseInt(this.limit as any, 10) || 20 : this.limit || 20;
+  }
+
+  // Handle both sortOrder and order
+  get finalSortOrder(): 'ASC' | 'DESC' {
+    return this.order || this.sortOrder || 'DESC';
   }
 }

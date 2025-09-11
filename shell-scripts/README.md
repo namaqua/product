@@ -1,79 +1,149 @@
-# Shell Scripts for PIM Project
+# PIM Project Shell Scripts
 
-## 🚨 Database Fix Scripts
+This directory contains automation scripts for the PIM project.
 
-### Primary Solution: `fix-database-schema.sh`
-**Purpose:** Complete database reset and rebuild to fix schema issues
-- Drops and recreates the database
-- Lets TypeORM create correct table structure
-- Seeds with sample data
-- Verifies everything works
+## Git Management Scripts
 
-**Usage:**
+### 🚀 Main Push Script
 ```bash
-./fix-database-schema.sh
+./push-to-github.sh
+```
+The main script to push all changes to GitHub. This runs `update-all-repos.sh` internally.
+
+### 📊 Check Status
+```bash
+./pre-commit-check.sh
+```
+Shows what changes will be committed across all repositories.
+
+### 📤 Update All Repositories
+```bash
+./update-all-repos.sh
+```
+Updates backend, frontend, and root project repositories with detailed commit messages.
+
+### ⚡ Quick Push
+```bash
+./quick-push.sh
+```
+Fast commit and push with auto-generated timestamp message.
+
+### 📝 Detailed Update
+```bash
+./update-github.sh
+```
+Comprehensive update with detailed commit messages and full status reporting.
+
+### 🔍 Git Status Check
+```bash
+./check-git-status.sh
+```
+Shows detailed git status, recent commits, and repository information.
+
+## Project Management Scripts
+
+### 🏃 Start Everything
+```bash
+./start-all.sh
+```
+Starts PostgreSQL, backend, and frontend in the correct order.
+
+### 🛑 Stop Everything
+```bash
+./stop-all.sh
+```
+Stops all running services cleanly.
+
+### 🔄 Restart Backend
+```bash
+./restart-backend.sh
+```
+Quick backend restart for applying changes.
+
+### 🧪 Test System
+```bash
+./test-system.sh
+```
+Comprehensive system test - checks all services and endpoints.
+
+### 🔍 Quick Test
+```bash
+./test-now.sh
+```
+Quick validation that everything is working.
+
+## Fix Scripts
+
+### 🔧 Fix Validation
+```bash
+./fix-validation-complete.sh
+```
+Applies validation fixes to the backend.
+
+### 🌱 Seed Database
+```bash
+./seed-database.sh
+```
+Seeds the database with initial data including admin user.
+
+## Usage Examples
+
+### Daily Development Workflow
+```bash
+# Start your day
+./start-all.sh
+
+# Check system status
+./test-system.sh
+
+# Make changes, then push to GitHub
+./pre-commit-check.sh  # Review what will be committed
+./push-to-github.sh     # Push everything
+
+# End of day
+./stop-all.sh
 ```
 
-### Quick Fix: `quick-db-reset.sh`
-**Purpose:** Emergency database reset (faster, less checks)
-- Quick drop and recreate
-- Minimal verification
-- Use when the main script has issues
-
-**Usage:**
+### Quick Updates
 ```bash
-./quick-db-reset.sh
+# After making changes
+./quick-push.sh
 ```
 
-### Diagnostic: `check-db-schema.sh`
-**Purpose:** Check current database schema for problems
-- Shows all tables and columns
-- Identifies schema mismatches
-- Counts data in tables
-
-**Usage:**
+### Troubleshooting
 ```bash
-./check-db-schema.sh
+# If validation errors occur
+./fix-validation-complete.sh
+
+# If login fails
+./seed-database.sh
+
+# Check what's running
+./test-system.sh
 ```
 
-## 📝 Other Scripts
+## Important Notes
 
-- `test-lint.sh` - Run linting tests
-- `commit-lint-fixes.sh` - Commit linting fixes
-- `make-executable.sh` - Make all scripts executable
+1. **Make scripts executable**: First time setup:
+   ```bash
+   chmod +x *.sh
+   ```
 
-## ⚠️ Important Notes
+2. **GitHub Setup**: Ensure your repositories have remotes configured:
+   ```bash
+   git remote add origin YOUR_GITHUB_URL
+   ```
 
-1. **These scripts are LOCAL ONLY** - not tracked in Git
-2. **Database scripts will DELETE all data** - use carefully
-3. **Default credentials:**
-   - Database: `pim_dev`
-   - User: `pim_user`
-   - Password: `secure_password_change_me`
+3. **Credentials**: You may need to set up GitHub credentials or SSH keys for pushing.
 
-## Common Issues & Solutions
+## Color Codes in Scripts
+- 🟢 Green: Success
+- 🟡 Yellow: Warning or info
+- 🔵 Blue: Process or step indicator
+- 🔴 Red: Error or failure
 
-### Issue: "Database does not exist"
-```bash
-createdb -U pim_user pim_dev
-```
-
-### Issue: "Permission denied"
-```bash
-chmod +x *.sh
-# or
-./make-executable.sh
-```
-
-### Issue: "Port 3010 already in use"
-```bash
-lsof -ti:3010 | xargs kill -9
-```
-
-### Issue: Backend won't start
-```bash
-cd ../pim
-npm install
-npm run build
-npm run start:dev
-```
+## Recent Updates
+- Fixed validation errors in backend
+- Replaced all indigo colors with blue throughout UI
+- Added comprehensive automation scripts
+- Improved error handling and user experience

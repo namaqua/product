@@ -1,0 +1,9 @@
+Frontend Diagnostic Report
+==========================
+Date: Thu Sep 11 18:50:45 CEST 2025
+
+React Version: 19.1.1
+Vite Version: 7.1.4
+TypeScript Errors: 
+
+TypeScript Output:

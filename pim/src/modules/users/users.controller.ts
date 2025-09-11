@@ -8,7 +8,14 @@ import {
   ApiQuery 
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
-import { UpdateUserDto, UserResponseDto, UserStatsResponseDto, UserQueryDto } from './dto';
+import { 
+  CreateUserDto,
+  UpdateUserDto, 
+  UserResponseDto, 
+  UserStatsResponseDto, 
+  UserQueryDto,
+  ResetPasswordDto
+} from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -24,6 +31,19 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new user (admin only)' })
+  @ApiResponse({
+    status: 201,
+    description: 'User created successfully',
+    type: UserResponseDto,
+  })
+  async create(@Body() createUserDto: CreateUserDto): Promise<ActionResponseDto<UserResponseDto>> {
+    return this.usersService.create(createUserDto);
+  }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
@@ -152,6 +172,26 @@ export class UsersController {
     @Body('status') status: UserStatus,
   ): Promise<ActionResponseDto<UserResponseDto>> {
     return this.usersService.updateStatus(id, status);
+  }
+
+  @Post(':id/reset-password')
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reset user password (admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async resetPassword(
+    @Param('id') id: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<ActionResponseDto<{ message: string }>> {
+    return this.usersService.resetPassword(id, resetPasswordDto.newPassword);
   }
 
   @Delete(':id')

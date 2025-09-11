@@ -90,10 +90,10 @@ const CategoryNode: React.FC<CategoryNodeProps> = ({
         className={classNames(
           'flex items-center px-2 py-1.5 rounded-md cursor-pointer group transition-colors duration-150',
           isSelected
-            ? 'bg-indigo-50 text-indigo-700'
+            ? 'bg-blue-50 text-blue-700'
             : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900',
           isDragging && 'opacity-50',
-          isDragOver && 'bg-indigo-100 border-indigo-500'
+          isDragOver && 'bg-blue-100 border-blue-500'
         )}
         style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
         onClick={() => onSelectCategory(category.id)}
@@ -125,7 +125,7 @@ const CategoryNode: React.FC<CategoryNodeProps> = ({
         {/* Folder Icon */}
         <div className="ml-1 mr-2">
           {isExpanded ? (
-            <FolderOpenIcon className="h-5 w-5 text-indigo-600" />
+            <FolderOpenIcon className="h-5 w-5 text-blue-600" />
           ) : (
             <FolderIcon className="h-5 w-5 text-gray-400" />
           )}
@@ -291,7 +291,7 @@ const CategoryTree: React.FC<CategoryTreeProps> = ({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -321,7 +321,7 @@ const CategoryTree: React.FC<CategoryTreeProps> = ({
             <span className="text-gray-400">|</span>
             <button
               onClick={() => onCreateCategory()}
-              className="flex items-center space-x-1 px-3 py-1 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700"
+              className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700"
             >
               <PlusIcon className="h-4 w-4" />
               <span>Add Root</span>
@@ -347,7 +347,7 @@ const CategoryTree: React.FC<CategoryTreeProps> = ({
             <p>No categories yet</p>
             <button
               onClick={() => onCreateCategory()}
-              className="mt-3 text-indigo-600 hover:text-indigo-700 font-medium"
+              className="mt-3 text-blue-600 hover:text-blue-700 font-medium"
             >
               Create your first category
             </button>

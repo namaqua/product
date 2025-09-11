@@ -6,7 +6,9 @@ import { Exclude } from 'class-transformer';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
-  USER = 'user',
+  EDITOR = 'editor',
+  VIEWER = 'viewer',
+  USER = 'user', // Temporary - for backward compatibility, maps to viewer
 }
 
 export enum UserStatus {
@@ -57,7 +59,7 @@ export class User extends BaseEntity {
   @Column({ 
     type: 'enum',
     enum: UserRole,
-    default: UserRole.USER,
+    default: UserRole.VIEWER,
     comment: 'User role for authorization' 
   })
   role: UserRole;
@@ -65,10 +67,34 @@ export class User extends BaseEntity {
   @Column({ 
     type: 'enum',
     enum: UserStatus,
-    default: UserStatus.PENDING,
+    default: UserStatus.ACTIVE,
     comment: 'User account status' 
   })
   status: UserStatus;
+
+  @Column({ 
+    type: 'varchar', 
+    length: 20, 
+    nullable: true,
+    comment: 'User phone number' 
+  })
+  phoneNumber: string | null;
+
+  @Column({ 
+    type: 'varchar', 
+    length: 100, 
+    nullable: true,
+    comment: 'User department' 
+  })
+  department: string | null;
+
+  @Column({ 
+    type: 'varchar', 
+    length: 100, 
+    nullable: true,
+    comment: 'User job title' 
+  })
+  jobTitle: string | null;
 
   @Column({ 
     type: 'timestamp with time zone', 

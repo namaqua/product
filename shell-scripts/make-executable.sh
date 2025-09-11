@@ -4,13 +4,15 @@
 cd /Users/colinroets/dev/projects/product/shell-scripts
 
 echo "Making all shell scripts executable..."
+chmod +x *.sh
 
-chmod +x setup-media-backend.sh
-chmod +x test-media-upload.sh
-
-echo "✓ Scripts are now executable"
-
+echo "✅ All scripts are now executable"
 echo ""
-echo "You can now run:"
-echo "  ./setup-media-backend.sh    - Install dependencies and run migrations"
-echo "  ./test-media-upload.sh       - Test the media upload endpoints"
+echo "Available scripts:"
+ls -la *.sh | awk '{print "  " $9}'
+echo ""
+echo "To fix and start the frontend, run:"
+echo "  ./quick-start-frontend.sh"
+echo ""
+echo "To start everything, run:"
+echo "  ./start-all.sh"

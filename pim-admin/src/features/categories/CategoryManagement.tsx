@@ -323,7 +323,7 @@ const CategoryManagement: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={() => handleEditCategory(category.id)}
-                className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700"
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
               >
                 Edit
               </button>
