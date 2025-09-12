@@ -3,6 +3,8 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import productService from '../../services/product.service';
 import mediaService, { Media } from '../../services/media.service';
 import MediaUpload from '../../components/media/MediaUpload';
+import ProductVariants from './ProductVariants';
+import ConfigurableProduct from './ConfigurableProduct';
 
 export default function ProductEdit() {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ export default function ProductEdit() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [productMedia, setProductMedia] = useState<Media[]>([]);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -149,7 +152,7 @@ export default function ProductEdit() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, shouldClose = false) => {
     e.preventDefault();
     
     if (!id) return;
@@ -207,11 +210,19 @@ export default function ProductEdit() {
       await productService.updateProduct(id, updateData);
       
       setSuccessMessage('Product updated successfully!');
+      setLastSaved(new Date());
       
-      // Redirect after a short delay
-      setTimeout(() => {
-        navigate('/products');
-      }, 1500);
+      // Only redirect if explicitly requested (e.g., via a "Save and Close" button)
+      if (shouldClose) {
+        setTimeout(() => {
+          navigate('/products');
+        }, 1000);
+      } else {
+        // Clear success message after a delay when staying on the page
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 5000);
+      }
       
     } catch (err: any) {
       console.error('Failed to update product:', err);
@@ -254,8 +265,17 @@ export default function ProductEdit() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">Edit Product</h1>
-        <p className="text-sm text-gray-600">Update product information</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Edit Product</h1>
+            <p className="text-sm text-gray-600">Update product information</p>
+          </div>
+          {lastSaved && (
+            <div className="text-sm text-gray-500">
+              Last saved: {lastSaved.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -265,8 +285,15 @@ export default function ProductEdit() {
       )}
 
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-          {successMessage}
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center justify-between">
+          <span>{successMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSuccessMessage(null)}
+            className="text-green-600 hover:text-green-800"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -501,6 +528,29 @@ export default function ProductEdit() {
           </div>
         </div>
 
+        {/* Product Variants - For inventory management (sizes, colors, etc.) */}
+        {/* Show for all products except configurable */}
+        {id && formData.type !== 'configurable' && (
+          <ProductVariants 
+            productId={id} 
+            productType={formData.type}
+            productSku={formData.sku}
+            productName={formData.name}
+            onTypeChange={(newType) => {
+              setFormData(prev => ({ ...prev, type: newType }));
+            }}
+          />
+        )}
+        
+        {/* Configurable Product - For product builders/customizers */}
+        {/* Show only for configurable products */}
+        {id && (
+          <ConfigurableProduct
+            productId={id}
+            productType={formData.type}
+          />
+        )}
+
         {/* SEO */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-medium mb-4">SEO</h2>
@@ -535,21 +585,31 @@ export default function ProductEdit() {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-between">
           <button
             type="button"
             onClick={() => navigate('/products')}
             className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
           >
-            Cancel
+            ← Back to Products
           </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleSubmit(e as any, true)}
+              disabled={saving}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+            >
+              {saving ? 'Saving...' : 'Save & Close'}
+            </button>
+          </div>
         </div>
       </form>
     </div>

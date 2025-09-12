@@ -192,9 +192,9 @@ export default function UserList() {
       case UserRole.ADMIN:
         return 'bg-purple-100 text-purple-800';
       case UserRole.MANAGER:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary-100 text-primary-800';
       case UserRole.EDITOR:
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-100 text-success-800';
       case UserRole.VIEWER:
       case UserRole.USER: // USER is same as VIEWER
         return 'bg-gray-100 text-gray-800';
@@ -228,7 +228,7 @@ export default function UserList() {
             </button>
             <button
               onClick={() => navigate('/users/new')}
-              className="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
               Add User
@@ -248,7 +248,7 @@ export default function UserList() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name or email..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
           </form>
@@ -259,7 +259,7 @@ export default function UserList() {
               setRoleFilter(e.target.value as UserRole | '');
               setCurrentPage(1);
             }}
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
           >
             <option value="">All Roles</option>
             <option value={UserRole.ADMIN}>Admin</option>
@@ -291,19 +291,19 @@ export default function UserList() {
           </span>
           <button
             onClick={() => handleBulkStatusUpdate(true)}
-            className="text-sm text-green-600 hover:text-green-800"
+            className="text-sm text-success-600 hover:text-success-800"
           >
             Activate
           </button>
           <button
             onClick={() => handleBulkStatusUpdate(false)}
-            className="text-sm text-yellow-600 hover:text-yellow-800"
+            className="text-sm text-warning-600 hover:text-warning-800"
           >
             Deactivate
           </button>
           <button
             onClick={handleBulkDelete}
-            className="text-sm text-red-600 hover:text-red-800"
+            className="text-sm text-danger-600 hover:text-danger-800"
           >
             Delete
           </button>
@@ -320,7 +320,7 @@ export default function UserList() {
       <div className="bg-white shadow-sm rounded-lg overflow-hidden">
         {loading ? (
           <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading users...</p>
           </div>
         ) : error ? (
@@ -328,7 +328,7 @@ export default function UserList() {
             <p>{error}</p>
             <button
               onClick={fetchUsers}
-              className="mt-4 text-blue-600 hover:text-blue-800"
+              className="mt-4 text-primary-600 hover:text-primary-800"
             >
               Try Again
             </button>
@@ -346,7 +346,7 @@ export default function UserList() {
               <div className="mt-6">
                 <button
                   onClick={() => navigate('/users/new')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-700 hover:bg-primary-800"
                 >
                   <PlusIcon className="-ml-1 mr-2 h-5 w-5" />
                   Add User
@@ -364,7 +364,7 @@ export default function UserList() {
                       type="checkbox"
                       checked={selectedUsers.size === users.length && users.length > 0}
                       onChange={toggleAllSelection}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                     />
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -424,11 +424,11 @@ export default function UserList() {
                         className="inline-flex items-center"
                       >
                         {user.isActive ? (
-                          <CheckCircleSolid className="h-5 w-5 text-green-500" />
+                          <CheckCircleSolid className="h-5 w-5 text-success-500" />
                         ) : (
                           <XCircleIcon className="h-5 w-5 text-gray-400" />
                         )}
-                        <span className={`ml-2 text-sm ${user.isActive ? 'text-green-600' : 'text-gray-500'}`}>
+                        <span className={`ml-2 text-sm ${user.isActive ? 'text-success-600' : 'text-gray-500'}`}>
                           {user.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </button>
@@ -453,7 +453,7 @@ export default function UserList() {
                         </button>
                         <button
                           onClick={() => navigate(`/users/${user.id}/edit`)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-primary-600 hover:text-primary-800"
                           title="Edit"
                         >
                           <PencilIcon className="h-5 w-5" />
@@ -463,7 +463,7 @@ export default function UserList() {
                             setUserToDelete(user);
                             setShowDeleteModal(true);
                           }}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-danger-600 hover:text-danger-800"
                           title="Delete"
                         >
                           <TrashIcon className="h-5 w-5" />
@@ -528,7 +528,7 @@ export default function UserList() {
                             onClick={() => setCurrentPage(pageNum)}
                             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
                               currentPage === pageNum
-                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
                                 : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                             }`}
                           >
@@ -580,7 +580,7 @@ export default function UserList() {
           </button>
           <button
             onClick={handleDelete}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            className="px-4 py-2 text-sm font-medium text-white bg-danger-600 border border-transparent rounded-md hover:bg-danger-700"
           >
             Delete
           </button>

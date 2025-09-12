@@ -54,9 +54,9 @@ export default function UserProfile() {
       case UserRole.ADMIN:
         return 'bg-purple-100 text-purple-800';
       case UserRole.MANAGER:
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-primary-100 text-primary-800';
       case UserRole.EDITOR:
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-100 text-success-800';
       case UserRole.VIEWER:
       case UserRole.USER: // USER is same as VIEWER
         return 'bg-gray-100 text-gray-800';
@@ -85,7 +85,7 @@ export default function UserProfile() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       </div>
     );
@@ -95,10 +95,10 @@ export default function UserProfile() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-red-600">User not found</p>
+          <p className="text-danger-600">User not found</p>
           <button
             onClick={() => navigate('/users')}
-            className="mt-4 text-blue-600 hover:text-blue-800"
+            className="mt-4 text-primary-600 hover:text-primary-800"
           >
             Back to Users
           </button>
@@ -135,7 +135,7 @@ export default function UserProfile() {
           </div>
           <button
             onClick={() => navigate(`/users/${id}/edit`)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-700 hover:bg-primary-800"
           >
             <PencilIcon className="-ml-1 mr-2 h-5 w-5" />
             Edit User
@@ -145,7 +145,7 @@ export default function UserProfile() {
 
       {/* User Card */}
       <div className="bg-white shadow rounded-lg overflow-hidden mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-800 px-6 py-8">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-900 px-6 py-8">
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="h-20 w-20 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
@@ -156,7 +156,7 @@ export default function UserProfile() {
               <h2 className="text-2xl font-bold text-white">
                 {user.firstName} {user.lastName}
               </h2>
-              <p className="text-blue-100">{user.email}</p>
+              <p className="text-primary-100">{user.email}</p>
               <div className="mt-2 flex items-center space-x-4">
                 <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-white/90 ${getRoleBadgeColor(user.role).replace('bg-', '').replace('-100', '-600')}`}>
                   {user.role.toUpperCase()}
@@ -186,7 +186,7 @@ export default function UserProfile() {
               onClick={() => setActiveTab('overview')}
               className={`py-2 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'overview'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-primary-500 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -196,7 +196,7 @@ export default function UserProfile() {
               onClick={() => setActiveTab('permissions')}
               className={`py-2 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'permissions'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-primary-500 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -206,7 +206,7 @@ export default function UserProfile() {
               onClick={() => setActiveTab('activity')}
               className={`py-2 px-6 border-b-2 font-medium text-sm ${
                 activeTab === 'activity'
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-primary-500 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -330,16 +330,16 @@ export default function UserProfile() {
 
           {activeTab === 'permissions' && (
             <div className="space-y-6">
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <div className="bg-warning-50 border-l-4 border-warning-400 p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
-                    <ShieldCheckIcon className="h-5 w-5 text-yellow-400" />
+                    <ShieldCheckIcon className="h-5 w-5 text-warning-400" />
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-yellow-700">
+                    <p className="text-sm text-warning-700">
                       <strong className="font-medium">Role: {user.role}</strong>
                     </p>
-                    <p className="mt-1 text-sm text-yellow-700">
+                    <p className="mt-1 text-sm text-warning-700">
                       {getRoleDescription(user.role)}
                     </p>
                   </div>
@@ -375,30 +375,30 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.products.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.products.create ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.products.update ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.products.delete ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     </tr>
@@ -410,30 +410,30 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.categories.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.categories.create ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.categories.update ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.categories.delete ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     </tr>
@@ -445,30 +445,30 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.attributes.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.attributes.create ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.attributes.update ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.attributes.delete ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     </tr>
@@ -480,30 +480,30 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.media.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.media.upload ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.media.upload ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.media.delete ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     </tr>
@@ -515,30 +515,30 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.users.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.users.create ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.users.update ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.users.delete ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     </tr>
@@ -550,16 +550,16 @@ export default function UserProfile() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         {permissions.settings.view ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center" colSpan={2}>
                         {permissions.settings.update ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -574,10 +574,10 @@ export default function UserProfile() {
 
           {activeTab === 'activity' && (
             <div className="space-y-4">
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+              <div className="bg-primary-50 border-l-4 border-primary-400 p-4">
                 <div className="flex">
                   <div className="ml-3">
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-primary-700">
                       Activity tracking is not yet implemented. This will show user login history, 
                       recent actions, and audit logs.
                     </p>
@@ -615,7 +615,7 @@ export default function UserProfile() {
                       <div className="relative pb-8">
                         <div className="relative flex space-x-3">
                           <div>
-                            <span className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
+                            <span className="h-8 w-8 rounded-full bg-success-500 flex items-center justify-center ring-8 ring-white">
                               <CheckCircleIcon className="h-5 w-5 text-white" />
                             </span>
                           </div>

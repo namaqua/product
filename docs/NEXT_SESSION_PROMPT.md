@@ -6,114 +6,131 @@
 
 ## 🚀 Next Development Session Prompt
 
-I'm continuing work on my PIM system. Here's the current status:
+I'm continuing work on my PIM system. Here's the current status and next priority:
 
-### ✅ What's Complete:
-- **Backend:** 100% core functionality complete with 54 API endpoints
-- **Modules:** Auth, Users, Products, Categories, Attributes (all tested and working)
-- **Database:** PostgreSQL with 15+ tables, all schemas created
-- **Infrastructure:** Docker Compose running PostgreSQL (5433) and Redis (6380)
-- **Documentation:** Comprehensive docs for all modules
-- **GitHub:** Code pushed to git@github.com:namaqua/product.git
-
-### 📁 Project Structure:
+### Project Location
 ```
 /Users/colinroets/dev/projects/product/
-├── pim/           # NestJS backend (port 3010)
-├── pim-admin/     # React frontend (port 5173)
-├── pimdocs/       # Documentation
-├── shell-scripts/ # Test scripts
+├── engines/       # NestJS backend (port 3010)
+├── admin/        # React frontend (port 5173)
+├── docs/         # Documentation
 └── docker-compose.yml
 ```
 
-### 🎯 Today's Goal: Frontend Integration
+### ✅ What's Complete (98%):
+- **Backend:** 66+ endpoints across all core modules
+- **Frontend:** All core UIs built and functional
+- **Auth:** JWT with refresh tokens, role-based access
+- **Products:** Full CRUD, basic variants, duplicate, archive
+- **Categories:** Nested set with drag-drop tree UI
+- **Attributes:** 13 types, groups, options management
+- **Media:** Upload, gallery, lightbox, associations
+- **Users:** Full management with roles
+- **Dashboards:** Dual dashboard system with charts
 
-I need to connect the React frontend to the backend APIs. Specifically:
+### 🔧 Active Priority: Product Variants Implementation
 
-1. **Create API Service Layer**
-   - Setup Axios with interceptors
-   - Add authentication handling
-   - Create service modules for each backend module
+**Current State:**
+- Frontend has basic ProductVariants.tsx (40% complete)
+- Backend has NO variant-specific endpoints (0% complete)
+- Full plan in: `/docs/VARIANT_IMPLEMENTATION_CONTINUATION.md`
 
-2. **Build Product Listing Page**
-   - Use existing DataTable component
-   - Connect to GET /api/v1/products endpoint
-   - Add filtering and pagination
-   - Include attribute values display
+### 🎯 Today's Tasks - Backend Variant Implementation:
 
-3. **Implement Authentication Flow**
-   - Login page using Tailwind Pro components
-   - JWT token storage
-   - Protected routes
-   - Logout functionality
+1. **Create Database Migration**
+```sql
+-- Add to products table:
+variantAxes: JSONB
+variantAttributes: JSONB  
+variantGroupId: string
+inheritedAttributes: boolean
+```
 
-4. **Create Product Form**
-   - Dynamic form based on attributes
-   - Connect to POST/PATCH endpoints
-   - Validation handling
-   - Support for all 13 attribute types
+2. **Create Variant DTOs** in `engines/src/modules/products/dto/variants/`:
+- create-variant-group.dto.ts
+- update-variant.dto.ts
+- bulk-variant-update.dto.ts
+- variant-group-response.dto.ts
+- variant-query.dto.ts
+- generate-variants.dto.ts
 
-### 🔧 Technical Details:
+3. **Add Service Methods** to ProductsService:
+- createVariantGroup()
+- getVariantGroup()
+- generateVariants()
+- bulkUpdateVariants()
+- validateVariantAxes()
 
-**Backend is running at:** http://localhost:3010
-**API Base URL:** http://localhost:3010/api/v1
-**Frontend at:** http://localhost:5173
+4. **Add Controller Endpoints**:
+- POST /products/:id/variants/group
+- GET /products/:id/variants
+- POST /products/:id/variants/generate
+- PUT /products/:id/variants/bulk
 
-**Available Components:**
-- ApplicationShell (layout with sidebar)
-- DataTable (with sorting/pagination)
-- Button, Modal, Notification
-- Dashboard (already built)
+### 🔧 Quick Start:
+```bash
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d
+cd engines && npm run start:dev
+cd ../admin && npm run dev
 
-**Auth Endpoints:**
-- POST /api/v1/auth/login
-- POST /api/v1/auth/register
-- POST /api/v1/auth/refresh
-- GET /api/v1/auth/profile
+# Login: admin@test.com / Admin123!
+```
 
-**Product Endpoints:**
-- GET /api/v1/products (paginated)
-- GET /api/v1/products/:id
-- POST /api/v1/products
-- PATCH /api/v1/products/:id
-- DELETE /api/v1/products/:id
+### 📝 Testing the Implementation:
 
-**Test Admin User:**
-- Email: admin@test.com
-- Password: Admin123!
-- Role: ADMIN (has all permissions)
+Test variant group creation:
+```json
+POST http://localhost:3010/api/v1/products/[product-id]/variants/group
+{
+  "variantAxes": ["color", "size"],
+  "generateSku": true,
+  "skuPattern": "{parent}-{color}-{size}"
+}
+```
 
-### 📝 Specific Tasks:
+Test variant generation:
+```json
+POST http://localhost:3010/api/v1/products/[product-id]/variants/generate
+{
+  "combinations": {
+    "color": ["Red", "Blue"],
+    "size": ["S", "M", "L"]
+  },
+  "basePrice": 29.99,
+  "defaultQuantity": 100
+}
+```
 
-1. Create `/src/services/api.ts` with Axios configuration
-2. Create `/src/services/auth.service.ts` for authentication
-3. Create `/src/services/product.service.ts` for products
-4. Update `/src/App.tsx` with routing
-5. Create `/src/pages/products/ProductList.tsx`
-6. Create `/src/pages/auth/Login.tsx`
-7. Setup Zustand store for auth state
-8. Add React Query for data fetching
+### 🚧 Known Issues to Keep in Mind:
+- Refresh token returns 401 (auth guard conflict)
+- Categories/attributes sometimes null in product responses
 
-Please help me start with the API service layer and authentication flow.
+### 📚 Key References:
+- **Variant Implementation Plan:** `/docs/VARIANT_IMPLEMENTATION_CONTINUATION.md`
+- **API Standards:** `/docs/API_STANDARDS.md`
+- **Current Tasks:** `/docs/TASKS.md`
 
 ---
 
-## Alternative Focus Options:
+## Alternative Session Options:
 
-If you prefer to continue with backend development instead:
-
-### Option A: Media Module
-"I want to add media handling to my PIM backend. Create a Media module with file upload, image processing, and gallery management."
+### Option A: Frontend Variant Wizard
+"I've completed the backend variant endpoints. Now I need to build the VariantWizard component - a multi-step wizard for creating product variants with axis selection and value definition."
 
 ### Option B: Import/Export Module
-"I want to add CSV import/export functionality. Create an Import/Export module with mapping, validation, and progress tracking."
+"Product variants are working. Now I need to add CSV/Excel import/export functionality for bulk product and variant management."
 
-### Option C: Search Enhancement
-"I want to add advanced search with Elasticsearch integration for products with faceted filtering."
+### Option C: Advanced Search
+"I want to implement advanced search with filters for products including variant-specific filtering."
 
-### Option D: Deployment Preparation
-"I want to prepare for deployment to DigitalOcean. Help me dockerize the application and create deployment scripts."
+### Option D: Performance Optimization
+"The system is feature-complete. Help me optimize database queries, add caching, and improve frontend performance."
 
 ---
 
-**Note:** The backend is feature-complete for MVP. Frontend integration is the recommended next step to create a working application.
+**Priority:** Complete variant backend implementation first (Week 1), then move to frontend wizard (Week 2). This will bring the project to 100% MVP completion.
+
+**Timeline:** 2 weeks to full variant implementation and MVP completion.
+
+*Last Updated: September 12, 2025*

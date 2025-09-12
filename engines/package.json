@@ -25,6 +25,8 @@
     "migration:revert": "npm run typeorm -- migration:revert -d typeorm.config.ts",
     "migration:show": "npm run typeorm -- migration:show -d typeorm.config.ts",
     "seed": "ts-node src/seed.ts",
+    "seed:attributes": "ts-node src/seeds/run-attributes-seed.ts",
+    "seed:all": "npm run seed",
     "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "dependencies": {

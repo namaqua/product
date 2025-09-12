@@ -23,6 +23,7 @@ import {
   CreditCardIcon,
   ShoppingCartIcon,
   RocketLaunchIcon,
+  ChartPieIcon,
 } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid';
 import { useAuthStore } from '../../stores/auth.store';
@@ -31,7 +32,7 @@ import { useAuthStore } from '../../stores/auth.store';
 const navigationSections = [
   {
     id: 'dashboard',
-    name: 'Dashboard',
+    name: 'Home',
     icon: HomeIcon,
     href: '/',
     isSection: false,
@@ -42,6 +43,7 @@ const navigationSections = [
     icon: CubeIcon,  // Same as Products
     isSection: true,
     items: [
+      { name: 'Dashboard', href: '/product-dashboard', icon: ChartPieIcon },
       { name: 'Products', href: '/products', icon: CubeIcon },
       { name: 'Categories', href: '/categories', icon: FolderIcon },
       { name: 'Attributes', href: '/attributes', icon: TagIcon },

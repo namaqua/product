@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -22,12 +23,31 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
+import { ProductAttributesService } from './services/product-attributes.service';
 import {
   CreateProductDto,
   UpdateProductDto,
   ProductQueryDto,
   ProductResponseDto,
 } from './dto';
+import {
+  AssignProductAttributesDto,
+  BulkAssignProductAttributesDto,
+  RemoveProductAttributeDto,
+  AssignProductAttributeGroupDto,
+  ProductAttributesResponseDto,
+  ValidateProductAttributesDto,
+  ProductAttributeValidationResultDto,
+} from './dto/attributes';
+import {
+  CreateVariantGroupDto,
+  UpdateVariantDto,
+  BulkVariantUpdateDto,
+  VariantGroupResponseDto,
+  VariantQueryDto,
+  GenerateVariantsDto,
+  VariantMatrixDto,
+} from './dto/variants';
 import { ProductStatus } from './entities/product.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -44,7 +64,10 @@ import {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly productAttributesService: ProductAttributesService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
@@ -196,5 +219,233 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.restore(id);
+  }
+
+  // ============ VARIANT MANAGEMENT ENDPOINTS ============
+
+  @Post(':id/variants/group')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Create a variant group for a product' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Variant group created successfully', type: VariantGroupResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  async createVariantGroup(
+    @Param('id', ParseUUIDPipe) parentId: string,
+    @Body() dto: Omit<CreateVariantGroupDto, 'parentId'>,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<VariantGroupResponseDto>> {
+    return this.productsService.createVariantGroup(
+      { ...dto, parentId },
+      userId,
+    );
+  }
+
+  @Get(':id/variants')
+  @ApiOperation({ summary: 'Get all variants for a product' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variants retrieved successfully', type: VariantGroupResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Product is not configurable' })
+  async getVariantGroup(
+    @Param('id', ParseUUIDPipe) parentId: string,
+  ): Promise<ActionResponseDto<VariantGroupResponseDto>> {
+    return this.productsService.getVariantGroup(parentId);
+  }
+
+  @Post(':id/variants/generate')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Generate variants from combinations' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Variants generated successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  async generateVariants(
+    @Param('id', ParseUUIDPipe) parentId: string,
+    @Body() dto: GenerateVariantsDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ created: number; skipped: number; variants: any[] }>> {
+    return this.productsService.generateVariants(parentId, dto, userId);
+  }
+
+  @Put('variants/:id')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Update a single variant' })
+  @ApiParam({ name: 'id', description: 'Variant ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variant updated successfully', type: ProductResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Variant not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Product is not a variant' })
+  async updateVariant(
+    @Param('id', ParseUUIDPipe) variantId: string,
+    @Body() dto: UpdateVariantDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    return this.productsService.updateVariant(variantId, dto, userId);
+  }
+
+  @Put(':id/variants/bulk')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Bulk update variants' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variants updated successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'No variants found' })
+  async bulkUpdateVariants(
+    @Body() dto: BulkVariantUpdateDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ updated: number; results: ProductResponseDto[] }>> {
+    return this.productsService.bulkUpdateVariants(dto, userId);
+  }
+
+  @Post(':id/variants/sync')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Sync variant inventory with parent' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Inventory synced successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  async syncVariantInventory(
+    @Param('id', ParseUUIDPipe) parentId: string,
+  ): Promise<ActionResponseDto<{ synced: number }>> {
+    return this.productsService.syncVariantInventory(parentId);
+  }
+
+  @Delete(':id/variants/group')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Dissolve a variant group' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variant group dissolved successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  async dissolveVariantGroup(
+    @Param('id', ParseUUIDPipe) parentId: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ affected: number }>> {
+    return this.productsService.dissolveVariantGroup(parentId, userId);
+  }
+
+  @Get(':id/variants/matrix')
+  @ApiOperation({ summary: 'Get variant matrix view' })
+  @ApiParam({ name: 'id', description: 'Parent product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variant matrix retrieved successfully', type: VariantMatrixDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Parent product not found' })
+  async getVariantMatrix(
+    @Param('id', ParseUUIDPipe) parentId: string,
+  ): Promise<ActionResponseDto<VariantMatrixDto>> {
+    return this.productsService.getVariantMatrix(parentId);
+  }
+
+  @Get('variants/search')
+  @ApiOperation({ summary: 'Search variants across all products' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Variants retrieved successfully' })
+  async searchVariants(
+    @Query() query: VariantQueryDto,
+  ): Promise<CollectionResponseDto<ProductResponseDto>> {
+    return this.productsService.searchVariants(query);
+  }
+
+  // ============ ATTRIBUTE MANAGEMENT ENDPOINTS ============
+
+  @Post(':id/attributes')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Assign attributes to a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Attributes assigned successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async assignAttributes(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Body() dto: AssignProductAttributesDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ assigned: number; failed: number }>> {
+    return this.productAttributesService.assignAttributes(productId, dto, userId);
+  }
+
+  @Post('attributes/bulk')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Bulk assign attributes to multiple products' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Attributes assigned successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'One or more products not found' })
+  async bulkAssignAttributes(
+    @Body() dto: BulkAssignProductAttributesDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<any>> {
+    return this.productAttributesService.bulkAssignAttributes(dto, userId);
+  }
+
+  @Post(':id/attributes/group')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Assign all attributes from a group to a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Attribute group assigned successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product or group not found' })
+  async assignAttributeGroup(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Body() dto: AssignProductAttributeGroupDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ assigned: number; failed: number }>> {
+    return this.productAttributesService.assignAttributeGroup(productId, dto, userId);
+  }
+
+  @Get(':id/attributes')
+  @ApiOperation({ summary: 'Get all attributes for a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiQuery({ name: 'locale', required: false, description: 'Locale code' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Product attributes retrieved successfully', type: ProductAttributesResponseDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async getProductAttributes(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Query('locale') locale?: string,
+  ): Promise<ProductAttributesResponseDto> {
+    return this.productAttributesService.getProductAttributes(productId, locale);
+  }
+
+  @Delete(':id/attributes')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove an attribute from a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Attribute removed successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product or attribute not found' })
+  async removeAttribute(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Body() dto: RemoveProductAttributeDto,
+  ): Promise<ActionResponseDto<any>> {
+    return this.productAttributesService.removeAttribute(productId, dto);
+  }
+
+  @Delete(':id/attributes/all')
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clear all attributes from a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'All attributes cleared successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async clearAttributes(
+    @Param('id', ParseUUIDPipe) productId: string,
+  ): Promise<ActionResponseDto<{ removed: number }>> {
+    return this.productAttributesService.clearAttributes(productId);
+  }
+
+  @Post(':id/attributes/validate')
+  @ApiOperation({ summary: 'Validate attributes before assignment' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Validation completed', type: ProductAttributeValidationResultDto })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async validateAttributes(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Body() dto: ValidateProductAttributesDto,
+  ): Promise<ProductAttributeValidationResultDto> {
+    return this.productAttributesService.validateAttributes(productId, dto);
+  }
+
+  @Post(':id/attributes/copy/:targetId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Copy attributes from one product to another' })
+  @ApiParam({ name: 'id', description: 'Source product ID' })
+  @ApiParam({ name: 'targetId', description: 'Target product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Attributes copied successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Source or target product not found' })
+  async copyAttributes(
+    @Param('id', ParseUUIDPipe) sourceProductId: string,
+    @Param('targetId', ParseUUIDPipe) targetProductId: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ copied: number }>> {
+    return this.productAttributesService.copyAttributes(sourceProductId, targetProductId, userId);
   }
 }

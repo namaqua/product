@@ -67,14 +67,14 @@ export default function RoleManager() {
         border: 'border-purple-200',
       },
       blue: {
-        bg: 'bg-blue-50 hover:bg-blue-100',
-        text: 'text-blue-700',
-        border: 'border-blue-200',
+        bg: 'bg-primary-50 hover:bg-primary-100',
+        text: 'text-primary-700',
+        border: 'border-primary-200',
       },
       green: {
-        bg: 'bg-green-50 hover:bg-green-100',
-        text: 'text-green-700',
-        border: 'border-green-200',
+        bg: 'bg-success-50 hover:bg-success-100',
+        text: 'text-success-700',
+        border: 'border-success-200',
       },
       gray: {
         bg: 'bg-gray-50 hover:bg-gray-100',
@@ -87,9 +87,9 @@ export default function RoleManager() {
 
   const renderPermissionIcon = (hasPermission: boolean) => {
     return hasPermission ? (
-      <CheckCircleIcon className="h-5 w-5 text-green-500" />
+      <CheckCircleIcon className="h-5 w-5 text-success-500" />
     ) : (
-      <XCircleIcon className="h-5 w-5 text-red-500" />
+      <XCircleIcon className="h-5 w-5 text-danger-500" />
     );
   };
 
@@ -118,7 +118,7 @@ export default function RoleManager() {
             </button>
             <button
               onClick={() => navigate('/users')}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 hover:bg-primary-800"
             >
               Manage Users
             </button>
@@ -169,7 +169,7 @@ export default function RoleManager() {
               {/* Products */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full mr-2"></span>
+                  <span className="w-2 h-2 bg-primary-500 rounded-full mr-2"></span>
                   Products
                 </h3>
                 <ul className="space-y-2">
@@ -199,7 +199,7 @@ export default function RoleManager() {
               {/* Categories */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  <span className="w-2 h-2 bg-success-500 rounded-full mr-2"></span>
                   Categories
                 </h3>
                 <ul className="space-y-2">
@@ -225,7 +225,7 @@ export default function RoleManager() {
               {/* Attributes */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <span className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></span>
+                  <span className="w-2 h-2 bg-warning-500 rounded-full mr-2"></span>
                   Attributes
                 </h3>
                 <ul className="space-y-2">
@@ -273,7 +273,7 @@ export default function RoleManager() {
               {/* Users */}
               <div className="border rounded-lg p-4">
                 <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                  <span className="w-2 h-2 bg-danger-500 rounded-full mr-2"></span>
                   Users
                 </h3>
                 <ul className="space-y-2">
@@ -336,10 +336,10 @@ export default function RoleManager() {
                   <th className="px-6 py-3 text-center text-xs font-medium text-purple-600 uppercase tracking-wider">
                     Admin
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-blue-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-primary-600 uppercase tracking-wider">
                     Manager
                   </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-green-600 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-success-600 uppercase tracking-wider">
                     Editor
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
@@ -362,9 +362,9 @@ export default function RoleManager() {
                     {[UserRole.ADMIN, UserRole.MANAGER, UserRole.EDITOR, UserRole.VIEWER].map(role => (
                       <td key={role} className="px-6 py-3 text-center">
                         {defaultRolePermissions[role].products[action as keyof typeof defaultRolePermissions[UserRole.ADMIN]['products']] ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     ))}
@@ -385,9 +385,9 @@ export default function RoleManager() {
                     {[UserRole.ADMIN, UserRole.MANAGER, UserRole.EDITOR, UserRole.VIEWER].map(role => (
                       <td key={role} className="px-6 py-3 text-center">
                         {defaultRolePermissions[role].categories[action as keyof typeof defaultRolePermissions[UserRole.ADMIN]['categories']] ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     ))}
@@ -408,9 +408,9 @@ export default function RoleManager() {
                     {[UserRole.ADMIN, UserRole.MANAGER, UserRole.EDITOR, UserRole.VIEWER].map(role => (
                       <td key={role} className="px-6 py-3 text-center">
                         {defaultRolePermissions[role].users[action as keyof typeof defaultRolePermissions[UserRole.ADMIN]['users']] ? (
-                          <CheckCircleIcon className="h-5 w-5 text-green-500 mx-auto" />
+                          <CheckCircleIcon className="h-5 w-5 text-success-500 mx-auto" />
                         ) : (
-                          <XCircleIcon className="h-5 w-5 text-red-500 mx-auto" />
+                          <XCircleIcon className="h-5 w-5 text-danger-500 mx-auto" />
                         )}
                       </td>
                     ))}
@@ -423,14 +423,14 @@ export default function RoleManager() {
       )}
 
       {/* Info Box */}
-      <div className="mt-8 bg-blue-50 border-l-4 border-blue-400 p-4">
+      <div className="mt-8 bg-primary-50 border-l-4 border-primary-400 p-4">
         <div className="flex">
           <div className="flex-shrink-0">
-            <InformationCircleIcon className="h-5 w-5 text-blue-400" />
+            <InformationCircleIcon className="h-5 w-5 text-primary-400" />
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">Role Management Information</h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <h3 className="text-sm font-medium text-primary-800">Role Management Information</h3>
+            <div className="mt-2 text-sm text-primary-700">
               <p>
                 Roles define what users can do in the system. Each role has a specific set of permissions
                 that control access to different modules and actions. Users can only have one role at a time.

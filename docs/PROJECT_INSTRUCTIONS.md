@@ -33,7 +33,7 @@ This document serves as the primary reference for maintaining continuity across 
 ## Directory Structure
 ```
 /Users/colinroets/dev/projects/product/
-├── pim/                    # Main backend application directory
+├── engines/               # Main backend application directory (NestJS)
 │   ├── src/               # Source code
 │   ├── dist/              # Compiled code
 │   ├── node_modules/      # Dependencies
@@ -42,12 +42,12 @@ This document serves as the primary reference for maintaining continuity across 
 │   ├── package.json       # Project dependencies
 │   ├── nest-cli.json      # NestJS configuration
 │   └── tsconfig.json      # TypeScript configuration
-├── pim-admin/             # Admin portal (Tailwind Pro based)
+├── admin/                 # Admin portal (React + Tailwind)
 │   ├── src/               # React/TypeScript source
 │   ├── public/            # Static assets
-│   ├── components/        # Tailwind Pro components
+│   ├── components/        # React components
 │   └── package.json       # Frontend dependencies
-├── pimdocs/               # Project documentation
+├── docs/                  # Project documentation
 │   └── PROJECT_INSTRUCTIONS.md  # This file
 ├── docker-compose.yml     # Docker services configuration
 ├── scripts/               # Database init scripts
@@ -59,7 +59,8 @@ This document serves as the primary reference for maintaining continuity across 
 ## Development Environment Setup
 
 ### Local Development
-- **Path**: `/Users/colinroets/dev/projects/product/pim`
+- **Backend Path**: `/Users/colinroets/dev/projects/product/engines`
+- **Frontend Path**: `/Users/colinroets/dev/projects/product/admin`
 - **Database**: PostgreSQL in Docker container on port 5433
 - **Redis**: Optional Redis in Docker on port 6380
 - **Application**: NestJS running on port 3010
@@ -198,7 +199,7 @@ DATABASE_PASSWORD=[strong_production_password]
 ### Backend Development
 ```bash
 # Install dependencies
-cd /Users/colinroets/dev/projects/product/pim
+cd /Users/colinroets/dev/projects/product/engines
 npm install
 
 # Run development server
@@ -214,7 +215,7 @@ npm run build
 ### Admin Portal Development
 ```bash
 # Install dependencies
-cd /Users/colinroets/dev/projects/product/pim-admin
+cd /Users/colinroets/dev/projects/product/admin
 npm install
 
 # Run development server
@@ -292,6 +293,7 @@ Then paste into new chat session.
 - Reference Tailwind Pro templates in `/Users/colinroets/dev/tailwind-admin Pro` (if available) for UI implementation
 - **CRITICAL**: Save ALL shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/` (NEVER in project root)
 - Shell scripts are LOCAL ONLY and not tracked in Git
+- **UI COLORS**: Use `blue` for primary actions, NEVER use `indigo` - see `/docs/UI_DESIGN_GUIDELINES.md`
 - Avoid suggesting features not explicitly requested
 - Keep solutions simple and deployable
 - Focus on working code over theoretical optimizations
@@ -299,6 +301,6 @@ Then paste into new chat session.
 - When implementing admin UI, always check if a suitable component exists in Tailwind Pro first
 
 ---
-*Last Updated: [Current Date]*
-*Version: 1.1*
-*Changes: Added Tailwind Pro admin portal specifications*
+*Last Updated: September 12, 2025*
+*Version: 1.2*
+*Changes: Updated directory structure (engines, admin, docs) from old structure (pim, pim-admin, pimdocs)*

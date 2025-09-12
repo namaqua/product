@@ -213,6 +213,43 @@ export class Product extends SoftDeleteEntity {
   })
   urlKey: string | null;
 
+  // Variant-specific fields
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: 'Attributes that define this variant (e.g., {"color": "blue", "size": "L"})',
+  })
+  variantAxes: Record<string, any> | null;
+
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    comment: 'List of attributes that can vary (e.g., ["sku", "price", "quantity"])',
+  })
+  variantAttributes: string[] | null;
+
+  @Column({
+    type: 'boolean',
+    default: true,
+    comment: 'Whether variant inherits attributes from parent',
+  })
+  inheritedAttributes: boolean;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+    comment: 'Unique identifier for grouping variants together',
+  })
+  variantGroupId: string | null;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+    comment: 'Marks product as a variant parent',
+  })
+  isConfigurable: boolean;
+
   // Hierarchical relationship for variants
   @Column({
     type: 'uuid',
@@ -344,17 +381,40 @@ export class Product extends SoftDeleteEntity {
   }
 
   /**
-   * Check if product has variants
+   * Check if product has variants (simple parent-child variants)
    */
   hasVariants(): boolean {
-    return this.type === ProductType.CONFIGURABLE && this.variants?.length > 0;
+    // A product has variants if it has child products
+    // This is independent of product type
+    return this.variants?.length > 0;
   }
 
   /**
-   * Check if product is a variant
+   * Check if product is a configurable product (product builder)
+   */
+  isConfigurableProduct(): boolean {
+    // Configurable products are for complex product builders
+    // where customers select components (PC with processor/RAM)
+    return this.type === ProductType.CONFIGURABLE && this.isConfigurable;
+  }
+
+  /**
+   * Check if product is a variant (child of another product)
    */
   isVariant(): boolean {
+    // A product is a variant if it has a parent
+    // This applies to both simple variants (T-shirt sizes)
+    // and configurable product components
     return this.parentId !== null;
+  }
+
+  /**
+   * Check if product is a simple variant parent
+   */
+  isSimpleVariantParent(): boolean {
+    // Simple variant parents have child products but are not configurable
+    // Examples: T-shirt with sizes, Phone with colors
+    return this.hasVariants() && this.type !== ProductType.CONFIGURABLE;
   }
 
   /**

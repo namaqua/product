@@ -78,15 +78,15 @@ export default function AttributeList() {
 
   const getTypeBadge = (type: AttributeType) => {
     const colors: Record<AttributeType, string> = {
-      [AttributeType.TEXT]: 'bg-blue-100 text-blue-800',
-      [AttributeType.NUMBER]: 'bg-green-100 text-green-800',
-      [AttributeType.DECIMAL]: 'bg-green-100 text-green-800',
-      [AttributeType.INTEGER]: 'bg-green-100 text-green-800',
+      [AttributeType.TEXT]: 'bg-primary-100 text-primary-800',
+      [AttributeType.NUMBER]: 'bg-success-100 text-success-800',
+      [AttributeType.DECIMAL]: 'bg-success-100 text-success-800',
+      [AttributeType.INTEGER]: 'bg-success-100 text-success-800',
       [AttributeType.BOOLEAN]: 'bg-purple-100 text-purple-800',
       [AttributeType.SELECT]: 'bg-indigo-100 text-indigo-800',
       [AttributeType.MULTISELECT]: 'bg-indigo-100 text-indigo-800',
-      [AttributeType.DATE]: 'bg-yellow-100 text-yellow-800',
-      [AttributeType.DATETIME]: 'bg-yellow-100 text-yellow-800',
+      [AttributeType.DATE]: 'bg-warning-100 text-warning-800',
+      [AttributeType.DATETIME]: 'bg-warning-100 text-warning-800',
       [AttributeType.PRICE]: 'bg-emerald-100 text-emerald-800',
       [AttributeType.URL]: 'bg-cyan-100 text-cyan-800',
       [AttributeType.EMAIL]: 'bg-pink-100 text-pink-800',
@@ -105,7 +105,7 @@ export default function AttributeList() {
     
     if (attr.isRequired) {
       badges.push(
-        <span key="required" className="px-2 py-0.5 text-xs bg-red-100 text-red-700 rounded" title="Required">
+        <span key="required" className="px-2 py-0.5 text-xs bg-danger-100 text-danger-700 rounded" title="Required">
           Required
         </span>
       );
@@ -113,7 +113,7 @@ export default function AttributeList() {
     
     if (attr.isFilterable) {
       badges.push(
-        <span key="filterable" className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded" title="Filterable">
+        <span key="filterable" className="px-2 py-0.5 text-xs bg-primary-100 text-primary-700 rounded" title="Filterable">
           <FunnelIcon className="w-3 h-3 inline" /> Filter
         </span>
       );
@@ -121,7 +121,7 @@ export default function AttributeList() {
     
     if (attr.isSearchable) {
       badges.push(
-        <span key="searchable" className="px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded" title="Searchable">
+        <span key="searchable" className="px-2 py-0.5 text-xs bg-success-100 text-success-700 rounded" title="Searchable">
           <MagnifyingGlassIcon className="w-3 h-3 inline" /> Search
         </span>
       );
@@ -160,7 +160,7 @@ export default function AttributeList() {
           </button>
           <button
             onClick={() => navigate('/attributes/new')}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 inline-flex items-center gap-2"
+            className="px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 inline-flex items-center gap-2"
           >
             <PlusIcon className="w-4 h-4" />
             Add Attribute
@@ -170,14 +170,14 @@ export default function AttributeList() {
 
       {/* Success/Error Messages */}
       {successMessage && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2">
+        <div className="mb-4 p-4 bg-success-50 border border-success-200 text-success-800 rounded-lg flex items-center gap-2">
           <CheckCircleIcon className="w-5 h-5" />
           {successMessage}
         </div>
       )}
       
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2">
+        <div className="mb-4 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg flex items-center gap-2">
           <XCircleIcon className="w-5 h-5" />
           {error}
         </div>
@@ -193,7 +193,7 @@ export default function AttributeList() {
               placeholder="Search attributes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function AttributeList() {
         <select
           value={selectedType}
           onChange={(e) => setSelectedType(e.target.value as AttributeType | '')}
-          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         >
           <option value="">All Types</option>
           {Object.values(AttributeType).map(type => (
@@ -219,7 +219,7 @@ export default function AttributeList() {
           <p className="text-gray-500">No attributes found</p>
           <button
             onClick={() => navigate('/attributes/new')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-primary-700 text-white rounded hover:bg-primary-800"
           >
             Create Your First Attribute
           </button>
@@ -282,7 +282,7 @@ export default function AttributeList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {attribute.isActive ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-100 text-success-800">
                         Active
                       </span>
                     ) : (
@@ -294,7 +294,7 @@ export default function AttributeList() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button
                       onClick={() => navigate(`/attributes/${attribute.id}/edit`)}
-                      className="text-blue-600 hover:text-blue-900 mr-3"
+                      className="text-primary-600 hover:text-primary-800 mr-3"
                       title="Edit"
                     >
                       <PencilIcon className="w-4 h-4 inline" />
@@ -310,7 +310,7 @@ export default function AttributeList() {
                     )}
                     <button
                       onClick={() => handleDelete(attribute.id, attribute.name)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-danger-600 hover:text-danger-800"
                       title="Delete"
                     >
                       <TrashIcon className="w-4 h-4 inline" />

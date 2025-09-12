@@ -1,3 +1,27 @@
+// Attribute Value structure from backend
+export interface AttributeValue {
+  id: string;
+  attributeId: string;
+  productId: string;
+  attribute: {
+    id: string;
+    code: string;
+    name: string;
+    type: string;
+    options?: Array<{
+      value: string;
+      label: string;
+      sortOrder: number;
+    }>;
+  };
+  textValue?: string | null;
+  numberValue?: number | null;
+  dateValue?: string | null;
+  booleanValue?: boolean | null;
+  jsonValue?: any | null;
+  locale?: string;
+}
+
 // Product Response DTO - matches backend exactly
 export interface ProductResponseDto {
   id: string;
@@ -22,15 +46,23 @@ export interface ProductResponseDto {
   metaDescription?: string;
   metaKeywords?: string;
   categories?: any[]; // Will be CategoryResponseDto[]
-  attributes?: any[]; // Will be AttributeValueDto[]
+  attributes?: Record<string, any>; // Simple key-value for product custom attributes
+  attributeValues?: AttributeValue[]; // EAV pattern attribute values
   images?: any[]; // Will be ImageDto[]
-  variants?: any[]; // Will be VariantDto[]
+  variants?: ProductResponseDto[]; // Variants are also products
+  parentId?: string | null; // For variant products
+  parent?: ProductResponseDto | null; // Parent product for variants
   brand?: any; // Will be BrandDto
   brandId?: string;
+  inStock?: boolean;
+  lowStockThreshold?: number | null;
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
 }
+
+// Alias for backward compatibility
+export type Product = ProductResponseDto;
 
 // Create Product DTO - for POST requests
 export interface CreateProductDto {
@@ -55,6 +87,8 @@ export interface CreateProductDto {
   metaKeywords?: string;
   categoryIds?: string[];
   brandId?: string;
+  parentId?: string | null; // For creating variants
+  attributes?: Record<string, any>; // For variant attributes
 }
 
 // Update Product DTO - for PUT/PATCH requests
@@ -74,6 +108,8 @@ export interface ProductQueryDto {
   isFeatured?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  parentId?: string | null; // For filtering variants
+  includeVariants?: boolean; // Include variants in response
 }
 
 // Export all types

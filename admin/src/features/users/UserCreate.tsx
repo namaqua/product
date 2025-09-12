@@ -127,7 +127,7 @@ export default function UserCreate() {
               {/* Email */}
               <div className="sm:col-span-2">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address <span className="text-red-500">*</span>
+                  Email Address <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -138,20 +138,20 @@ export default function UserCreate() {
                     type="email"
                     id="email"
                     className={`block w-full pl-10 pr-3 py-2 border ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.email ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                     placeholder="user@example.com"
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.email.message}</p>
                 )}
               </div>
 
               {/* Password */}
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password <span className="text-red-500">*</span>
+                  Password <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -162,8 +162,8 @@ export default function UserCreate() {
                     type={showPassword ? 'text' : 'password'}
                     id="password"
                     className={`block w-full pl-10 pr-10 py-2 border ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.password ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                   <button
                     type="button"
@@ -176,25 +176,25 @@ export default function UserCreate() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.password.message}</p>
                 )}
                 {passwordValue && !errors.password && (
                   <div className="mt-2 text-xs text-gray-600">
                     <p className="font-medium">Password requirements:</p>
                     <ul className="mt-1 space-y-1">
-                      <li className={passwordValue.length >= 8 ? 'text-green-600' : ''}>
+                      <li className={passwordValue.length >= 8 ? 'text-success-600' : ''}>
                         ✓ At least 8 characters
                       </li>
-                      <li className={/[A-Z]/.test(passwordValue) ? 'text-green-600' : ''}>
+                      <li className={/[A-Z]/.test(passwordValue) ? 'text-success-600' : ''}>
                         ✓ One uppercase letter
                       </li>
-                      <li className={/[a-z]/.test(passwordValue) ? 'text-green-600' : ''}>
+                      <li className={/[a-z]/.test(passwordValue) ? 'text-success-600' : ''}>
                         ✓ One lowercase letter
                       </li>
-                      <li className={/[0-9]/.test(passwordValue) ? 'text-green-600' : ''}>
+                      <li className={/[0-9]/.test(passwordValue) ? 'text-success-600' : ''}>
                         ✓ One number
                       </li>
-                      <li className={/[!@#$%^&*]/.test(passwordValue) ? 'text-green-600' : ''}>
+                      <li className={/[!@#$%^&*]/.test(passwordValue) ? 'text-success-600' : ''}>
                         ✓ One special character
                       </li>
                     </ul>
@@ -205,7 +205,7 @@ export default function UserCreate() {
               {/* Confirm Password */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirm Password <span className="text-red-500">*</span>
+                  Confirm Password <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -216,8 +216,8 @@ export default function UserCreate() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     id="confirmPassword"
                     className={`block w-full pl-10 pr-10 py-2 border ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.confirmPassword ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                   <button
                     type="button"
@@ -230,7 +230,7 @@ export default function UserCreate() {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.confirmPassword.message}</p>
                 )}
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function UserCreate() {
               {/* First Name */}
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name <span className="text-red-500">*</span>
+                  First Name <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <input
@@ -252,19 +252,19 @@ export default function UserCreate() {
                     type="text"
                     id="firstName"
                     className={`block w-full px-3 py-2 border ${
-                      errors.firstName ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.firstName ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                 </div>
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.firstName.message}</p>
                 )}
               </div>
 
               {/* Last Name */}
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name <span className="text-red-500">*</span>
+                  Last Name <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <input
@@ -272,12 +272,12 @@ export default function UserCreate() {
                     type="text"
                     id="lastName"
                     className={`block w-full px-3 py-2 border ${
-                      errors.lastName ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.lastName ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                 </div>
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.lastName.message}</p>
                 )}
               </div>
 
@@ -291,7 +291,7 @@ export default function UserCreate() {
                     {...register('phoneNumber')}
                     type="tel"
                     id="phoneNumber"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -336,15 +336,15 @@ export default function UserCreate() {
               {/* Role */}
               <div>
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                  Role <span className="text-red-500">*</span>
+                  Role <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <select
                     {...register('role')}
                     id="role"
                     className={`block w-full px-3 py-2 border ${
-                      errors.role ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.role ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   >
                     <option value={UserRole.VIEWER}>Viewer</option>
                     <option value={UserRole.EDITOR}>Editor</option>
@@ -353,7 +353,7 @@ export default function UserCreate() {
                   </select>
                 </div>
                 {errors.role && (
-                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.role.message}</p>
                 )}
               </div>
 
@@ -410,7 +410,7 @@ export default function UserCreate() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 border border-transparent rounded-md hover:bg-primary-800 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span className="flex items-center">

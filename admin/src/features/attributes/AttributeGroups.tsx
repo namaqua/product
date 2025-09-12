@@ -256,7 +256,7 @@ export const AttributeGroups: React.FC = () => {
               <button
                 onClick={handleCreateNew}
                 disabled={isCreating || editingGroup !== null}
-                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Group
@@ -267,13 +267,13 @@ export const AttributeGroups: React.FC = () => {
 
         {/* Success/Error Messages */}
         {successMessage && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+          <div className="mb-4 p-4 bg-success-50 border border-success-200 text-success-800 rounded-lg">
             {successMessage}
           </div>
         )}
         
         {errorMessage && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+          <div className="mb-4 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg">
             {errorMessage}
           </div>
         )}
@@ -293,23 +293,23 @@ export const AttributeGroups: React.FC = () => {
                   {/* Code */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Code <span className="text-red-500">*</span>
+                      Code <span className="text-danger-500">*</span>
                     </label>
                     <input
                       {...register('code')}
                       disabled={editingGroup !== null}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100"
                       placeholder="general_info"
                     />
                     {errors.code && (
-                      <p className="mt-1 text-xs text-red-600">{errors.code.message}</p>
+                      <p className="mt-1 text-xs text-danger-600">{errors.code.message}</p>
                     )}
                   </div>
 
                   {/* Name */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Name <span className="text-red-500">*</span>
+                      Name <span className="text-danger-500">*</span>
                     </label>
                     <input
                       {...register('name')}
@@ -320,11 +320,11 @@ export const AttributeGroups: React.FC = () => {
                           setValue('code', generateCode(value));
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       placeholder="General Information"
                     />
                     {errors.name && (
-                      <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>
+                      <p className="mt-1 text-xs text-danger-600">{errors.name.message}</p>
                     )}
                   </div>
                 </div>
@@ -337,7 +337,7 @@ export const AttributeGroups: React.FC = () => {
                   <textarea
                     {...register('description')}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Group description..."
                   />
                 </div>
@@ -351,11 +351,11 @@ export const AttributeGroups: React.FC = () => {
                     <input
                       type="number"
                       {...register('sortOrder', { valueAsNumber: true })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       min={0}
                     />
                     {errors.sortOrder && (
-                      <p className="mt-1 text-xs text-red-600">{errors.sortOrder.message}</p>
+                      <p className="mt-1 text-xs text-danger-600">{errors.sortOrder.message}</p>
                     )}
                   </div>
 
@@ -382,7 +382,7 @@ export const AttributeGroups: React.FC = () => {
                         <input
                           type="checkbox"
                           {...register('isActive')}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                         />
                         <span className="ml-2 text-sm text-gray-700">Active</span>
                       </label>
@@ -398,7 +398,7 @@ export const AttributeGroups: React.FC = () => {
                       <input
                         type="checkbox"
                         {...register('isCollapsible')}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                       />
                       <span className="ml-2 text-sm text-gray-700">Allow collapsing</span>
                     </label>
@@ -430,7 +430,7 @@ export const AttributeGroups: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -464,7 +464,7 @@ export const AttributeGroups: React.FC = () => {
             {!isCreating && (
               <button
                 onClick={handleCreateNew}
-                className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                className="inline-flex items-center px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Create First Group
@@ -510,12 +510,12 @@ export const AttributeGroups: React.FC = () => {
                             </span>
                           )}
                           {group.isCollapsible && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800">
                               Collapsible
                             </span>
                           )}
                           {group.isCollapsedByDefault && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-warning-100 text-warning-800">
                               Collapsed
                             </span>
                           )}
@@ -532,7 +532,7 @@ export const AttributeGroups: React.FC = () => {
                           <div className="mt-3">
                             <button
                               onClick={() => toggleGroupExpanded(group.id)}
-                              className="text-sm text-indigo-600 hover:text-indigo-800"
+                              className="text-sm text-primary-600 hover:text-primary-800"
                             >
                               {expandedGroups.has(group.id) ? (
                                 <>
@@ -583,14 +583,14 @@ export const AttributeGroups: React.FC = () => {
                       <button
                         onClick={() => handleEdit(group)}
                         disabled={isCreating || editingGroup !== null}
-                        className="p-1 text-indigo-600 hover:text-indigo-800 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="p-1 text-primary-600 hover:text-primary-800 disabled:opacity-30 disabled:cursor-not-allowed"
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(group)}
-                        className="p-1 text-red-600 hover:text-red-800"
+                        className="p-1 text-danger-600 hover:text-danger-800"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />

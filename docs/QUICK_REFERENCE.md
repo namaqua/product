@@ -1,39 +1,92 @@
-# PIM Project Quick Reference
+# PIM Quick Reference
 
-## Copy this at the start of each new chat:
+## Project Status
+- **Core Features**: 98% Complete
+- **Active Work**: Product Variants Implementation
+- **Timeline**: 2 weeks to MVP completion
+
+## Access Points
+```bash
+# Start everything
+cd /Users/colinroets/dev/projects/product
+docker-compose up -d
+cd engines && npm run start:dev
+cd ../admin && npm run dev
+
+# URLs
+Frontend: http://localhost:5173
+Backend: http://localhost:3010/api/v1
+Swagger: http://localhost:3010/api/docs
+Login: admin@test.com / Admin123!
 ```
-I'm working on the PIM project with these specifications:
-- Framework: NestJS
-- Database: PostgreSQL  
-- Dev Path: /Users/colinroets/dev/pim
-- Docs Path: /Users/colinroets/dev/pimdocs
-- Deployment Target: DigitalOcean
-- Constraint: Open source tools only, avoid over-engineering
 
-Full instructions: /Users/colinroets/dev/docs/PROJECT_INSTRUCTIONS.md
+## Current Implementation Status
+
+### ✅ Completed Modules
+| Module | Backend | Frontend | Status |
+|--------|---------|----------|--------|
+| Auth | 8 endpoints | Login, Guards, Refresh | ✅ 100% |
+| Products | 11 endpoints | List, CRUD, Details | ✅ 100% |
+| Categories | 15+ endpoints | Tree, Drag-drop | ✅ 100% |
+| Attributes | 14 endpoints | Full management UI | ✅ 100% |
+| Media | 9 endpoints | Upload, Gallery | ✅ 100% |
+| Users | 9 endpoints | Full management | ✅ 100% |
+| **Total** | **66+ endpoints** | **All UIs** | **✅ 98%** |
+
+### 🔧 Active: Product Variants
+- **Current**: Basic parent-child UI (40% done)
+- **Needed**: Backend endpoints, wizard UI, matrix view
+- **Reference**: `/docs/VARIANT_IMPLEMENTATION_CONTINUATION.md`
+
+## This Week's Focus (Sept 12-19)
+1. Create variant database migration
+2. Implement variant DTOs
+3. Add variant service methods
+4. Create controller endpoints
+5. Test API with Postman
+
+## API Response Format
+```typescript
+{
+  success: boolean,
+  message: string,
+  data: T | { items: T[], meta: {...} },
+  timestamp: string
+}
 ```
 
-## Current Setup Status
-- [ ] NestJS project initialized
-- [ ] PostgreSQL database configured
-- [ ] TypeORM integrated
-- [ ] Basic project structure created
-- [ ] Environment variables configured
-- [ ] First migration created
-- [ ] Deployment scripts prepared
+## Common Field Names
+- `quantity` (not inventoryQuantity)
+- `urlKey` (not slug)  
+- `isFeatured` (not featured)
+- `status`: 'draft' | 'published' | 'archived'
 
-## Essential Files Checklist
-- [ ] package.json
-- [ ] .env.example
-- [ ] tsconfig.json
-- [ ] nest-cli.json
-- [ ] .gitignore
-- [ ] README.md
-- [ ] ecosystem.config.js (PM2)
+## Known Issues
+- Auth refresh token returns 401
+- Categories/attributes sometimes null in responses
 
-## Key Reminders
-1. Keep it simple - no premature optimization
-2. All software must be open source
-3. Document in /docs for continuity
-4. Design for easy DigitalOcean deployment
-5. Don't anticipate features not requested
+## Key Commands
+```bash
+# Database
+docker exec -it product-postgres-1 psql -U postgres -d pim_dev
+
+# Logs
+docker logs product-postgres-1
+pm2 logs engines
+
+# Testing
+cd shell-scripts
+./test-products-fix.sh
+./test-media-api.sh
+```
+
+## Documentation Map
+- **Active Plan**: `/docs/VARIANT_IMPLEMENTATION_CONTINUATION.md`
+- **Tasks**: `/docs/TASKS.md`
+- **API Standards**: `/docs/API_STANDARDS.md`
+- **Setup**: `/docs/PROJECT_INSTRUCTIONS.md`
+
+---
+*Priority: Complete Product Variants Implementation*
+*Timeline: 2 weeks to MVP*
+*Last Updated: Sept 12, 2025*

@@ -10,6 +10,30 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface CollectionResponse<T> {
+  items: T[];
+  meta?: {
+    totalItems: number;
+    itemCount: number;
+    itemsPerPage?: number;
+    totalPages?: number;
+    currentPage?: number;
+    page?: number;
+  };
+}
+
+export interface ActionResponse<T> {
+  item: T;
+  message: string;
+}
+
 export interface ApiError {
   statusCode: number;
   message: string | string[];

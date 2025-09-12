@@ -28,8 +28,10 @@ class ProductService {
   /**
    * Get single product by ID
    */
-  async getProduct(id: string): Promise<ProductResponseDto> {
-    const response = await api.get(`/products/${id}`);
+  async getProduct(id: string, includeRelations = true): Promise<ProductResponseDto> {
+    const response = await api.get(`/products/${id}`, {
+      params: includeRelations ? { includeVariants: true, includeAttributes: true } : {}
+    });
     return ApiResponseParser.parseSingle<ProductResponseDto>(response);
   }
 

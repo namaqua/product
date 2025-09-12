@@ -37,6 +37,7 @@ export default function ProductDetails() {
   const { id } = useParams();
   const [product, setProduct] = useState<any>(null);
   const [productMedia, setProductMedia] = useState<Media[]>([]);
+  const [variants, setVariants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export default function ProductDetails() {
     if (id) {
       loadProduct(id);
       loadProductMedia(id);
+      loadVariants(id); // Always load variants for any product
     }
   }, [id]);
 
@@ -60,6 +62,9 @@ export default function ProductDetails() {
       const data = await productService.getProduct(productId);
       console.log('Loaded product details:', data);
       setProduct(data);
+      
+      // Load variants for any product (moved to useEffect)
+      // Variants can exist for any product type, not just configurable
     } catch (err: any) {
       console.error('Failed to load product:', err);
       setError('Failed to load product details');
@@ -77,6 +82,20 @@ export default function ProductDetails() {
     } catch (err) {
       console.error('Failed to load product media:', err);
       // Don't show error as media is optional
+    }
+  };
+  
+  const loadVariants = async (productId: string) => {
+    try {
+      const variantsResponse = await productService.getProducts({
+        parentId: productId,
+        limit: 100,
+      });
+      setVariants(variantsResponse.items || []);
+      console.log('Loaded variants:', variantsResponse.items);
+    } catch (err) {
+      console.error('Failed to load variants:', err);
+      setVariants([]);
     }
   };
 
@@ -347,7 +366,33 @@ export default function ProductDetails() {
                   )}
                   {getStatusBadge(product.status)}
                   {getTypeBadge(product.type)}
+                  {/* Show if this is a variant */}
+                  {product.parentId && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <Tag className="w-3 h-3" />
+                      Variant Product
+                    </span>
+                  )}
+                  {/* Show variant count if has variants */}
+                  {variants.length > 0 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <Box className="w-3 h-3" />
+                      {variants.length} {variants.length === 1 ? 'Variant' : 'Variants'}
+                    </span>
+                  )}
                 </div>
+                {/* Show parent product link if this is a variant */}
+                {product.parentId && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => navigate(`/products/${product.parentId}`)}
+                      className="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="w-3 h-3" />
+                      View Parent Product
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -466,6 +511,22 @@ export default function ProductDetails() {
             </div>
             
             <div className="space-y-4">
+              {/* Show variant axes if this is a variant */}
+              {product.variantAxes && Object.keys(product.variantAxes).length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Variant Properties</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {Object.entries(product.variantAxes).map(([key, value]) => (
+                      <span
+                        key={key}
+                        className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                      >
+                        <span className="capitalize">{key}:</span> {value}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {product.urlKey && (
               <div>
               <label className="text-sm font-medium text-gray-500">URL Slug</label>
@@ -667,6 +728,266 @@ export default function ProductDetails() {
             </div>
           </div>
 
+          {/* Product Variants Section */}
+          {(variants.length > 0 || product.type === 'configurable') && (
+            <div className="bg-white shadow-sm rounded-lg p-6">
+              {/* Variant Summary Stats */}
+              {variants.length > 0 && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs text-gray-600 uppercase tracking-wider">Total Variants</div>
+                      <div className="text-2xl font-bold text-gray-900">{variants.length}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 uppercase tracking-wider">Total Stock</div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {variants.reduce((sum, v) => sum + (v.quantity || 0), 0)}
+                        <span className="text-sm font-normal text-gray-600 ml-1">units</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 uppercase tracking-wider">Price Range</div>
+                      <div className="text-lg font-semibold text-gray-900">
+                        {(() => {
+                          const prices = variants.map(v => v.price || 0).filter(p => p > 0);
+                          if (prices.length === 0) return 'Not set';
+                          const min = Math.min(...prices);
+                          const max = Math.max(...prices);
+                          return min === max 
+                            ? formatPrice(min)
+                            : `${formatPrice(min)} - ${formatPrice(max)}`;
+                        })()}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-600 uppercase tracking-wider">Stock Status</div>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          {variants.filter(v => v.quantity > 10).length > 0 && (
+                            <span className="text-sm">
+                              <span className="font-semibold text-green-600">
+                                {variants.filter(v => v.quantity > 10).length}
+                              </span>
+                              <span className="text-gray-600"> ok</span>
+                            </span>
+                          )}
+                          {variants.filter(v => v.quantity > 0 && v.quantity <= 10).length > 0 && (
+                            <span className="text-sm">
+                              <span className="font-semibold text-orange-600">
+                                {variants.filter(v => v.quantity > 0 && v.quantity <= 10).length}
+                              </span>
+                              <span className="text-gray-600"> low</span>
+                            </span>
+                          )}
+                          {variants.filter(v => v.quantity === 0).length > 0 && (
+                            <span className="text-sm">
+                              <span className="font-semibold text-red-600">
+                                {variants.filter(v => v.quantity === 0).length}
+                              </span>
+                              <span className="text-gray-600"> out</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Box className="w-5 h-5 text-gray-400" />
+                  <h2 className="text-lg font-semibold">
+                    Product Variants
+                    {variants.length > 0 && (
+                      <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                        {variants.length} {variants.length === 1 ? 'variant' : 'variants'}
+                      </span>
+                    )}
+                  </h2>
+                  {product.type === 'configurable' && (
+                    <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                      Configurable Product
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={() => navigate(`/products/${id}/edit`)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Manage Variants →
+                </button>
+              </div>
+              
+              {variants.length > 0 ? (
+                <div className="space-y-3">
+                  {variants.map((variant) => {
+                    const variantLabel = variant.attributes?.variantLabel || 
+                                       (variant.variantAxes ? Object.values(variant.variantAxes).join(' / ') : null) ||
+                                       variant.name?.split(' - ').pop() || 'Variant';
+                    
+                    return (
+                      <div key={variant.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              {variantLabel && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
+                                  {variantLabel}
+                                </span>
+                              )}
+                              <h4 className="font-medium text-gray-900">{variant.name}</h4>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">SKU:</span>
+                                <span className="ml-2 font-mono text-gray-900">{variant.sku}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Price:</span>
+                                <span className="ml-2 font-medium text-gray-900">
+                                  {formatPrice(variant.price)}
+                                </span>
+                                {variant.specialPrice && (
+                                  <span className="ml-1 text-green-600 text-xs">
+                                    (Special: {formatPrice(variant.specialPrice)})
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Stock:</span>
+                                <span className={`ml-2 font-medium ${
+                                  variant.quantity === 0 ? 'text-red-600' : 
+                                  variant.quantity < 10 ? 'text-orange-600' : 'text-gray-900'
+                                }`}>
+                                  {variant.quantity || 0} units
+                                  {variant.quantity === 0 && ' (Out of Stock)'}
+                                  {variant.quantity > 0 && variant.quantity < 10 && ' (Low Stock)'}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {getStatusBadge(variant.status)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <button
+                              onClick={() => navigate(`/products/${variant.id}/edit`)}
+                              className="p-2 text-blue-600 hover:text-blue-900 transition-colors"
+                              title="Edit Variant"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => navigate(`/products/${variant.id}`)}
+                              className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {/* Additional variant details */}
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            {variant.barcode && (
+                              <div>
+                                <span className="text-gray-500">Barcode:</span>
+                                <span className="ml-2 font-mono text-xs">{variant.barcode}</span>
+                              </div>
+                            )}
+                            {variant.weight && (
+                              <div>
+                                <span className="text-gray-500">Weight:</span>
+                                <span className="ml-2">{variant.weight} kg</span>
+                              </div>
+                            )}
+                            {variant.cost && (
+                              <div>
+                                <span className="text-gray-500">Cost:</span>
+                                <span className="ml-2">{formatPrice(variant.cost)}</span>
+                              </div>
+                            )}
+                            {variant.inStock !== undefined && (
+                              <div>
+                                <span className="text-gray-500">In Stock:</span>
+                                <span className="ml-2">
+                                  {variant.inStock ? (
+                                    <span className="text-green-600">✓ Yes</span>
+                                  ) : (
+                                    <span className="text-red-600">✗ No</span>
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Variant Axes */}
+                          {variant.variantAxes && Object.keys(variant.variantAxes).length > 0 && (
+                            <div className="mt-3">
+                              <span className="text-xs text-gray-500 uppercase tracking-wider">Variant Properties:</span>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {Object.entries(variant.variantAxes).map(([key, value]) => (
+                                  <span
+                                    key={key}
+                                    className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs"
+                                  >
+                                    <span className="font-medium capitalize">{key}:</span> {value}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Custom Attributes */}
+                          {variant.attributes && Object.keys(variant.attributes).length > 0 && (
+                            <div className="mt-3">
+                              <span className="text-xs text-gray-500 uppercase tracking-wider">Custom Attributes:</span>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {Object.entries(variant.attributes)
+                                  .filter(([key]) => !key.startsWith('_') && key !== 'variantLabel')
+                                  .map(([key, value]) => (
+                                    <span
+                                      key={key}
+                                      className="px-2 py-1 bg-yellow-50 text-yellow-800 rounded text-xs"
+                                    >
+                                      {key}: {value}
+                                    </span>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Box className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500 mb-2">
+                    {product.type === 'configurable' 
+                      ? 'No product configurations created yet.'
+                      : 'No variants created yet.'}
+                  </p>
+                  <p className="text-sm text-gray-400 mb-4">
+                    {product.type === 'configurable'
+                      ? 'Add product configurations to allow customers to customize their selection.'
+                      : 'Create variants for different versions of this product (sizes, colors, etc.).'}
+                  </p>
+                  <button
+                    onClick={() => navigate(`/products/${id}/edit`)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Add Variants →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* SEO & Marketing */}
           <div className="bg-white shadow-sm rounded-lg p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -735,6 +1056,43 @@ export default function ProductDetails() {
             </div>
             
             <dl className="space-y-3">
+              {variants.length > 0 && (
+                <>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">Variants</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {variants.length}
+                    </dd>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">Total Stock</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {variants.reduce((sum, v) => sum + (v.quantity || 0), 0)}
+                    </dd>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">In Stock</dt>
+                    <dd className="text-sm font-medium text-gray-900">
+                      {variants.filter(v => v.quantity > 0).length} / {variants.length}
+                    </dd>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-gray-100" />
+                </>
+              )}
+              
+              {product.parentId && (
+                <>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-gray-500">Product Type</dt>
+                    <dd className="text-sm font-medium text-blue-600">Variant</dd>
+                  </div>
+                  <div className="pt-2 border-t border-gray-100" />
+                </>
+              )}
+              
               <div className="flex justify-between">
                 <dt className="text-sm text-gray-500">Views</dt>
                 <dd className="text-sm font-medium text-gray-900">

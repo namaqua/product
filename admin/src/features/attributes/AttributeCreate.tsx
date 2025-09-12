@@ -226,7 +226,7 @@ export default function AttributeCreate() {
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2">
+        <div className="mb-4 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg flex items-center gap-2">
           <XCircleIcon className="w-5 h-5 flex-shrink-0" />
           {error}
         </div>
@@ -241,22 +241,22 @@ export default function AttributeCreate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Name <span className="text-red-500">*</span>
+                Name <span className="text-danger-500">*</span>
               </label>
               <input
                 type="text"
                 {...register('name', { required: 'Name is required' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="e.g., Color, Size, Weight"
               />
               {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                <p className="mt-1 text-sm text-danger-600">{errors.name.message}</p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Code <span className="text-red-500">*</span>
+                Code <span className="text-danger-500">*</span>
               </label>
               <input
                 type="text"
@@ -267,11 +267,11 @@ export default function AttributeCreate() {
                     message: 'Code must be lowercase letters, numbers, and underscores only'
                   }
                 })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm"
                 placeholder="e.g., product_color"
               />
               {errors.code && (
-                <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>
+                <p className="mt-1 text-sm text-danger-600">{errors.code.message}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">Auto-generated from name, but you can customize</p>
             </div>
@@ -284,7 +284,7 @@ export default function AttributeCreate() {
             <textarea
               {...register('description')}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               placeholder="Brief description of this attribute"
             />
           </div>
@@ -292,11 +292,11 @@ export default function AttributeCreate() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Type <span className="text-red-500">*</span>
+                Type <span className="text-danger-500">*</span>
               </label>
               <select
                 {...register('type', { required: 'Type is required' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 {Object.values(AttributeType).map(type => (
                   <option key={type} value={type}>
@@ -405,7 +405,7 @@ export default function AttributeCreate() {
                 <input
                   type="checkbox"
                   {...register('isRequired')}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span className="ml-2 text-sm text-gray-700">Required field</span>
               </label>
@@ -542,9 +542,9 @@ export default function AttributeCreate() {
 
         {/* Note for Select/Multiselect */}
         {(watchType === AttributeType.SELECT || watchType === AttributeType.MULTISELECT) && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
-            <InformationCircleIcon className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800">
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-start gap-3">
+            <InformationCircleIcon className="w-5 h-5 text-primary-600 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-primary-800">
               <p className="font-semibold mb-1">Options Required</p>
               <p>After creating this {watchType} attribute, you'll be redirected to add the available options.</p>
             </div>
@@ -563,7 +563,7 @@ export default function AttributeCreate() {
           <button
             type="submit"
             disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+            className="px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
           >
             {loading ? (
               <>

@@ -588,15 +588,39 @@ export default function ProductCreate() {
           </div>
         </div>
 
-        {/* Note about Categories */}
-        {categories.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              <strong>Note:</strong> Category assignment will be available after the product is created. 
-              You can assign categories by editing the product after creation.
-            </p>
-          </div>
-        )}
+        {/* Note about Categories and Variants */}
+        <div className="space-y-3">
+          {categories.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Note:</strong> Category assignment will be available after the product is created. 
+                You can assign categories by editing the product after creation.
+              </p>
+            </div>
+          )}
+          
+          {productType === 'configurable' && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <p className="text-sm text-purple-800">
+                <strong>Configurable Product:</strong> This creates a product builder where customers can customize 
+                their purchase (like choosing computer components). After creation, you'll define configuration 
+                options that affect the final price.
+              </p>
+              <p className="text-xs text-purple-600 mt-2">
+                Note: For simple inventory variations (like T-shirt sizes), keep the product as "Simple" and add variants after creation.
+              </p>
+            </div>
+          )}
+          
+          {productType === 'simple' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Simple Product:</strong> After creation, you can add variants for inventory variations 
+                (sizes, colors, etc.). Each variant will have its own SKU and stock level.
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* SEO */}
         <div className="bg-white shadow rounded-lg p-6">

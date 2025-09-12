@@ -1,8 +1,10 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
-// Import debug utility (keeping for console debugging only)
+// Import debug utility
 import './utils/debug-auth';
+import { RouteDebugger } from './utils/RouteDebugger';
 
 // Auth components
 import Login from './components/auth/Login';
@@ -13,6 +15,7 @@ import ApplicationShell from './components/layouts/ApplicationShell';
 
 // Features
 import Dashboard from './features/dashboard/Dashboard';
+import ProductDashboard from './features/product-dashboard/ProductDashboard';
 import ProductList from './features/products/ProductList';
 import ProductCreate from './features/products/ProductCreate';
 import ProductEdit from './features/products/ProductEdit';
@@ -43,15 +46,134 @@ const queryClient = new QueryClient({
   },
 });
 
+// Add debugging to window
+if (typeof window !== 'undefined') {
+  (window as any).checkRoute = () => {
+    console.log('Current URL:', window.location.href);
+    console.log('Pathname:', window.location.pathname);
+  };
+}
+
+function AppRoutes() {
+  const { isAuthenticated } = useAuthStore();
+  const location = useLocation();
+  
+  // Debug log route changes
+  useEffect(() => {
+    console.log('📍 Route changed to:', location.pathname);
+  }, [location.pathname]);
+
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/login" element={
+        isAuthenticated ? <Navigate to="/" replace /> : <Login />
+      } />
+
+      {/* Protected routes with ApplicationShell wrapper */}
+      <Route path="/" element={
+        <AuthGuard>
+          <ApplicationShell />
+        </AuthGuard>
+      }>
+        {/* Dashboard */}
+        <Route index element={<Dashboard />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        
+        {/* Product Engine */}
+        <Route path="product-dashboard" element={<ProductDashboard />} />
+        
+        {/* Products */}
+        <Route path="products" element={<ProductList />} />
+        <Route path="products/new" element={<ProductCreate />} />
+        <Route path="products/:id" element={<ProductDetails />} />
+        <Route path="products/:id/edit" element={<ProductEdit />} />
+        
+        {/* Categories */}
+        <Route path="categories" element={<CategoryManagement />} />
+        
+        {/* Attributes */}
+        <Route path="attributes" element={<AttributeList />} />
+        <Route path="attributes/new" element={<AttributeCreate />} />
+        <Route path="attributes/:id/edit" element={<AttributeEdit />} />
+        <Route path="attributes/:id/options" element={<AttributeOptions />} />
+        <Route path="attributes/groups" element={<AttributeGroups />} />
+        
+        {/* Media */}
+        <Route path="media" element={
+          <div className="p-8">
+            <h1 className="text-2xl font-bold">Media Library</h1>
+            <p className="mt-2 text-gray-600">Media management coming soon...</p>
+          </div>
+        } />
+        
+        {/* Workflows */}
+        <Route path="workflows" element={
+          <div className="p-8">
+            <h1 className="text-2xl font-bold">Workflows</h1>
+            <p className="mt-2 text-gray-600">Workflow management coming soon...</p>
+          </div>
+        } />
+        
+        {/* Import/Export */}
+        <Route path="import-export" element={
+          <div className="p-8">
+            <h1 className="text-2xl font-bold">Import/Export</h1>
+            <p className="mt-2 text-gray-600">Bulk import/export coming soon...</p>
+          </div>
+        } />
+        
+        {/* Channels */}
+        <Route path="channels" element={
+          <div className="p-8">
+            <h1 className="text-2xl font-bold">Channels</h1>
+            <p className="mt-2 text-gray-600">Channel management coming soon...</p>
+          </div>
+        } />
+        
+        {/* Users */}
+        <Route path="users" element={<UserList />} />
+        <Route path="users/new" element={<UserCreate />} />
+        <Route path="users/:id" element={<UserProfile />} />
+        <Route path="users/:id/edit" element={<UserEdit />} />
+        <Route path="users/roles" element={<RoleManager />} />
+        
+        {/* Settings */}
+        <Route path="settings" element={
+          <div className="p-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h1 className="text-2xl font-bold mb-4">System Settings</h1>
+              <p className="text-gray-600">Settings configuration coming soon...</p>
+              <div className="mt-6 p-4 bg-yellow-50 rounded">
+                <p className="text-sm text-yellow-800">
+                  This page will allow you to configure system settings, integrations, and preferences.
+                </p>
+              </div>
+            </div>
+          </div>
+        } />
+      </Route>
+
+      {/* 404 Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 function App() {
   const { isAuthenticated, isHydrated } = useAuthStore();
 
-  // Wait for auth store to hydrate before rendering routes
+  // Log when component mounts
+  useEffect(() => {
+    console.log('🚀 App mounted', { isAuthenticated, isHydrated });
+  }, []);
+
+  // Wait for auth store to hydrate
   if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading application...</p>
         </div>
       </div>
@@ -61,78 +183,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={
-            isAuthenticated ? <Navigate to="/" replace /> : <Login />
-          } />
-
-          {/* Protected routes - Proper nested structure */}
-          <Route path="/" element={
-            <AuthGuard>
-              <ApplicationShell />
-            </AuthGuard>
-          }>
-            {/* These are child routes of ApplicationShell - they render in <Outlet /> */}
-            <Route index element={<Dashboard />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="products" element={<ProductList />} />
-            <Route path="products/new" element={<ProductCreate />} />
-            <Route path="products/:id" element={<ProductDetails />} />
-            <Route path="products/:id/edit" element={<ProductEdit />} />
-            <Route path="categories" element={<CategoryManagement />} />
-            <Route path="attributes" element={<AttributeList />} />
-            <Route path="attributes/new" element={<AttributeCreate />} />
-            <Route path="attributes/:id/edit" element={<AttributeEdit />} />
-            <Route path="attributes/:id/options" element={<AttributeOptions />} />
-            <Route path="attributes/groups" element={<AttributeGroups />} />
-            <Route path="media" element={
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Media Library</h1>
-                <p className="mt-2 text-gray-600">Media management coming soon...</p>
-              </div>
-            } />
-            <Route path="workflows" element={
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Workflows</h1>
-                <p className="mt-2 text-gray-600">Workflow management coming soon...</p>
-              </div>
-            } />
-            <Route path="import-export" element={
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Import/Export</h1>
-                <p className="mt-2 text-gray-600">Bulk import/export coming soon...</p>
-              </div>
-            } />
-            <Route path="channels" element={
-              <div className="p-8">
-                <h1 className="text-2xl font-bold">Channels</h1>
-                <p className="mt-2 text-gray-600">Channel management coming soon...</p>
-              </div>
-            } />
-            <Route path="users" element={<UserList />} />
-            <Route path="users/new" element={<UserCreate />} />
-            <Route path="users/:id" element={<UserProfile />} />
-            <Route path="users/:id/edit" element={<UserEdit />} />
-            <Route path="users/roles" element={<RoleManager />} />
-            <Route path="settings" element={
-              <div className="p-8">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h1 className="text-2xl font-bold mb-4">System Settings</h1>
-                  <p className="text-gray-600">Settings configuration coming soon...</p>
-                  <div className="mt-6 p-4 bg-yellow-50 rounded">
-                    <p className="text-sm text-yellow-800">
-                      This page will allow you to configure system settings, integrations, and preferences.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            } />
-          </Route>
-
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <RouteDebugger />
+        <AppRoutes />
       </Router>
     </QueryClientProvider>
   );

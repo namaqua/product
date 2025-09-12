@@ -168,7 +168,7 @@ export default function UserEdit() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
       </div>
     );
@@ -178,10 +178,10 @@ export default function UserEdit() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <p className="text-red-600">User not found</p>
+          <p className="text-danger-600">User not found</p>
           <button
             onClick={() => navigate('/users')}
-            className="mt-4 text-indigo-600 hover:text-indigo-800"
+            className="mt-4 text-primary-600 hover:text-primary-800"
           >
             Back to Users
           </button>
@@ -247,7 +247,7 @@ export default function UserEdit() {
                 <button
                   type="button"
                   onClick={() => setShowPasswordModal(true)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                 >
                   <LockClosedIcon className="-ml-0.5 mr-2 h-4 w-4" />
                   Reset Password
@@ -264,7 +264,7 @@ export default function UserEdit() {
               {/* First Name */}
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name <span className="text-red-500">*</span>
+                  First Name <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <input
@@ -272,19 +272,19 @@ export default function UserEdit() {
                     type="text"
                     id="firstName"
                     className={`block w-full px-3 py-2 border ${
-                      errors.firstName ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.firstName ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                 </div>
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.firstName.message}</p>
                 )}
               </div>
 
               {/* Last Name */}
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name <span className="text-red-500">*</span>
+                  Last Name <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <input
@@ -292,12 +292,12 @@ export default function UserEdit() {
                     type="text"
                     id="lastName"
                     className={`block w-full px-3 py-2 border ${
-                      errors.lastName ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.lastName ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   />
                 </div>
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.lastName.message}</p>
                 )}
               </div>
 
@@ -311,7 +311,7 @@ export default function UserEdit() {
                     {...register('phoneNumber')}
                     type="tel"
                     id="phoneNumber"
-                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -356,15 +356,15 @@ export default function UserEdit() {
               {/* Role */}
               <div>
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                  Role <span className="text-red-500">*</span>
+                  Role <span className="text-danger-500">*</span>
                 </label>
                 <div className="mt-1">
                   <select
                     {...register('role')}
                     id="role"
                     className={`block w-full px-3 py-2 border ${
-                      errors.role ? 'border-red-300' : 'border-gray-300'
-                    } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                      errors.role ? 'border-danger-300' : 'border-gray-300'
+                    } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                   >
                     <option value={UserRole.VIEWER}>Viewer</option>
                     <option value={UserRole.EDITOR}>Editor</option>
@@ -373,7 +373,7 @@ export default function UserEdit() {
                   </select>
                 </div>
                 {errors.role && (
-                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+                  <p className="mt-1 text-sm text-danger-600">{errors.role.message}</p>
                 )}
               </div>
 
@@ -459,7 +459,7 @@ export default function UserEdit() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 border border-transparent rounded-md hover:bg-primary-800 disabled:opacity-50"
             >
               {isSubmitting ? (
                 <span className="flex items-center">
@@ -496,7 +496,7 @@ export default function UserEdit() {
             {/* New Password */}
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
-                New Password <span className="text-red-500">*</span>
+                New Password <span className="text-danger-500">*</span>
               </label>
               <div className="mt-1 relative">
                 <input
@@ -504,8 +504,8 @@ export default function UserEdit() {
                   type={showPasswordFields ? 'text' : 'password'}
                   id="newPassword"
                   className={`block w-full pr-10 px-3 py-2 border ${
-                    passwordErrors.newPassword ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    passwordErrors.newPassword ? 'border-danger-300' : 'border-gray-300'
+                  } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                 />
                 <button
                   type="button"
@@ -518,14 +518,14 @@ export default function UserEdit() {
                 </button>
               </div>
               {passwordErrors.newPassword && (
-                <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword.message}</p>
+                <p className="mt-1 text-sm text-danger-600">{passwordErrors.newPassword.message}</p>
               )}
             </div>
 
             {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password <span className="text-red-500">*</span>
+                Confirm Password <span className="text-danger-500">*</span>
               </label>
               <div className="mt-1">
                 <input
@@ -533,12 +533,12 @@ export default function UserEdit() {
                   type={showPasswordFields ? 'text' : 'password'}
                   id="confirmPassword"
                   className={`block w-full px-3 py-2 border ${
-                    passwordErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500`}
+                    passwordErrors.confirmPassword ? 'border-danger-300' : 'border-gray-300'
+                  } rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500`}
                 />
               </div>
               {passwordErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword.message}</p>
+                <p className="mt-1 text-sm text-danger-600">{passwordErrors.confirmPassword.message}</p>
               )}
             </div>
 
@@ -547,19 +547,19 @@ export default function UserEdit() {
               <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded">
                 <p className="font-medium mb-1">Password requirements:</p>
                 <ul className="space-y-1">
-                  <li className={newPasswordValue.length >= 8 ? 'text-green-600' : ''}>
+                  <li className={newPasswordValue.length >= 8 ? 'text-success-600' : ''}>
                     ✓ At least 8 characters
                   </li>
-                  <li className={/[A-Z]/.test(newPasswordValue) ? 'text-green-600' : ''}>
+                  <li className={/[A-Z]/.test(newPasswordValue) ? 'text-success-600' : ''}>
                     ✓ One uppercase letter
                   </li>
-                  <li className={/[a-z]/.test(newPasswordValue) ? 'text-green-600' : ''}>
+                  <li className={/[a-z]/.test(newPasswordValue) ? 'text-success-600' : ''}>
                     ✓ One lowercase letter
                   </li>
-                  <li className={/[0-9]/.test(newPasswordValue) ? 'text-green-600' : ''}>
+                  <li className={/[0-9]/.test(newPasswordValue) ? 'text-success-600' : ''}>
                     ✓ One number
                   </li>
-                  <li className={/[!@#$%^&*]/.test(newPasswordValue) ? 'text-green-600' : ''}>
+                  <li className={/[!@#$%^&*]/.test(newPasswordValue) ? 'text-success-600' : ''}>
                     ✓ One special character
                   </li>
                 </ul>
@@ -581,7 +581,7 @@ export default function UserEdit() {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 border border-transparent rounded-md hover:bg-primary-800"
             >
               Reset Password
             </button>
