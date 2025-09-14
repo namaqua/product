@@ -115,8 +115,13 @@ export class ProductsController {
   @ApiParam({ name: 'sku', description: 'Product SKU' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Product retrieved successfully', type: ProductResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
-  async findBySku(@Param('sku') sku: string): Promise<ProductResponseDto> {
-    return this.productsService.findBySku(sku);
+  async findBySku(@Param('sku') sku: string): Promise<{ success: boolean; data: ProductResponseDto; timestamp: string }> {
+    const product = await this.productsService.findBySku(sku);
+    return {
+      success: true,
+      data: product,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get(':id')
@@ -128,8 +133,13 @@ export class ProductsController {
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('includeVariants') includeVariants?: boolean,
-  ): Promise<ProductResponseDto> {
-    return this.productsService.findOne(id, includeVariants);
+  ): Promise<{ success: boolean; data: ProductResponseDto; timestamp: string }> {
+    const product = await this.productsService.findOne(id, includeVariants);
+    return {
+      success: true,
+      data: product,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Patch(':id')
@@ -391,8 +401,13 @@ export class ProductsController {
   async getProductAttributes(
     @Param('id', ParseUUIDPipe) productId: string,
     @Query('locale') locale?: string,
-  ): Promise<ProductAttributesResponseDto> {
-    return this.productAttributesService.getProductAttributes(productId, locale);
+  ): Promise<{ success: boolean; data: ProductAttributesResponseDto; timestamp: string }> {
+    const attributes = await this.productAttributesService.getProductAttributes(productId, locale);
+    return {
+      success: true,
+      data: attributes,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Delete(':id/attributes')
@@ -430,8 +445,13 @@ export class ProductsController {
   async validateAttributes(
     @Param('id', ParseUUIDPipe) productId: string,
     @Body() dto: ValidateProductAttributesDto,
-  ): Promise<ProductAttributeValidationResultDto> {
-    return this.productAttributesService.validateAttributes(productId, dto);
+  ): Promise<{ success: boolean; data: ProductAttributeValidationResultDto; timestamp: string }> {
+    const result = await this.productAttributesService.validateAttributes(productId, dto);
+    return {
+      success: true,
+      data: result,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post(':id/attributes/copy/:targetId')

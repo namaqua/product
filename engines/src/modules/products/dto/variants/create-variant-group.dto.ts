@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { VariantCombination } from './generate-variants.dto';
 
 export class CreateVariantGroupDto {
   @ApiProperty({
@@ -36,6 +37,16 @@ export class CreateVariantGroupDto {
   @IsString({ each: true })
   @IsNotEmpty()
   variantAxes: string[];
+
+  @ApiPropertyOptional({
+    description: 'Variant combinations for automatic generation',
+    type: [VariantCombination],
+  })
+  @ValidateNested({ each: true })
+  @Type(() => VariantCombination)
+  @IsArray()
+  @IsOptional()
+  combinations?: VariantCombination[];
 
   @ApiPropertyOptional({
     description: 'Attributes that can vary between variants',

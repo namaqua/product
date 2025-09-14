@@ -48,7 +48,11 @@ This document serves as the primary reference for maintaining continuity across 
 │   ├── components/        # React components
 │   └── package.json       # Frontend dependencies
 ├── docs/                  # Project documentation
-│   └── PROJECT_INSTRUCTIONS.md  # This file
+│   ├── PROJECT_INSTRUCTIONS.md  # This file (main reference)
+│   ├── DATABASE_GUIDE.md        # Database access instructions
+│   ├── LEARNING_LOG.md          # Lessons learned & pitfalls to avoid
+│   ├── VARIANT_TEMPLATES_STATUS.md  # Variant templates implementation
+│   └── UI_DESIGN_GUIDELINES.md  # UI/UX standards
 ├── docker-compose.yml     # Docker services configuration
 ├── scripts/               # Database init scripts
 └── shell-scripts/         # All project shell scripts
@@ -80,6 +84,9 @@ DATABASE_PASSWORD=secure_password_change_me
 ```
 
 ## Database Configuration
+
+### ⚠️ IMPORTANT: PostgreSQL Runs in Docker Container
+**The database is NOT installed locally on your Mac - it runs INSIDE a Docker container named `postgres-pim`**
 
 ### Docker Compose Setup
 PostgreSQL runs in Docker container managed by docker-compose.yml:
@@ -237,11 +244,14 @@ docker-compose up -d
 # Stop Docker services
 docker-compose down
 
-# Connect to PostgreSQL (Docker on port 5433)
-psql -U pim_user -d pim_dev -h localhost -p 5433
+# ⚠️ NOTE: psql command requires PostgreSQL client installed locally
+# If you get "psql: command not found", use Docker instead:
 
-# Or connect via Docker exec
+# Connect via Docker exec (RECOMMENDED - always works)
 docker exec -it postgres-pim psql -U pim_user -d pim_dev
+
+# Only works if psql is installed locally:
+# psql -U pim_user -d pim_dev -h localhost -p 5433
 
 # View Docker logs
 docker-compose logs -f postgres-pim
@@ -290,6 +300,8 @@ Then paste into new chat session.
 
 ## Notes for Assistant
 - Always check this file first when starting a new session
+- Review LEARNING_LOG.md to avoid repeated issues
+- **CRITICAL**: PostgreSQL runs in Docker container `postgres-pim`, NOT locally
 - Reference Tailwind Pro templates in `/Users/colinroets/dev/tailwind-admin Pro` (if available) for UI implementation
 - **CRITICAL**: Save ALL shell scripts in `/Users/colinroets/dev/projects/product/shell-scripts/` (NEVER in project root)
 - Shell scripts are LOCAL ONLY and not tracked in Git

@@ -1,7 +1,8 @@
-import axios from 'axios';
+import api from './api';
 import authService from './auth.service';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3010/api/v1';
+// Log to confirm we're using the centralized API
+console.log('Media Service - Using centralized API with baseURL:', api.defaults.baseURL);
 
 // Media type definitions
 export interface Media {
@@ -32,6 +33,7 @@ export interface Media {
   createdBy: string | null;
   updatedBy: string | null;
   version: number;
+  products?: any[]; // Associated products
 }
 
 export interface UploadMediaParams {
@@ -65,11 +67,6 @@ export interface MediaListParams {
 }
 
 class MediaService {
-  private getAuthHeader() {
-    const token = authService.getTokens().accessToken;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
   async uploadMedia(params: UploadMediaParams) {
     const formData = new FormData();
     formData.append('file', params.file);
@@ -83,16 +80,11 @@ class MediaService {
       formData.append('productIds', JSON.stringify(params.productIds));
     }
 
-    const response = await axios.post(
-      `${API_URL}/media/upload`,
-      formData,
-      {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
+    const response = await api.post('/media/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
 
     return response.data;
   }
@@ -111,69 +103,39 @@ class MediaService {
   }
 
   async getMediaList(params?: MediaListParams) {
-    const response = await axios.get(`${API_URL}/media`, {
-      headers: this.getAuthHeader(),
-      params,
-    });
+    console.log('getMediaList - calling /media with params:', params);
+    const response = await api.get('/media', { params });
     return response.data;
   }
 
   async getMediaById(id: string) {
-    const response = await axios.get(`${API_URL}/media/${id}`, {
-      headers: this.getAuthHeader(),
-    });
+    const response = await api.get(`/media/${id}`);
     return response.data;
   }
 
   async getProductMedia(productId: string) {
-    const response = await axios.get(`${API_URL}/media/product/${productId}`, {
-      headers: this.getAuthHeader(),
-    });
+    const response = await api.get(`/media/product/${productId}`);
     return response.data;
   }
 
   async updateMedia(id: string, params: UpdateMediaParams) {
-    const response = await axios.put(
-      `${API_URL}/media/${id}`,
-      params,
-      {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.put(`/media/${id}`, params);
     return response.data;
   }
 
   async deleteMedia(id: string) {
-    const response = await axios.delete(`${API_URL}/media/${id}`, {
-      headers: this.getAuthHeader(),
-    });
+    const response = await api.delete(`/media/${id}`);
     return response.data;
   }
 
   async associateWithProducts(mediaId: string, productIds: string[]) {
-    const response = await axios.post(
-      `${API_URL}/media/${mediaId}/products`,
-      { productIds },
-      {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.post(`/media/${mediaId}/products`, { productIds });
     return response.data;
   }
 
   async dissociateFromProducts(mediaId: string, productIds: string[]) {
     try {
-      const response = await axios.delete(`${API_URL}/media/${mediaId}/products`, {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
+      const response = await api.delete(`/media/${mediaId}/products`, {
         data: { productIds },
       });
       return response.data;
@@ -184,17 +146,27 @@ class MediaService {
   }
 
   async bulkDelete(ids: string[]) {
-    const response = await axios.post(
-      `${API_URL}/media/bulk-delete`,
-      { ids },
-      {
-        headers: {
-          ...this.getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const response = await api.post('/media/bulk-delete', { ids });
     return response.data;
+  }
+
+  async getStats() {
+    console.log('getStats - calling /media/stats');
+    
+    try {
+      const response = await api.get('/media/stats');
+      console.log('getStats - success:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('getStats error:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: error.config,
+      });
+      throw error;
+    }
   }
 
   // Helper to get full URL for media
@@ -206,7 +178,8 @@ class MediaService {
         return media.url;
       }
       // If it's a relative URL, make it absolute
-      const baseUrl = API_URL.replace('/api/v1', '');
+      // Use the baseURL from the API config, removing the /api/v1 part
+      const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
       return `${baseUrl}${media.url.startsWith('/') ? media.url : '/' + media.url}`;
     }
     
@@ -214,11 +187,13 @@ class MediaService {
     if (media.path) {
       // Extract just the filename from the path
       const filename = media.path.split('/').pop() || media.filename;
-      return `${API_URL.replace('/api/v1', '')}/uploads/${filename}`;
+      const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
+      return `${baseUrl}/uploads/${filename}`;
     }
     
     // Last resort: use filename
-    return `${API_URL.replace('/api/v1', '')}/uploads/${media.filename}`;
+    const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
+    return `${baseUrl}/uploads/${media.filename}`;
   }
 }
 

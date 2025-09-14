@@ -31,6 +31,7 @@ import UserCreate from './features/users/UserCreate';
 import UserEdit from './features/users/UserEdit';
 import UserProfile from './features/users/UserProfile';
 import RoleManager from './features/users/RoleManager';
+import MediaLibrary from './features/media/MediaLibrary';
 
 // Stores
 import { useAuthStore } from './stores/auth.store';
@@ -100,12 +101,7 @@ function AppRoutes() {
         <Route path="attributes/groups" element={<AttributeGroups />} />
         
         {/* Media */}
-        <Route path="media" element={
-          <div className="p-8">
-            <h1 className="text-2xl font-bold">Media Library</h1>
-            <p className="mt-2 text-gray-600">Media management coming soon...</p>
-          </div>
-        } />
+        <Route path="media" element={<MediaLibrary />} />
         
         {/* Workflows */}
         <Route path="workflows" element={

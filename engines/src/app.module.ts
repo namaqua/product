@@ -12,6 +12,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { MediaModule } from './modules/media/media.module';
+import { VariantsModule } from './modules/variants/variants.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { MediaModule } from './modules/media/media.module';
     CategoriesModule,
     AttributesModule,
     MediaModule,
+    VariantsModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseHealthService, AuditSubscriber],

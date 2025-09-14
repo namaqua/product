@@ -145,8 +145,13 @@ export class MediaController {
   @ApiOperation({ summary: 'Get media by ID' })
   @ApiResponse({ status: 200, description: 'Media retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Media not found' })
-  async findOne(@Param('id') id: string): Promise<MediaResponseDto> {
-    return this.mediaService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<{ success: boolean; data: MediaResponseDto; timestamp: string }> {
+    const media = await this.mediaService.findOne(id);
+    return {
+      success: true,
+      data: media,
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Put(':id')

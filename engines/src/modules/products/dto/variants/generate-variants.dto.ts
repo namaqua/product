@@ -12,12 +12,14 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProductStatus } from '../../entities/product.entity';
 
 export enum PricingStrategy {
   FIXED = 'fixed',
   PERCENTAGE_INCREASE = 'percentage_increase',
   TIERED = 'tiered',
   CUSTOM = 'custom',
+  AXIS_BASED = 'axis_based',
 }
 
 export enum InventoryStrategy {
@@ -25,6 +27,32 @@ export enum InventoryStrategy {
   DIVIDED = 'divided',
   CUSTOM = 'custom',
   DEFAULT = 'default',
+}
+
+export enum SkuGenerationStrategy {
+  PATTERN = 'pattern',
+  CUSTOM = 'custom',
+  AUTO = 'auto',
+  SEQUENTIAL = 'sequential',
+}
+
+export enum PriceAdjustmentType {
+  PERCENTAGE = 'percentage',
+  FIXED = 'fixed',
+  OVERRIDE = 'override',
+  ABSOLUTE = 'absolute',
+}
+
+export enum BulkUpdateOperation {
+  SET = 'set',
+  INCREMENT = 'increment',
+  DECREMENT = 'decrement',
+  MULTIPLY = 'multiply',
+  UPDATE_STATUS = 'update_status',
+  ADJUST_PRICE = 'adjust_price',
+  UPDATE_STOCK = 'update_stock',
+  SYNC_ATTRIBUTES = 'sync_attributes',
+  UPDATE_VISIBILITY = 'update_visibility',
 }
 
 export class PricingConfigDto {
@@ -183,6 +211,81 @@ export class GenerateVariantsDto {
   skuPattern?: string;
 
   @ApiPropertyOptional({
+    description: 'SKU generation strategy',
+    enum: SkuGenerationStrategy,
+    default: SkuGenerationStrategy.PATTERN,
+  })
+  @IsEnum(SkuGenerationStrategy)
+  @IsOptional()
+  skuStrategy?: SkuGenerationStrategy;
+
+  @ApiPropertyOptional({
+    description: 'Custom SKUs for specific combinations',
+    example: { 'Red-Large': 'CUSTOM-SKU-001' },
+  })
+  @IsObject()
+  @IsOptional()
+  customSkus?: Record<string, string>;
+
+  @ApiPropertyOptional({
+    description: 'Pricing strategy',
+    enum: PricingStrategy,
+    default: PricingStrategy.FIXED,
+  })
+  @IsEnum(PricingStrategy)
+  @IsOptional()
+  pricingStrategy?: PricingStrategy;
+
+  @ApiPropertyOptional({
+    description: 'Base price for all variants',
+    example: 29.99,
+  })
+  @IsNumber()
+  @Min(0)
+  @Type(() => Number)
+  @IsOptional()
+  basePrice?: number;
+
+  @ApiPropertyOptional({
+    description: 'Pricing rules for variants',
+  })
+  @IsObject()
+  @IsOptional()
+  pricingRules?: Record<string, any>;
+
+  @ApiPropertyOptional({
+    description: 'Custom prices for specific combinations',
+    example: { 'Red-Large': 39.99 },
+  })
+  @IsObject()
+  @IsOptional()
+  customPrices?: Record<string, number>;
+
+  @ApiPropertyOptional({
+    description: 'Initial status for variants',
+    enum: ProductStatus,
+    default: ProductStatus.DRAFT,
+  })
+  @IsEnum(ProductStatus)
+  @IsOptional()
+  initialStatus?: ProductStatus;
+
+  @ApiPropertyOptional({
+    description: 'Whether variants are visible',
+    default: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  isVisible?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Default attributes for all variants',
+  })
+  @IsObject()
+  @IsOptional()
+  defaultAttributes?: Record<string, any>;
+
+  @ApiPropertyOptional({
     description: 'Name generation pattern',
     example: '{parent} - {color} - {size}',
     default: '{parent} - {variant}',
@@ -199,6 +302,15 @@ export class GenerateVariantsDto {
   @IsString({ each: true })
   @IsOptional()
   inheritAttributes?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Fields to inherit from parent',
+    example: ['description', 'brand', 'category'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  inheritFields?: string[];
 
   @ApiPropertyOptional({
     description: 'Whether to publish variants immediately',

@@ -21,12 +21,13 @@ import {
   VariantGroupResponseDto,
   VariantQueryDto,
   GenerateVariantsDto,
-  VariantSummaryDto,
+  VariantSummary,
   VariantMatrixDto,
   PriceAdjustmentType,
   BulkUpdateOperation,
   PricingStrategy,
   SkuGenerationStrategy,
+  InventoryOperation,
 } from './dto/variants';
 import { plainToInstance } from 'class-transformer';
 import { 
@@ -505,6 +506,7 @@ export class ProductsService {
     let variants: Product[] = [];
     if (dto.combinations) {
       const generateDto: GenerateVariantsDto = {
+        parentId: dto.parentId,
         combinations: dto.combinations,
         skuStrategy: dto.generateSku ? SkuGenerationStrategy.PATTERN : SkuGenerationStrategy.CUSTOM,
         skuPattern: dto.skuPattern || '{parent}-{axes}',
@@ -556,16 +558,15 @@ export class ProductsService {
 
     // Calculate statistics
     const statistics = {
-      totalQuantity: variants.reduce((sum, v) => sum + (v.quantity || 0), 0),
-      averagePrice: variants.length > 0
-        ? variants.reduce((sum, v) => sum + (v.price || 0), 0) / variants.length
-        : 0,
+      total: variants.length,
+      active: variants.filter(v => v.isActive).length,
+      published: variants.filter(v => v.status === ProductStatus.PUBLISHED).length,
+      outOfStock: variants.filter(v => !v.inStock).length,
       priceRange: {
-        min: Math.min(...variants.map(v => v.price || 0)),
-        max: Math.max(...variants.map(v => v.price || 0)),
+        min: variants.length > 0 ? Math.min(...variants.map(v => v.price || 0)) : 0,
+        max: variants.length > 0 ? Math.max(...variants.map(v => v.price || 0)) : 0,
       },
-      inStockCount: variants.filter(v => v.inStock).length,
-      outOfStockCount: variants.filter(v => !v.inStock).length,
+      totalStock: variants.reduce((sum, v) => sum + (v.quantity || 0), 0),
     };
 
     const response: VariantGroupResponseDto = {
@@ -606,8 +607,14 @@ export class ProductsService {
       throw new NotFoundException(`Parent product ${parentId} not found`);
     }
 
+    // Convert VariantCombination[] to Record<string, string[]>
+    const axesRecord: Record<string, string[]> = {};
+    dto.combinations.forEach(combo => {
+      axesRecord[combo.axis] = combo.values;
+    });
+    
     // Generate all combinations
-    const combinations = this.generateCombinations(dto.combinations);
+    const combinations = this.generateCombinations(axesRecord);
     const created: Product[] = [];
     let skipped = 0;
 
@@ -1084,7 +1091,7 @@ export class ProductsService {
     combination: Record<string, any>,
     strategy: PricingStrategy,
     customBase?: number,
-    rules?: any[],
+    rules?: Record<string, any>,
     customPrices?: Record<string, number>,
   ): number {
     const combinationKey = Object.values(combination).join('-');
@@ -1102,12 +1109,17 @@ export class ProductsService {
       case PricingStrategy.AXIS_BASED:
         let adjustedPrice = price;
         if (rules) {
-          rules.forEach(rule => {
-            if (combination[rule.axis] === rule.value) {
-              if (rule.adjustmentType === 'percentage') {
-                adjustedPrice *= (1 + rule.adjustmentValue / 100);
-              } else {
-                adjustedPrice += rule.adjustmentValue;
+          // Handle rules as a Record of axis -> adjustments
+          Object.entries(rules).forEach(([axis, axisRules]) => {
+            const value = combination[axis];
+            if (value && axisRules && axisRules[value]) {
+              const adjustment = axisRules[value];
+              if (typeof adjustment === 'number') {
+                adjustedPrice += adjustment;
+              } else if (adjustment && adjustment.type === 'percentage') {
+                adjustedPrice *= (1 + adjustment.value / 100);
+              } else if (adjustment && adjustment.type === 'fixed') {
+                adjustedPrice += adjustment.value;
               }
             }
           });
@@ -1144,17 +1156,22 @@ export class ProductsService {
    */
   private applyInventoryAdjustment(
     currentQuantity: number,
-    operation: BulkUpdateOperation,
+    operation: InventoryOperation | string,
     value: number,
   ): number {
     switch (operation) {
-      case BulkUpdateOperation.SET:
+      case InventoryOperation.SET:
+      case 'set':
         return value;
-      case BulkUpdateOperation.INCREMENT:
+      case InventoryOperation.ADD:
+      case 'add':
+      case 'increment':
         return currentQuantity + value;
-      case BulkUpdateOperation.DECREMENT:
+      case InventoryOperation.SUBTRACT:
+      case 'subtract':
+      case 'decrement':
         return Math.max(0, currentQuantity - value);
-      case BulkUpdateOperation.MULTIPLY:
+      case 'multiply':
         return Math.floor(currentQuantity * value);
       default:
         return currentQuantity;
@@ -1164,7 +1181,7 @@ export class ProductsService {
   /**
    * Convert product to variant summary
    */
-  private toVariantSummary(product: Product): VariantSummaryDto {
+  private toVariantSummary(product: Product): VariantSummary {
     return {
       id: product.id,
       sku: product.sku,
@@ -1174,8 +1191,7 @@ export class ProductsService {
       quantity: product.quantity,
       status: product.status,
       isVisible: product.isVisible,
-      inStock: product.inStock,
-      sortOrder: product.sortOrder,
+      thumbnail: undefined, // Optional field
     };
   }
 }

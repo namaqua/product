@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Product } from '../../entities/product.entity';
 
 export class VariantStatistics {
@@ -115,9 +115,52 @@ export class VariantSummary {
 
 export class VariantGroupResponseDto {
   @ApiProperty({
-    description: 'Parent product information',
+    description: 'Parent product ID',
+    example: 'parent-uuid',
   })
-  parent: Product;
+  parentId: string;
+
+  @ApiProperty({
+    description: 'Parent product SKU',
+    example: 'PARENT-SKU',
+  })
+  parentSku: string;
+
+  @ApiProperty({
+    description: 'Parent product name',
+    example: 'Parent Product Name',
+  })
+  parentName: string;
+
+  @ApiProperty({
+    description: 'Variant group ID',
+    example: 'group-uuid',
+  })
+  variantGroupId: string;
+
+  @ApiProperty({
+    description: 'Variant axes',
+    example: ['color', 'size'],
+  })
+  variantAxes: string[];
+
+  @ApiProperty({
+    description: 'Variant attributes',
+    example: ['sku', 'price', 'quantity'],
+  })
+  variantAttributes: string[];
+
+  @ApiProperty({
+    description: 'Number of variants',
+    example: 12,
+  })
+  variantCount: number;
+
+  @ApiProperty({
+    description: 'Available values for each axis',
+    example: { color: ['Red', 'Blue'], size: ['S', 'M', 'L'] },
+  })
+  availableValues: Record<string, string[]>;
 
   @ApiProperty({
     description: 'List of variants in the group',
@@ -126,27 +169,9 @@ export class VariantGroupResponseDto {
   variants: VariantSummary[];
 
   @ApiProperty({
-    description: 'Variant axes configuration',
-    type: [VariantAxisValue],
-  })
-  axes: VariantAxisValue[];
-
-  @ApiProperty({
-    description: 'Attributes that can vary',
-    example: ['sku', 'price', 'quantity', 'weight'],
-  })
-  variantAttributes: string[];
-
-  @ApiProperty({
     description: 'Variant group statistics',
   })
   statistics: VariantStatistics;
-
-  @ApiProperty({
-    description: 'Group ID',
-    example: 'group-uuid',
-  })
-  variantGroupId: string;
 
   @ApiProperty({
     description: 'Timestamp when group was created',
@@ -159,4 +184,16 @@ export class VariantGroupResponseDto {
     example: '2025-01-02T00:00:00Z',
   })
   updatedAt: Date;
+
+  // Legacy properties for backward compatibility
+  @ApiPropertyOptional({
+    description: 'Parent product information',
+  })
+  parent?: Product;
+
+  @ApiPropertyOptional({
+    description: 'Variant axes configuration',
+    type: [VariantAxisValue],
+  })
+  axes?: VariantAxisValue[];
 }
