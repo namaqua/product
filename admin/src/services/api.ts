@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 // API base configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3010/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3010/api';
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
@@ -92,7 +92,14 @@ api.interceptors.response.use(
           refreshToken,
         });
         
-        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        // Handle standardized response format
+        const responseData = response.data;
+        
+        if (!responseData.success || !responseData.data) {
+          throw new Error('Invalid refresh response format');
+        }
+        
+        const { accessToken, refreshToken: newRefreshToken } = responseData.data;
         tokenManager.setTokens(accessToken, newRefreshToken);
         
         // Retry original request with new token

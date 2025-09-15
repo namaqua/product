@@ -1,0 +1,3 @@
+name,slug,description,parent,order,status
+"Electronics","electronics","Electronic products and gadgets",,1,"active"
+"Computers","computers","Desktop and laptop computers","Electronics",1,"active"

@@ -96,8 +96,8 @@ async function bootstrap() {
     new TransformInterceptor(),
   );
 
-  // API prefix - this MUST come AFTER static asset configuration
-  app.setGlobalPrefix('api/v1', {
+  // API prefix - Changed from 'api/v1' to just 'api' to match existing routes
+  app.setGlobalPrefix('api', {
     exclude: ['health'],
   });
 
@@ -113,6 +113,7 @@ async function bootstrap() {
     .addTag('Categories', 'Category management endpoints')
     .addTag('Attributes', 'Attribute management endpoints')
     .addTag('Media', 'Media management endpoints')
+    .addTag('Search', 'Product search endpoints')
     .build();
   
   const document = SwaggerModule.createDocument(app, config);
@@ -123,7 +124,7 @@ async function bootstrap() {
   
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`🏥 Health check: http://localhost:${port}/health`);
-  console.log(`📡 API endpoints: http://localhost:${port}/api/v1`);
+  console.log(`📡 API endpoints: http://localhost:${port}/api`);
   console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
   console.log(`🌐 CORS enabled for: http://localhost:5173`);
   console.log(`📁 Static files:`);

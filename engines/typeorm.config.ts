@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
-import * as path from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -15,15 +14,17 @@ console.log('  Password:', process.env.DATABASE_PASSWORD ? '***hidden***' : 'NOT
 
 const port = process.env.DATABASE_PORT ? parseInt(process.env.DATABASE_PORT, 10) : 5432;
 
-export default new DataSource({
+const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
   port: port,
   username: process.env.DATABASE_USER || 'pim_user',
   password: process.env.DATABASE_PASSWORD || 'secure_password_change_me',
   database: process.env.DATABASE_NAME || 'pim_dev',
-  entities: [path.join(__dirname, 'src', '**', '*.entity{.ts,.js}')],
-  migrations: [path.join(__dirname, 'src', 'migrations', '*{.ts,.js}')],
+  entities: [__dirname + '/src/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/src/migrations/*{.ts,.js}'],
   synchronize: false,
   logging: true,
 });
+
+export default AppDataSource;

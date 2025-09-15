@@ -116,6 +116,50 @@ docker ps | grep pim
 Database connection managed through NestJS TypeORM module with migrations enabled.
 Connection uses port 5433 to connect to Docker PostgreSQL.
 
+## API Standardization (COMPLETED ✅)
+
+### Status: 100% Complete as of September 14, 2025
+
+All API endpoints across all 8 modules now follow standardized response formats.
+
+### Standard Response Format
+```typescript
+{
+  success: boolean,
+  data: T,
+  message?: string,
+  timestamp: string
+}
+```
+
+### Key Points for Development
+1. **Always use standardized DTOs**:
+   - `ApiResponse<T>` for all responses
+   - `ActionResponseDto<T>` for CUD operations
+   - `CollectionResponseDto<T>` for paginated lists
+
+2. **Never use `Promise<any>`** - Always type your returns
+
+3. **Import the DTOs**:
+   ```typescript
+   import { ApiResponse } from '../../common/dto';
+   ```
+
+4. **Use helper methods**:
+   ```typescript
+   return ApiResponse.success(data, 'Operation successful');
+   ```
+
+### Frontend Consumption
+- Responses are nested: `response.data.data`
+- Auth tokens: `response.data.data.accessToken`
+- Collections: `response.data.data.items`
+
+### Documentation
+- **Full Report**: [API_STANDARDIZATION_FINAL_REPORT.md](./API_STANDARDIZATION_FINAL_REPORT.md)
+- **Quick Reference**: [API_STANDARDIZATION_QUICK_REFERENCE.md](./API_STANDARDIZATION_QUICK_REFERENCE.md)
+- **Test Scripts**: Located in `/shell-scripts/`
+
 ## Development Guidelines
 
 ### Backend Code Structure
@@ -313,6 +357,9 @@ Then paste into new chat session.
 - When implementing admin UI, always check if a suitable component exists in Tailwind Pro first
 
 ---
-*Last Updated: September 12, 2025*
-*Version: 1.2*
-*Changes: Updated directory structure (engines, admin, docs) from old structure (pim, pim-admin, pimdocs)*
+*Last Updated: September 14, 2025*
+*Version: 1.3*
+*Changes:*
+- *Added API Standardization section*
+- *Updated with completed standardization status*
+- *Added quick reference links*

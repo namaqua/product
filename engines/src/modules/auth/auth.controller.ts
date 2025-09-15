@@ -5,8 +5,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
-import { ActionResponseDto } from '../../common/dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ActionResponseDto, ApiResponse } from '../../common/dto';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -15,22 +15,22 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered successfully',
   })
-  async register(@Body() createUserDto: CreateUserDto) {
+  async register(@Body() createUserDto: CreateUserDto): Promise<ApiResponse> {
     return this.authService.register(createUserDto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'User logged in successfully',
   })
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto): Promise<ApiResponse> {
     return this.authService.login(loginDto);
   }
 
@@ -39,7 +39,7 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'User logged out successfully',
   })
@@ -52,11 +52,11 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Token refreshed successfully',
   })
-  async refreshTokens(@CurrentUser() user: any) {
+  async refreshTokens(@CurrentUser() user: any): Promise<ApiResponse> {
     return this.authService.refreshTokens(user.sub, user.refreshToken);
   }
 
@@ -65,7 +65,7 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Change user password' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Password changed successfully',
   })
@@ -79,7 +79,7 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Password reset email sent if email exists',
   })
@@ -90,7 +90,7 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password with token' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Password reset successfully',
   })
@@ -100,7 +100,7 @@ export class AuthController {
 
   @Get('verify-email/:token')
   @ApiOperation({ summary: 'Verify email address' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Email verified successfully',
   })
@@ -112,12 +112,12 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({
+  @SwaggerApiResponse({
     status: HttpStatus.OK,
     description: 'Current user profile retrieved successfully',
   })
-  async getCurrentUser(@CurrentUser() user: User): Promise<Partial<User>> {
+  async getCurrentUser(@CurrentUser() user: User): Promise<ApiResponse> {
     const { password, refreshToken, resetPasswordToken, emailVerificationToken, ...sanitizedUser } = user;
-    return sanitizedUser;
+    return ApiResponse.success(sanitizedUser, 'User profile retrieved successfully');
   }
 }

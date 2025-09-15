@@ -8,14 +8,14 @@ import { User, UserStatus } from '../users/entities/user.entity';
 import { CreateUserDto, LoginDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from '../users/dto/user.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 import { randomBytes } from 'crypto';
-import { ActionResponseDto } from '../../common/dto';
+import { ActionResponseDto, ApiResponse } from '../../common/dto';
 
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
 }
 
-export interface AuthResponse extends AuthTokens {
+export interface AuthData extends AuthTokens {
   user: Partial<User>;
 }
 
@@ -31,7 +31,7 @@ export class AuthService {
   /**
    * Register a new user
    */
-  async register(createUserDto: CreateUserDto): Promise<AuthResponse> {
+  async register(createUserDto: CreateUserDto): Promise<ApiResponse<AuthData>> {
     // Check if user already exists
     const existingUser = await this.userRepository.findOne({
       where: { email: createUserDto.email },
@@ -57,16 +57,16 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return {
+    return ApiResponse.success({
       ...tokens,
       user: this.sanitizeUser(user),
-    };
+    }, 'User registered successfully');
   }
 
   /**
    * Login user
    */
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(loginDto: LoginDto): Promise<ApiResponse<AuthData>> {
     const { email, password } = loginDto;
 
     // Find user
@@ -97,10 +97,10 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return {
+    return ApiResponse.success({
       ...tokens,
       user: this.sanitizeUser(user),
-    };
+    }, 'Login successful');
   }
 
   /**
@@ -120,7 +120,7 @@ export class AuthService {
   /**
    * Refresh tokens
    */
-  async refreshTokens(userId: string, refreshToken: string): Promise<AuthTokens> {
+  async refreshTokens(userId: string, refreshToken: string): Promise<ApiResponse<AuthTokens>> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
     });
@@ -139,7 +139,7 @@ export class AuthService {
     const tokens = await this.generateTokens(user);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return ApiResponse.success(tokens, 'Tokens refreshed successfully');
   }
 
   /**

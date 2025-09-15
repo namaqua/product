@@ -13,6 +13,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { MediaModule } from './modules/media/media.module';
 import { VariantsModule } from './modules/variants/variants.module';
+import { ImportExportModule } from './modules/import-export/import-export.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -45,6 +47,8 @@ import { VariantsModule } from './modules/variants/variants.module';
     AttributesModule,
     MediaModule,
     VariantsModule,
+    ImportExportModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseHealthService, AuditSubscriber],

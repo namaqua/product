@@ -87,18 +87,17 @@ export class ApiResponseParser {
   }
 
   /**
-   * Parse auth responses (special case - not wrapped)
+   * Parse auth responses (now standardized with wrapper)
    */
   static parseAuth(response: AxiosResponse): AuthResponse {
-    // Auth endpoints return tokens directly (not wrapped)
     const data = response.data;
     
-    // Check if it's wrapped (shouldn't be, but handle both)
-    if (data.success && data.data) {
-      return data.data;
+    // Auth endpoints now return standardized format
+    if (!data.success || !data.data) {
+      throw new Error('Invalid auth response format');
     }
     
-    return data as AuthResponse;
+    return data.data as AuthResponse;
   }
 
   /**

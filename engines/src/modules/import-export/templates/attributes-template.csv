@@ -1,0 +1,3 @@
+name,slug,type,options,required,filterable,description
+"Color","color","select","Red,Blue,Green,Black,White","true","true","Product color options"
+"Size","size","select","XS,S,M,L,XL,XXL","true","true","Product size options"

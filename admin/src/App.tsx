@@ -32,6 +32,7 @@ import UserEdit from './features/users/UserEdit';
 import UserProfile from './features/users/UserProfile';
 import RoleManager from './features/users/RoleManager';
 import MediaLibrary from './features/media/MediaLibrary';
+import ImportExport from './features/import-export/ImportExport';
 
 // Stores
 import { useAuthStore } from './stores/auth.store';
@@ -112,12 +113,7 @@ function AppRoutes() {
         } />
         
         {/* Import/Export */}
-        <Route path="import-export" element={
-          <div className="p-8">
-            <h1 className="text-2xl font-bold">Import/Export</h1>
-            <p className="mt-2 text-gray-600">Bulk import/export coming soon...</p>
-          </div>
-        } />
+        <Route path="import-export" element={<ImportExport />} />
         
         {/* Channels */}
         <Route path="channels" element={

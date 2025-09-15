@@ -1,0 +1,28 @@
+--- a/src/modules/import-export/import-export.controller.ts
++++ b/src/modules/import-export/import-export.controller.ts
+@@ -1,4 +1,4 @@
+-import { ApiResponse } from '../../common/dto';
++import { ApiResponse } from '../../common/dto';
+ import {
+   Controller,
+   Get,
+@@ -496,7 +496,7 @@ export class ImportExportController {
+   async downloadTemplate(
+     @Query() templateDto: DownloadTemplateDto,
+     @Res({ passthrough: true }) res: Response,
+-  ): Promise<StreamableFile> {
++  ): Promise<any> {
+     const { filepath, filename } = await this.importExportService.downloadTemplate(templateDto);
+     
+     res.set({
+@@ -505,7 +505,10 @@ export class ImportExportController {
+     });
+ 
+     const file = createReadStream(filepath);
+-    return new StreamableFile(file);
++    // Don't wrap in ApiResponse for file downloads
++    // Return the StreamableFile directly
++    const streamableFile = new StreamableFile(file);
++    return streamableFile;
+   }
+ }

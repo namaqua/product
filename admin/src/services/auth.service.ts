@@ -31,8 +31,14 @@ class AuthService {
     try {
       const response = await api.post('/auth/login', credentials);
       
-      // The backend returns tokens directly, not wrapped
-      const authData = response.data;
+      // Handle standardized response format
+      const responseData = response.data;
+      
+      if (!responseData.success || !responseData.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      const authData = responseData.data;
       
       // Validate response structure
       if (!authData.accessToken || !authData.refreshToken) {
@@ -45,6 +51,10 @@ class AuthService {
       return authData;
     } catch (error: any) {
       console.error('[AuthService] Login failed:', error.response?.data || error.message);
+      // Extract error message from standardized error response if available
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
       throw error;
     }
   }
@@ -53,30 +63,55 @@ class AuthService {
    * Register new user
    */
   async register(data: RegisterDto): Promise<AuthResponse> {
-    const response = await api.post('/auth/register', data);
-    const authData = response.data;
-    
-    // Store tokens
-    if (authData.accessToken && authData.refreshToken) {
-      tokenManager.setTokens(authData.accessToken, authData.refreshToken);
+    try {
+      const response = await api.post('/auth/register', data);
+      const responseData = response.data;
+      
+      if (!responseData.success || !responseData.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      const authData = responseData.data;
+      
+      // Store tokens
+      if (authData.accessToken && authData.refreshToken) {
+        tokenManager.setTokens(authData.accessToken, authData.refreshToken);
+      }
+      
+      return authData;
+    } catch (error: any) {
+      console.error('[AuthService] Register failed:', error.response?.data || error.message);
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw error;
     }
-    
-    return authData;
   }
 
   /**
    * Refresh access token
    */
   async refresh(refreshToken: string): Promise<AuthResponse> {
-    const response = await api.post('/auth/refresh', { refreshToken });
-    const authData = response.data;
-    
-    // Update tokens
-    if (authData.accessToken && authData.refreshToken) {
-      tokenManager.setTokens(authData.accessToken, authData.refreshToken);
+    try {
+      const response = await api.post('/auth/refresh', { refreshToken });
+      const responseData = response.data;
+      
+      if (!responseData.success || !responseData.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      const authData = responseData.data;
+      
+      // Update tokens
+      if (authData.accessToken && authData.refreshToken) {
+        tokenManager.setTokens(authData.accessToken, authData.refreshToken);
+      }
+      
+      return authData;
+    } catch (error: any) {
+      console.error('[AuthService] Refresh failed:', error.response?.data || error.message);
+      throw error;
     }
-    
-    return authData;
   }
 
   /**
@@ -98,8 +133,19 @@ class AuthService {
    * Get current user profile
    */
   async getProfile(): Promise<UserResponseDto> {
-    const response = await api.get('/auth/profile');
-    return ApiResponseParser.parseSingle<UserResponseDto>(response);
+    try {
+      const response = await api.get('/auth/me');
+      const responseData = response.data;
+      
+      if (!responseData.success || !responseData.data) {
+        throw new Error('Invalid response format from server');
+      }
+      
+      return responseData.data;
+    } catch (error: any) {
+      console.error('[AuthService] Get profile failed:', error.response?.data || error.message);
+      throw error;
+    }
   }
 
   /**

@@ -1,0 +1,3 @@
+name,sku,description,price,compareAtPrice,stock,category,brand,weight,dimensions,status
+"Sample Product 1","PROD-001","High-quality product description",99.99,129.99,100,"Electronics","BrandName",0.5,"10x10x5","active"
+"Sample Product 2","PROD-002","Another great product",149.99,199.99,50,"Accessories","BrandName",0.3,"8x8x3","active"

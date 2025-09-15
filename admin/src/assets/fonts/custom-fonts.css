@@ -1,0 +1,41 @@
+/* Custom Font Configuration */
+/* Place your .ttf, .woff, .woff2 files in the same directory as this file */
+
+/* Example for a font called "YourCustomFont" */
+/* Replace 'YourCustomFont' with your actual font name */
+
+@font-face {
+  font-family: 'YourCustomFont';
+  src: url('./YourFont-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap; /* Improves loading performance */
+}
+
+/* If you have multiple weights/styles of the same font */
+@font-face {
+  font-family: 'YourCustomFont';
+  src: url('./YourFont-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'YourCustomFont';
+  src: url('./YourFont-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* For better browser support, include multiple formats if available */
+@font-face {
+  font-family: 'YourCustomFont';
+  src: url('./YourFont-Regular.woff2') format('woff2'),
+       url('./YourFont-Regular.woff') format('woff'),
+       url('./YourFont-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
