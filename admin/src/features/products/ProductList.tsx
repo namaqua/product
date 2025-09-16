@@ -38,6 +38,17 @@ export default function ProductList() {
         limit: 20,
         parentId: null // Only get parent products
       });
+      
+      // DIAGNOSTIC: Check what we got
+      console.log('📊 LIST - Response from getProducts:', response);
+      console.log('📊 LIST - First item structure:', response.items?.[0]);
+      console.log('📊 LIST - First item fields:', {
+        sku: response.items?.[0]?.sku,
+        name: response.items?.[0]?.name,
+        status: response.items?.[0]?.status,
+        price: response.items?.[0]?.price
+      });
+      
       setProducts(response.items);
       
       // Pre-load variant counts for products that might have them
@@ -264,8 +275,8 @@ export default function ProductList() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                      ${product.status === 'ACTIVE' || product.status === 'published' ? 'bg-green-100 text-green-800' : 
-                        product.status === 'DRAFT' || product.status === 'draft' ? 'bg-gray-100 text-gray-800' : 
+                      ${product.status?.toLowerCase() === 'active' || product.status?.toLowerCase() === 'published' ? 'bg-green-100 text-green-800' : 
+                        product.status?.toLowerCase() === 'draft' ? 'bg-yellow-100 text-yellow-800' : 
                         'bg-red-100 text-red-800'}`}>
                       {product.status}
                     </span>

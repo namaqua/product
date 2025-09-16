@@ -1,0 +1,74 @@
+version: '3.8'
+
+name: pim-dev-alt
+
+services:
+  # PostgreSQL for PIM - Using alternative port
+  postgres-pim:
+    image: postgres:15-alpine
+    container_name: postgres-pim-alt
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: secure_password_change_me
+      POSTGRES_DB: pim_dev
+    ports:
+      - "5434:5432"  # Alternative port to avoid conflict
+    volumes:
+      - postgres_pim_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim_user -d pim_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-network
+
+  # Redis for PIM - Alternative port
+  redis-pim:
+    image: redis:7-alpine
+    container_name: redis-pim-alt
+    restart: unless-stopped
+    ports:
+      - "6381:6379"  # Alternative port
+    volumes:
+      - redis_pim_data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - pim-network
+
+  # Elasticsearch for Advanced Search - Alternative port
+  elasticsearch-pim:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: elasticsearch-pim-alt
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9201:9200"  # Alternative port
+      - "9301:9300"  # Alternative port
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - pim-network
+
+volumes:
+  postgres_pim_data:
+  redis_pim_data:
+  elasticsearch_data:
+
+networks:
+  pim-network:
+    driver: bridge

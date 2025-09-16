@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # Simple PostgreSQL without health checks
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: product_user
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: product_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  # Simple Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  # API with simple config
+  api:
+    build:
+      context: ./engines
+      dockerfile: Dockerfile.production
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: product_db
+      DB_USER: product_user
+      DB_PASSWORD: password123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: my-jwt-secret
+      JWT_REFRESH_SECRET: my-refresh-secret
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "3010:3010"
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Frontend
+  frontend:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.production
+      args:
+        VITE_API_URL: http://localhost:3010/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - api

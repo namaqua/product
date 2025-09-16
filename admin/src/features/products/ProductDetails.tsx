@@ -59,8 +59,47 @@ export default function ProductDetails() {
       setLoading(true);
       setError(null);
       
+      // DIAGNOSTIC: Check raw response
+      const token = localStorage.getItem('access_token');
+      console.log('🔍 Token exists:', !!token, 'First 20 chars:', token?.substring(0, 20));
+      
+      const rawResponse = await fetch(`/api/products/${productId}?includeVariants=true&includeAttributes=true`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('🔍 Response status:', rawResponse.status, 'Type:', rawResponse.headers.get('content-type'));
+      const contentType = rawResponse.headers.get('content-type');
+      
+      if (contentType && contentType.includes('text/html')) {
+        console.error('🔍 ERROR: API returned HTML instead of JSON!');
+        console.error('🔍 This means the request went to the wrong place or auth failed');
+        const text = await rawResponse.text();
+        console.error('🔍 HTML Response (first 200 chars):', text.substring(0, 200));
+        throw new Error('API returned HTML instead of JSON. Check proxy configuration.');
+      }
+      
+      const rawData = await rawResponse.json();
+      console.log('🔍 RAW API RESPONSE:', rawData);
+      console.log('🔍 Response structure path:', {
+        'success': rawData.success,
+        'has data': !!rawData.data,
+        'data is object': typeof rawData.data === 'object',
+        'data.sku': rawData.data?.sku,
+        'data.data exists': !!rawData.data?.data,
+        'data.data.sku': rawData.data?.data?.sku
+      });
+      
       const data = await productService.getProduct(productId);
-      console.log('Loaded product details:', data);
+      console.log('📦 PARSED product details:', data);
+      console.log('📦 Product fields:', {
+        sku: data?.sku,
+        name: data?.name,
+        status: data?.status,
+        price: data?.price
+      });
       setProduct(data);
       
       // Load variants for any product (moved to useEffect)
@@ -122,6 +161,7 @@ export default function ProductDetails() {
       setError(null);
       setSuccessMessage(null);
       
+      console.log('Attempting to duplicate product:', product);
       const response = await productService.duplicateProduct(id);
       const newProduct = response.item;
       
@@ -131,8 +171,36 @@ export default function ProductDetails() {
       });
     } catch (err: any) {
       console.error('Failed to duplicate product:', err);
-      setError('Unable to duplicate product. Please try again.');
-      setTimeout(() => setError(null), 5000);
+      console.error('Duplicate error response:', err.response?.data);
+      console.error('Duplicate error status:', err.response?.status);
+      
+      // Extract detailed error message
+      let errorMessage = 'Unable to duplicate product. ';
+      if (err.response?.data?.message) {
+        errorMessage += err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage += err.response.data.error;
+      } else if (err.response?.data?.errors) {
+        const errors = err.response.data.errors;
+        console.error('Duplicate validation errors:', errors);
+        if (Array.isArray(errors)) {
+          errorMessage += errors.map((e: any) => {
+            if (typeof e === 'object' && e.constraints) {
+              return Object.values(e.constraints).join(', ');
+            }
+            return e;
+          }).join(', ');
+        } else if (typeof errors === 'object') {
+          errorMessage += Object.entries(errors).map(([field, msgs]: [string, any]) => {
+            return `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+          }).join('; ');
+        }
+      } else if (err.message) {
+        errorMessage += err.message;
+      }
+      
+      setError(errorMessage);
+      setTimeout(() => setError(null), 10000);
     } finally {
       setIsDuplicating(false);
     }
@@ -195,16 +263,17 @@ export default function ProductDetails() {
   };
 
   const getStatusBadge = (status: string) => {
+    // Normalize status to handle both uppercase (from backend) and lowercase
+    const normalizedStatus = status?.toLowerCase();
+    
     const statusMap: any = {
-      'ACTIVE': { bg: 'bg-green-100', text: 'text-green-800', icon: Eye },
+      'active': { bg: 'bg-green-100', text: 'text-green-800', icon: Eye },
       'published': { bg: 'bg-green-100', text: 'text-green-800', icon: Eye },
-      'DRAFT': { bg: 'bg-gray-100', text: 'text-gray-800', icon: FileText },
       'draft': { bg: 'bg-yellow-100', text: 'text-yellow-800', icon: FileText },
-      'ARCHIVED': { bg: 'bg-red-100', text: 'text-red-800', icon: Archive },
       'archived': { bg: 'bg-red-100', text: 'text-red-800', icon: Archive },
     };
     
-    const config = statusMap[status] || { bg: 'bg-gray-100', text: 'text-gray-800', icon: Info };
+    const config = statusMap[normalizedStatus] || { bg: 'bg-gray-100', text: 'text-gray-800', icon: Info };
     const Icon = config.icon;
     
     return (

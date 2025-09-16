@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: dbpass
+      POSTGRES_DB: appdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  cache:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  backend:
+    build: 
+      context: ./engines
+      dockerfile: Dockerfile.production
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: dbuser
+      DB_PASSWORD: dbpass
+      REDIS_HOST: cache
+      REDIS_PORT: 6379
+      JWT_SECRET: secret123
+      JWT_REFRESH_SECRET: refresh123
+    ports:
+      - "3010:3010"
+    depends_on:
+      - db
+      - cache
+    command: sh -c "sleep 10 && node dist/main"
+
+  web:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.production
+      args:
+        VITE_API_URL: http://localhost:3010/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

@@ -1,5 +1,6 @@
 import api from './api';
 import { ApiResponseParser } from '../utils/api-response-parser';
+import { prepareProductForBackend } from '../utils/product-normalizer';
 import {
   CollectionResponse,
   ActionResponse,
@@ -55,16 +56,37 @@ class ProductService {
    * Create new product
    */
   async createProduct(dto: CreateProductDto): Promise<ActionResponse<ProductResponseDto>> {
-    const response = await api.post('/products', dto);
-    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    console.log('[ProductService] createProduct - Original DTO:', dto);
+    // Normalize data for backend (convert lowercase status/type to uppercase)
+    const normalizedDto = prepareProductForBackend(dto);
+    console.log('[ProductService] createProduct - Normalized DTO for backend:', normalizedDto);
+    
+    try {
+      const response = await api.post('/products', normalizedDto);
+      return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] createProduct failed:', error.response?.data);
+      throw error;
+    }
   }
 
   /**
    * Update existing product
    */
   async updateProduct(id: string, dto: UpdateProductDto): Promise<ActionResponse<ProductResponseDto>> {
-    const response = await api.patch(`/products/${id}`, dto);
-    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    console.log('[ProductService] updateProduct - Original DTO:', dto);
+    // Normalize data for backend (convert lowercase status/type to uppercase)
+    const normalizedDto = prepareProductForBackend(dto);
+    console.log('[ProductService] updateProduct - Normalized DTO for backend:', normalizedDto);
+    
+    try {
+      const response = await api.patch(`/products/${id}`, normalizedDto);
+      return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] updateProduct failed:', error.response?.data);
+      console.error('[ProductService] updateProduct status:', error.response?.status);
+      throw error;
+    }
   }
 
   /**
@@ -79,16 +101,16 @@ class ProductService {
    * Archive product
    */
   async archiveProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
-    const response = await api.patch(`/products/${id}`, { status: 'archived' });
-    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    // Use the normalized update method to ensure proper formatting
+    return this.updateProduct(id, { status: 'archived' });
   }
 
   /**
    * Unarchive product
    */
   async unarchiveProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
-    const response = await api.patch(`/products/${id}`, { status: 'draft' });
-    return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    // Use the normalized update method to ensure proper formatting
+    return this.updateProduct(id, { status: 'draft' });
   }
 
   /**
@@ -104,36 +126,45 @@ class ProductService {
    */
   async duplicateProduct(id: string): Promise<ActionResponse<ProductResponseDto>> {
     try {
-      // Step 1: Get the existing product
+      // Step 1: Get the existing product (already normalized by parseSingle)
       const existingProduct = await this.getProduct(id);
+      
+      // Validate that we have the required fields
+      if (!existingProduct || !existingProduct.sku || !existingProduct.name) {
+        console.error('[ProductService] Invalid product data:', existingProduct);
+        throw new Error('Cannot duplicate: Product data is missing required fields');
+      }
       
       // Step 2: Create a copy with modified SKU and name
       const timestamp = Date.now();
       const duplicateData: CreateProductDto = {
         sku: `${existingProduct.sku}-COPY-${timestamp}`,
         name: `${existingProduct.name} (Copy)`,
-        description: existingProduct.description,
-        shortDescription: existingProduct.shortDescription,
-        status: 'draft', // Always set duplicates to draft
-        type: existingProduct.type || 'simple',
-        price: existingProduct.price ? parseFloat(existingProduct.price.toString()) : undefined,
-        specialPrice: existingProduct.specialPrice ? parseFloat(existingProduct.specialPrice.toString()) : undefined,
-        cost: existingProduct.cost ? parseFloat(existingProduct.cost.toString()) : undefined,
-        barcode: existingProduct.barcode,
+        // Only include non-null values
+        ...(existingProduct.description && { description: existingProduct.description }),
+        ...(existingProduct.shortDescription && { shortDescription: existingProduct.shortDescription }),
+        // Status and type are already normalized (lowercase) from parseSingle
+        status: 'draft' as any, // Always set duplicates to draft
+        type: (existingProduct.type || 'simple') as any,
+        ...(existingProduct.price != null && { price: parseFloat(existingProduct.price.toString()) }),
+        ...(existingProduct.specialPrice != null && { specialPrice: parseFloat(existingProduct.specialPrice.toString()) }),
+        ...(existingProduct.cost != null && { cost: parseFloat(existingProduct.cost.toString()) }),
+        ...(existingProduct.barcode && { barcode: existingProduct.barcode }),
         quantity: existingProduct.quantity || 0,
-        isFeatured: existingProduct.isFeatured || false,
+        isFeatured: existingProduct.isFeatured === true,
         isVisible: existingProduct.isVisible !== false,
         manageStock: existingProduct.manageStock !== false,
-        metaTitle: existingProduct.metaTitle,
-        metaDescription: existingProduct.metaDescription,
-        metaKeywords: existingProduct.metaKeywords,
-        weight: existingProduct.weight,
-        weightUnit: existingProduct.weightUnit,
-        brandId: existingProduct.brandId,
-        // Note: categoryIds would need to be extracted from existingProduct.categories if needed
+        ...(existingProduct.metaTitle && { metaTitle: existingProduct.metaTitle }),
+        ...(existingProduct.metaDescription && { metaDescription: existingProduct.metaDescription }),
+        ...(existingProduct.metaKeywords && { metaKeywords: existingProduct.metaKeywords }),
+        ...(existingProduct.weight != null && { weight: existingProduct.weight }),
+        ...(existingProduct.brand && { brand: existingProduct.brand }),
+        ...(existingProduct.manufacturer && { manufacturer: existingProduct.manufacturer }),
       };
       
-      // Step 3: Create the new product
+      console.log('[ProductService] Duplicating product with data:', duplicateData);
+      
+      // Step 3: Create the new product (createProduct will normalize for backend)
       return await this.createProduct(duplicateData);
     } catch (error: any) {
       console.error('[ProductService] Failed to duplicate product:', error);

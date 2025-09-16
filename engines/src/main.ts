@@ -31,17 +31,17 @@ async function bootstrap() {
   const projectRoot = resolve(__dirname, '..');
   const uploadsPath = resolve(projectRoot, '..', 'uploads'); // Go up one more level from dist
   const publicPath = resolve(projectRoot, '..', 'public');
-  
+
   console.log('📁 Project root:', projectRoot);
   console.log('📁 Uploads path:', uploadsPath);
   console.log('📁 Public path:', publicPath);
-  
+
   // Check if directories exist
   if (fs.existsSync(uploadsPath)) {
     console.log('✅ Uploads directory found');
     const files = fs.readdirSync(uploadsPath);
     console.log(`📁 Contains ${files.length} files`);
-    
+
     // Serve uploads directory
     app.useStaticAssets(uploadsPath, {
       prefix: '/uploads',
@@ -59,7 +59,7 @@ async function bootstrap() {
       });
     }
   }
-  
+
   // Serve public directory if it exists
   if (fs.existsSync(publicPath)) {
     console.log('✅ Public directory found');
@@ -97,7 +97,7 @@ async function bootstrap() {
   );
 
   // API prefix - this MUST come AFTER static asset configuration
-  app.setGlobalPrefix('api/v1', {
+  app.setGlobalPrefix('api', {
     exclude: ['health'],
   });
 
@@ -114,13 +114,13 @@ async function bootstrap() {
     .addTag('Attributes', 'Attribute management endpoints')
     .addTag('Media', 'Media management endpoints')
     .build();
-  
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
   const port = process.env.PORT || 3010;
   await app.listen(port);
-  
+
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`🏥 Health check: http://localhost:${port}/health`);
   console.log(`📡 API endpoints: http://localhost:${port}/api/v1`);

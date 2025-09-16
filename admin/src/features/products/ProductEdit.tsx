@@ -55,8 +55,39 @@ export default function ProductEdit() {
       setLoading(true);
       setError(null);
       
+      // DIAGNOSTIC: Check raw response
+      const token = localStorage.getItem('access_token');
+      console.log('🔍 EDIT - Token exists:', !!token, 'First 20 chars:', token?.substring(0, 20));
+      
+      const rawResponse = await fetch(`/api/products/${productId}`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('🔍 EDIT - Response status:', rawResponse.status, 'Type:', rawResponse.headers.get('content-type'));
+      const contentType = rawResponse.headers.get('content-type');
+      
+      if (contentType && contentType.includes('text/html')) {
+        console.error('🔍 EDIT - ERROR: API returned HTML instead of JSON!');
+        const text = await rawResponse.text();
+        console.error('🔍 EDIT - HTML Response (first 200 chars):', text.substring(0, 200));
+        throw new Error('API returned HTML. Please restart the frontend dev server after the proxy fix.');
+      }
+      
+      const rawData = await rawResponse.json();
+      console.log('🔍 EDIT - RAW API RESPONSE:', rawData);
+      console.log('🔍 EDIT - Response structure:', {
+        'success': rawData.success,
+        'data exists': !!rawData.data,
+        'data.sku': rawData.data?.sku,
+        'data.data exists': !!rawData.data?.data,
+        'data.data.sku': rawData.data?.data?.sku
+      });
+      
       const product = await productService.getProduct(productId);
-      console.log('Loaded product:', product);
+      console.log('📦 EDIT - Loaded product:', product);
       
       // Map the product data to form fields
       setFormData({
@@ -65,8 +96,9 @@ export default function ProductEdit() {
         urlKey: product.urlKey || '',  // Map urlKey
         description: product.description || '',
         shortDescription: product.shortDescription || '',
-        status: product.status || 'draft',  // Use lowercase
-        type: product.type || 'simple',     // Use lowercase
+        // Product data is already normalized by parseSingle (lowercase status/type)
+        status: product.status || 'draft',
+        type: product.type || 'simple',
         price: product.price?.toString() || '',
         compareAtPrice: product.specialPrice?.toString() || '',  // Map specialPrice to compareAtPrice for UI
         cost: product.cost?.toString() || '',
@@ -166,8 +198,9 @@ export default function ProductEdit() {
       const updateData: any = {
         sku: formData.sku,
         name: formData.name,
-        status: formData.status.toLowerCase(),  // Ensure lowercase
-        type: formData.type.toLowerCase(),      // Ensure lowercase
+        // Status and type are already lowercase in form, will be normalized by service
+        status: formData.status || 'draft',
+        type: formData.type || 'simple',
         isFeatured: formData.featured,  // Backend expects isFeatured, not featured
         quantity: parseInt(formData.quantity.toString()) || 0,
       };
@@ -227,20 +260,34 @@ export default function ProductEdit() {
     } catch (err: any) {
       console.error('Failed to update product:', err);
       console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      console.error('Request data that was sent:', updateData);
       
       // Extract detailed error message
       let errorMessage = 'Failed to update product. ';
       if (err.response?.data?.message) {
         errorMessage += err.response.data.message;
+        // Log specific validation errors if present
+        if (err.response.data.message.includes('Validation')) {
+          console.error('Validation error details:', err.response.data);
+        }
       } else if (err.response?.data?.error) {
         errorMessage += err.response.data.error;
       } else if (err.response?.data?.errors) {
         // Handle validation errors array
         const errors = err.response.data.errors;
+        console.error('Validation errors:', errors);
         if (Array.isArray(errors)) {
-          errorMessage += errors.join(', ');
+          errorMessage += errors.map((e: any) => {
+            if (typeof e === 'object' && e.constraints) {
+              return Object.values(e.constraints).join(', ');
+            }
+            return e;
+          }).join(', ');
         } else if (typeof errors === 'object') {
-          errorMessage += Object.values(errors).flat().join(', ');
+          errorMessage += Object.entries(errors).map(([field, msgs]: [string, any]) => {
+            return `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+          }).join('; ');
         }
       } else if (err.message) {
         errorMessage += err.message;
