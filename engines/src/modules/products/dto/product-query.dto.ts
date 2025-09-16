@@ -1,182 +1,229 @@
-import { IsOptional, IsEnum, IsString, IsBoolean, IsNumber, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsUUID, IsNumber, IsBoolean, IsArray, IsEnum, Min, Max } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type, Transform } from 'class-transformer';
-import { ProductType, ProductStatus } from '../entities/product.entity';
+import { BaseQueryDto } from '../../../common/dto/base-query.dto';
 
-export class ProductQueryDto {
-  @ApiPropertyOptional({
-    description: 'Search term for product name, SKU, or description',
-    example: 'wireless',
-  })
-  @IsString()
+/**
+ * Product Query DTO - Compliant with PIM API Standards
+ * Extends BaseQueryDto for standard pagination and sorting
+ */
+export class ProductQueryDto extends BaseQueryDto {
+  
+  // ========== Product Identification Filters ==========
+  
+  @ApiPropertyOptional({ description: 'Filter by SKU' })
   @IsOptional()
-  search?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by SKU (exact match)',
-    example: 'PROD-001',
-  })
   @IsString()
-  @IsOptional()
+  @Transform(({ value }) => value?.trim())
   sku?: string;
 
-  @ApiPropertyOptional({
-    enum: ProductType,
-    description: 'Filter by product type',
-  })
-  @IsEnum(ProductType)
+  @ApiPropertyOptional({ description: 'Filter by product type' })
   @IsOptional()
-  type?: ProductType;
-
-  @ApiPropertyOptional({
-    enum: ProductStatus,
-    description: 'Filter by product status',
-  })
-  @IsEnum(ProductStatus)
-  @IsOptional()
-  status?: ProductStatus;
-
-  @ApiPropertyOptional({
-    description: 'Filter by brand',
-    example: 'Sony',
-  })
   @IsString()
-  @IsOptional()
-  brand?: string;
+  type?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter by manufacturer',
-    example: 'Sony Corporation',
-  })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Filter by parent product ID' })
   @IsOptional()
-  manufacturer?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by parent product ID (for variants)',
-    example: 'uuid-of-parent',
-  })
-  @IsString()
-  @IsOptional()
+  @IsUUID('4')
   parentId?: string;
 
-  @ApiPropertyOptional({
-    description: 'Filter by tags (comma-separated)',
-    example: 'electronics,audio',
-  })
+  // ========== Brand/Manufacturer Filters ==========
+
+  @ApiPropertyOptional({ description: 'Filter by brand' })
+  @IsOptional()
   @IsString()
-  @IsOptional()
-  @Transform(({ value }) => value?.split(',').map((tag: string) => tag.trim()))
-  tags?: string[];
+  @Transform(({ value }) => value?.trim())
+  brand?: string;
 
-  @ApiPropertyOptional({
-    description: 'Minimum price filter',
-    example: 50,
-    minimum: 0,
+  @ApiPropertyOptional({ description: 'Filter by manufacturer' })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.trim())
+  manufacturer?: string;
+
+  // ========== Status Filters ==========
+
+  @ApiPropertyOptional({ 
+    description: 'Filter by product status',
+    enum: ['draft', 'published', 'archived']
   })
-  @IsNumber()
   @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  minPrice?: number;
+  @IsString()
+  status?: string;
 
-  @ApiPropertyOptional({
-    description: 'Maximum price filter',
-    example: 500,
-    minimum: 0,
-  })
-  @IsNumber()
+  @ApiPropertyOptional({ description: 'Filter by active status' })
   @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  maxPrice?: number;
-
-  @ApiPropertyOptional({
-    description: 'Filter by in stock status',
-    example: true,
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
   })
   @IsBoolean()
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  inStock?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter by featured status',
-    example: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  isFeatured?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter by visibility status',
-    example: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  isVisible?: boolean;
-
-  @ApiPropertyOptional({
-    description: 'Filter by active status',
-    example: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
   isActive?: boolean;
 
-  @ApiPropertyOptional({
-    description: 'Include variants in response',
-    example: false,
-    default: false,
+  @ApiPropertyOptional({ description: 'Filter by visibility status' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
   })
   @IsBoolean()
+  isVisible?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by featured status' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  // ========== Inventory Filters ==========
+
+  @ApiPropertyOptional({ description: 'Filter by stock availability' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  inStock?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by low stock status' })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    return undefined;
+  })
+  @IsBoolean()
+  lowStock?: boolean;
+
+  // ========== Price Filters ==========
+
+  @ApiPropertyOptional({ description: 'Minimum price filter' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Maximum price filter' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxPrice?: number;
+
+  // ========== Category Filters (Supporting both single and multiple) ==========
+
+  @ApiPropertyOptional({ description: 'Filter by single category ID' })
+  @IsOptional()
+  @IsUUID('4')
+  categoryId?: string;
+
+  @ApiPropertyOptional({ 
+    description: 'Filter by multiple category IDs',
+    type: [String],
+    isArray: true
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    // Handle comma-separated string
+    if (typeof value === 'string') {
+      return value.split(',').map(id => id.trim()).filter(id => id);
+    }
+    // Handle array
+    if (Array.isArray(value)) {
+      return value.map(id => id.trim()).filter(id => id);
+    }
+    return [];
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  categoryIds?: string[];
+
+  // ========== Tag Filters ==========
+
+  @ApiPropertyOptional({ 
+    description: 'Filter by tags',
+    type: [String],
+    isArray: true
+  })
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value.split(',').map(tag => tag.trim()).filter(tag => tag);
+    }
+    if (Array.isArray(value)) {
+      return value;
+    }
+    return [];
+  })
+  @IsArray()
+  @IsString({ each: true })
+  tags?: string[];
+
+  // ========== Include Options ==========
+
+  @ApiPropertyOptional({ description: 'Include deleted items' })
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeDeleted?: boolean = false;
+
+  @ApiPropertyOptional({ description: 'Include product variants' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
   includeVariants?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'Sort field',
-    enum: ['name', 'sku', 'price', 'createdAt', 'updatedAt', 'sortOrder'],
-    default: 'createdAt',
-  })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Include product categories' })
   @IsOptional()
-  sortBy?: string = 'createdAt';
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeCategories?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'Sort order',
-    enum: ['ASC', 'DESC'],
-    default: 'DESC',
-  })
-  @IsString()
+  @ApiPropertyOptional({ description: 'Include product attributes' })
   @IsOptional()
-  @Transform(({ value }) => value?.toUpperCase())
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeAttributes?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'Page number',
-    minimum: 1,
-    default: 1,
-  })
-  @IsNumber()
+  @ApiPropertyOptional({ description: 'Include product media' })
   @IsOptional()
-  @Min(1)
-  @Type(() => Number)
-  page?: number = 1;
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeMedia?: boolean = false;
 
-  @ApiPropertyOptional({
-    description: 'Items per page',
-    minimum: 1,
-    maximum: 100,
-    default: 20,
-  })
-  @IsNumber()
-  @IsOptional()
-  @Min(1)
-  @Max(100)
-  @Type(() => Number)
-  limit?: number = 20;
+  // ========== Helper Methods ==========
+
+  /**
+   * Get combined category filters (both single and multiple)
+   */
+  getCategoryFilters(): string[] {
+    const filters: string[] = [];
+    
+    if (this.categoryId) {
+      filters.push(this.categoryId);
+    }
+    
+    if (this.categoryIds && this.categoryIds.length > 0) {
+      filters.push(...this.categoryIds);
+    }
+    
+    // Remove duplicates
+    return [...new Set(filters)];
+  }
+
+  /**
+   * Check if price range filter is applied
+   */
+  hasPriceRange(): boolean {
+    return this.minPrice !== undefined || this.maxPrice !== undefined;
+  }
 }

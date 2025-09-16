@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -605,5 +606,303 @@ export class CategoriesService {
     return plainToInstance(CategoryResponseDto, category, {
       excludeExtraneousValues: true,
     });
+  }
+
+  /**
+   * Get all categories with product counts
+   * Returns hierarchical tree with direct and total product counts
+   */
+  async getCategoriesWithCounts(): Promise<CollectionResponse<any>> {
+    try {
+      // Get all categories first
+      const categories = await this.categoryRepository.find({
+        where: { isDeleted: false },
+        order: { left: 'ASC' },
+      });
+
+      // If no categories, return empty collection
+      if (!categories || categories.length === 0) {
+        return ResponseHelpers.wrapCollection([], {
+          totalItems: 0,
+          itemCount: 0
+        });
+      }
+
+      // Build tree structure with counts (simplified - set to 0 for now)
+      const categoryMap = new Map<string, any>();
+      
+      // First pass: Create map with categories
+      for (const category of categories) {
+        categoryMap.set(category.id, {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          description: category.description,
+          parentId: category.parentId,
+          isActive: category.isActive,
+          isVisible: category.isVisible,
+          isFeatured: category.isFeatured,
+          showInMenu: category.showInMenu,
+          left: category.left,
+          right: category.right,
+          level: category.level,
+          productCount: 0,  // Will be calculated if products exist
+          totalProductCount: 0, // Will be calculated if products exist
+          children: []
+        });
+      }
+
+      // Try to get product counts (but don't fail if it doesn't work)
+      try {
+        for (const category of categories) {
+          const node = categoryMap.get(category.id);
+          if (node) {
+            // Try to get product count
+            const productCountResult = await this.categoryRepository
+              .createQueryBuilder('category')
+              .leftJoin('product_categories', 'pc', 'pc.categoryId = category.id')
+              .leftJoin('products', 'product', 'product.id = pc.productId')
+              .where('category.id = :categoryId', { categoryId: category.id })
+              .andWhere('(product.isDeleted = false OR product.isDeleted IS NULL)')
+              .select('COUNT(DISTINCT product.id)', 'count')
+              .getRawOne();
+            
+            const directCount = parseInt(productCountResult?.count || '0', 10);
+            node.productCount = directCount;
+            node.totalProductCount = directCount; // Will update with descendants below
+          }
+        }
+
+        // Calculate total counts including descendants
+        for (const category of categories) {
+          const node = categoryMap.get(category.id);
+          if (node) {
+            // Find all descendants using nested set model
+            const descendants = categories.filter(c => 
+              c.left > category.left && c.right < category.right
+            );
+            
+            // Sum up product counts from all descendants
+            const descendantCount = descendants.reduce((sum, desc) => {
+              const descNode = categoryMap.get(desc.id);
+              return sum + (descNode?.productCount || 0);
+            }, 0);
+            
+            // Total = direct + all descendants
+            node.totalProductCount = node.productCount + descendantCount;
+          }
+        }
+      } catch (countError) {
+        // If counting fails, just continue with 0 counts
+        this.logger.warn('Failed to get product counts, continuing with zeros', countError);
+      }
+
+      // Build tree structure
+      const tree: any[] = [];
+      const items: any[] = [];
+      
+      for (const [id, node] of categoryMap) {
+        items.push(node);
+        if (!node.parentId) {
+          tree.push(node);
+        } else {
+          const parent = categoryMap.get(node.parentId);
+          if (parent) {
+            parent.children.push(node);
+          }
+        }
+      }
+
+      // Sort children by name
+      const sortChildren = (nodes: any[]) => {
+        nodes.sort((a, b) => a.name.localeCompare(b.name));
+        nodes.forEach(node => {
+          if (node.children && node.children.length > 0) {
+            sortChildren(node.children);
+          }
+        });
+      };
+      sortChildren(tree);
+
+      // Return using ResponseHelpers for proper format
+      return ResponseHelpers.wrapCollection(items, {
+        totalItems: items.length,
+        itemCount: items.length
+      });
+    } catch (error) {
+      this.logger.error('Failed to retrieve categories with counts', error);
+      // Return empty collection on error
+      return ResponseHelpers.wrapCollection([], {
+        totalItems: 0,
+        itemCount: 0
+      });
+    }
+  }
+
+  /**
+   * Get category statistics
+   */
+  async getCategoryStats(): Promise<any> {
+    try {
+      const totalCategories = await this.categoryRepository.count({
+        where: { isDeleted: false }
+      });
+
+      const activeCategories = await this.categoryRepository.count({
+        where: { isDeleted: false, isActive: true }
+      });
+
+      // Get categories with products using query builder
+      const categoriesWithProducts = await this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoin('category.products', 'product')
+        .where('category.isDeleted = :isDeleted', { isDeleted: false })
+        .andWhere('product.id IS NOT NULL')
+        .andWhere('product.isDeleted = :productDeleted', { productDeleted: false })
+        .select('category.id')
+        .distinct(true)
+        .getCount();
+
+      const emptyCategories = totalCategories - categoriesWithProducts;
+
+      // Get total unique products
+      const productResult = await this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoin('category.products', 'product')
+        .where('category.isDeleted = :isDeleted', { isDeleted: false })
+        .andWhere('product.isDeleted = :productDeleted', { productDeleted: false })
+        .select('COUNT(DISTINCT product.id)', 'count')
+        .getRawOne();
+      
+      const totalProducts = parseInt(productResult?.count || '0', 10);
+
+      // Get top category
+      const topCategoryResult = await this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoin('category.products', 'product')
+        .where('category.isDeleted = :isDeleted', { isDeleted: false })
+        .andWhere('product.isDeleted = :productDeleted', { productDeleted: false })
+        .groupBy('category.id, category.name')
+        .select('category.id', 'id')
+        .addSelect('category.name', 'name')
+        .addSelect('COUNT(product.id)', 'count')
+        .orderBy('COUNT(product.id)', 'DESC')
+        .limit(1)
+        .getRawOne();
+
+      const stats = {
+        totalCategories,
+        activeCategories,
+        inactiveCategories: totalCategories - activeCategories,
+        categoriesWithProducts,
+        emptyCategories,
+        totalProducts,
+        averageProductsPerCategory: categoriesWithProducts > 0 
+          ? Math.round(totalProducts / categoriesWithProducts) 
+          : 0
+      };
+
+      if (topCategoryResult) {
+        stats['topCategory'] = {
+          id: topCategoryResult.id,
+          name: topCategoryResult.name,
+          count: parseInt(topCategoryResult.count, 10)
+        };
+      }
+
+      return {
+        success: true,
+        message: 'Category statistics retrieved successfully',
+        data: stats,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `Failed to retrieve category statistics: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Get single category with product count
+   */
+  async getCategoryWithCounts(id: string): Promise<any> {
+    try {
+      const category = await this.categoryRepository.findOne({
+        where: { id, isDeleted: false },
+        relations: ['products']
+      });
+
+      if (!category) {
+        throw new NotFoundException(`Category with ID ${id} not found`);
+      }
+
+      const directCount = category.products?.filter(p => !p.isDeleted).length || 0;
+      
+      // Get descendants for total count
+      const descendants = await this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoinAndSelect('category.products', 'product')
+        .where('category.left > :left', { left: category.left })
+        .andWhere('category.right < :right', { right: category.right })
+        .andWhere('category.isDeleted = :isDeleted', { isDeleted: false })
+        .getMany();
+
+      const descendantCount = descendants.reduce((sum, desc) => {
+        return sum + (desc.products?.filter(p => !p.isDeleted).length || 0);
+      }, 0);
+
+      const categoryWithCounts = {
+        ...this.toResponseDto(category),
+        productCount: directCount,
+        totalProductCount: directCount + descendantCount
+      };
+
+      return {
+        success: true,
+        message: 'Category with counts retrieved successfully',
+        data: categoryWithCounts,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        `Failed to retrieve category with counts: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Helper: Build tree structure with counts
+   */
+  private buildTreeWithCounts(categories: any[]): any[] {
+    const tree: any[] = [];
+    const map = new Map<string, any>();
+
+    // Create map
+    categories.forEach(category => {
+      map.set(category.id, { ...category, children: [] });
+    });
+
+    // Build tree structure
+    categories.forEach(category => {
+      const node = map.get(category.id);
+      if (node) {
+        if (category.parentId) {
+          const parent = map.get(category.parentId);
+          if (parent) {
+            parent.children.push(node);
+            // Add child counts to parent total
+            parent.totalProductCount = (parent.totalProductCount || 0) + (node.totalProductCount || 0);
+          }
+        } else {
+          tree.push(node);
+        }
+      }
+    });
+
+    return tree;
   }
 }

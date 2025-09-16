@@ -1,0 +1,26 @@
+
+    // Enhanced category filtering to support both categoryId and categoryIds
+    const categoryFilters: string[] = [];
+    
+    // Single category (backward compatibility)
+    if (query.categoryId) {
+      categoryFilters.push(query.categoryId);
+    }
+    
+    // Multiple categories
+    if (query.categoryIds && query.categoryIds.length > 0) {
+      categoryFilters.push(...query.categoryIds);
+    }
+    
+    // Apply category filter if we have any categories
+    if (categoryFilters.length > 0) {
+      // Remove duplicates
+      const uniqueCategories = [...new Set(categoryFilters)];
+      
+      queryBuilder.innerJoin(
+        'product.categories',
+        'category',
+        'category.id IN (:...categoryIds)',
+        { categoryIds: uniqueCategories }
+      );
+    }

@@ -3,7 +3,6 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import productService from '../../services/product.service';
 import mediaService, { Media } from '../../services/media.service';
 import MediaUpload from '../../components/media/MediaUpload';
-import CategoryAssignment from '../../components/products/CategoryAssignment';
 import ProductVariants from './ProductVariants';
 import ConfigurableProduct from './ConfigurableProduct';
 
@@ -479,16 +478,6 @@ export default function ProductEdit() {
             </label>
           </div>
         </div>
-
-        {/* Category Assignment Section */}
-        {id && (
-          <CategoryAssignment 
-            productId={id}
-            onCategoriesChange={(categoryIds) => {
-              console.log('Categories updated:', categoryIds);
-            }}
-          />
-        )}
 
         {/* Media Upload Section */}
         <div className="bg-white shadow rounded-lg p-6">

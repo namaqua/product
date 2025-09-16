@@ -1,0 +1,53 @@
+// Add these imports:
+import { 
+  CollectionResponse as CollectionResponseDto 
+} from '../../common/dto';
+import { CategoryWithCountsDto } from './dto/category-with-counts.dto';
+import { CategoryStatsResponseDto } from './dto/category-stats-response.dto';
+
+// Add these endpoints to categories.controller.ts:
+
+@Get('with-counts')
+@ApiOperation({ 
+  summary: 'Get all categories with product counts',
+  description: 'Returns hierarchical category tree with direct and total product counts'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Categories with counts retrieved successfully'
+})
+async getCategoriesWithCounts(): Promise<CollectionResponseDto<CategoryWithCountsDto>> {
+  return this.categoriesService.getCategoriesWithCounts();
+}
+
+@Get('stats')
+@ApiOperation({ 
+  summary: 'Get category statistics',
+  description: 'Returns aggregated statistics about categories and products'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Category statistics retrieved successfully',
+  type: CategoryStatsResponseDto
+})
+async getCategoryStats(): Promise<CategoryStatsResponseDto> {
+  return this.categoriesService.getCategoryStats();
+}
+
+@Get(':id/with-counts')
+@ApiOperation({ 
+  summary: 'Get single category with product count',
+  description: 'Returns a specific category with its product count'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Category with count retrieved successfully',
+  type: CategoryWithCountsDto
+})
+@ApiResponse({
+  status: 404,
+  description: 'Category not found'
+})
+async getCategoryWithCounts(@Param('id') id: string): Promise<CategoryWithCountsDto> {
+  return this.categoriesService.getCategoryWithCounts(id);
+}

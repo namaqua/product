@@ -1,0 +1,195 @@
+// Add these imports at the top:
+import { CollectionResponse, ResponseHelpers } from '../../common/dto';
+import { CategoryWithCountsDto } from './dto/category-with-counts.dto';
+import { CategoryStatsResponseDto } from './dto/category-stats-response.dto';
+
+// Add these methods to categories.service.ts:
+
+/**
+ * Get all categories with product counts
+ * Compliant with PIM API Standards
+ */
+async getCategoriesWithCounts(): Promise<CollectionResponse<CategoryWithCountsDto>> {
+  // Get categories with product counts using QueryBuilder
+  const categoriesWithCounts = await this.categoryRepository
+    .createQueryBuilder('category')
+    .leftJoin('category.products', 'product')
+    .leftJoin('category.children', 'child')
+    .select([
+      'category.id',
+      'category.name',
+      'category.description',
+      'category.urlKey',
+      'category.parentId',
+      'category.isActive',
+      'category.sortOrder',
+      'category.createdAt',
+      'category.updatedAt'
+    ])
+    .addSelect('COUNT(DISTINCT product.id)', 'productCount')
+    .where('category.isDeleted = :isDeleted', { isDeleted: false })
+    .groupBy('category.id')
+    .getRawMany();
+
+  // Build tree structure with counts
+  const tree = await this.buildTreeWithCounts(categoriesWithCounts);
+  
+  // Return using ResponseHelpers for PIM compliance
+  return ResponseHelpers.wrapCollection(tree, {
+    totalCategories: categoriesWithCounts.length,
+    timestamp: new Date().toISOString()
+  });
+}
+
+/**
+ * Get category statistics
+ */
+async getCategoryStats(): Promise<CategoryStatsResponseDto> {
+  const stats = await this.categoryRepository
+    .createQueryBuilder('category')
+    .leftJoin('category.products', 'product')
+    .select('COUNT(DISTINCT category.id)', 'totalCategories')
+    .addSelect('COUNT(DISTINCT CASE WHEN category.isActive = true THEN category.id END)', 'activeCategories')
+    .addSelect('COUNT(DISTINCT product.id)', 'totalProducts')
+    .where('category.isDeleted = :isDeleted', { isDeleted: false })
+    .getRawOne();
+
+  // Get empty categories count
+  const emptyCategories = await this.categoryRepository
+    .createQueryBuilder('category')
+    .leftJoin('category.products', 'product')
+    .where('category.isDeleted = :isDeleted', { isDeleted: false })
+    .groupBy('category.id')
+    .having('COUNT(product.id) = 0')
+    .getCount();
+
+  // Get top category
+  const topCategory = await this.categoryRepository
+    .createQueryBuilder('category')
+    .leftJoin('category.products', 'product')
+    .select('category.id', 'id')
+    .addSelect('category.name', 'name')
+    .addSelect('COUNT(product.id)', 'count')
+    .where('category.isDeleted = :isDeleted', { isDeleted: false })
+    .groupBy('category.id')
+    .addGroupBy('category.name')
+    .orderBy('count', 'DESC')
+    .limit(1)
+    .getRawOne();
+
+  const dto = new CategoryStatsResponseDto();
+  dto.totalCategories = parseInt(stats.totalCategories) || 0;
+  dto.activeCategories = parseInt(stats.activeCategories) || 0;
+  dto.totalProducts = parseInt(stats.totalProducts) || 0;
+  dto.emptyCategories = emptyCategories;
+  
+  if (topCategory) {
+    dto.topCategory = {
+      id: topCategory.id,
+      name: topCategory.name,
+      count: parseInt(topCategory.count) || 0
+    };
+  }
+
+  return dto;
+}
+
+/**
+ * Build tree structure with product counts
+ */
+private async buildTreeWithCounts(categories: any[]): Promise<CategoryWithCountsDto[]> {
+  const map = new Map<string, any>();
+  const tree: CategoryWithCountsDto[] = [];
+
+  // First pass: create all nodes with their direct counts
+  categories.forEach(cat => {
+    const node = CategoryWithCountsDto.fromEntityWithCount(
+      {
+        id: cat.category_id,
+        name: cat.category_name,
+        description: cat.category_description,
+        urlKey: cat.category_urlKey,
+        parentId: cat.category_parentId,
+        isActive: cat.category_isActive,
+        sortOrder: cat.category_sortOrder,
+        createdAt: cat.category_createdAt,
+        updatedAt: cat.category_updatedAt
+      },
+      parseInt(cat.productCount) || 0
+    );
+    
+    node.children = [];
+    map.set(cat.category_id, node);
+  });
+
+  // Second pass: build tree and calculate total counts
+  categories.forEach(cat => {
+    const node = map.get(cat.category_id);
+    
+    if (cat.category_parentId) {
+      const parent = map.get(cat.category_parentId);
+      if (parent) {
+        parent.children.push(node);
+      }
+    } else {
+      tree.push(node);
+    }
+  });
+
+  // Third pass: calculate total counts (including subcategories)
+  const calculateTotalCounts = (node: CategoryWithCountsDto): number => {
+    let total = node.productCount;
+    
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        total += calculateTotalCounts(child);
+      });
+    }
+    
+    node.totalProductCount = total;
+    return total;
+  };
+
+  tree.forEach(node => calculateTotalCounts(node));
+
+  return tree;
+}
+
+/**
+ * Get single category with counts
+ */
+async getCategoryWithCounts(id: string): Promise<CategoryWithCountsDto> {
+  const result = await this.categoryRepository
+    .createQueryBuilder('category')
+    .leftJoin('category.products', 'product')
+    .leftJoin('category.children', 'child')
+    .select([
+      'category.id',
+      'category.name',
+      'category.description',
+      'category.urlKey',
+      'category.parentId',
+      'category.isActive'
+    ])
+    .addSelect('COUNT(DISTINCT product.id)', 'productCount')
+    .where('category.id = :id', { id })
+    .andWhere('category.isDeleted = :isDeleted', { isDeleted: false })
+    .groupBy('category.id')
+    .getRawOne();
+
+  if (!result) {
+    throw new NotFoundException(`Category with ID ${id} not found`);
+  }
+
+  return CategoryWithCountsDto.fromEntityWithCount(
+    {
+      id: result.category_id,
+      name: result.category_name,
+      description: result.category_description,
+      urlKey: result.category_urlKey,
+      parentId: result.category_parentId,
+      isActive: result.category_isActive
+    },
+    parseInt(result.productCount) || 0
+  );
+}

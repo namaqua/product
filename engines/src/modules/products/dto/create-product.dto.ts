@@ -11,6 +11,7 @@ import {
   MinLength,
   Min,
   IsNotEmpty,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ProductType, ProductStatus } from '../entities/product.entity';
@@ -349,4 +350,15 @@ export class CreateProductDto {
   @Min(0)
   @Type(() => Number)
   sortOrder?: number = 0;
+
+  // Category associations
+  @ApiPropertyOptional({
+    description: 'Category IDs to assign to the product',
+    example: ['uuid-1', 'uuid-2'],
+    type: [String],
+  })
+  @IsArray()
+  @IsOptional()
+  @IsUUID('4', { each: true })
+  categoryIds?: string[];
 }

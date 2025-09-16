@@ -81,7 +81,7 @@ class CategoryService {
    * Update existing category
    */
   async updateCategory(id: string, dto: UpdateCategoryDto): Promise<ActionResponse<CategoryResponseDto>> {
-    const response = await api.patch(`/categories/${id}`, dto);
+    const response = await api.put(`/categories/${id}`, dto);
     return ApiResponseParser.parseAction<CategoryResponseDto>(response);
   }
 

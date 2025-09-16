@@ -36,6 +36,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { PaginatedResponseDto, CollectionResponse, ActionResponseDto } from '../../common/dto';
 
+// Import the new DTOs if they exist
+// import { CategoryWithCountsDto, CategoryStatsResponseDto } from './dto';
+
 @ApiTags('Categories')
 @Controller('categories')
 @UseGuards(JwtAuthGuard)
@@ -157,6 +160,32 @@ export class CategoriesController {
     return this.categoriesService.findBySlug(slug);
   }
 
+  @Get('with-counts')
+  @ApiOperation({ 
+    summary: 'Get all categories with product counts',
+    description: 'Returns hierarchical category tree with direct and total product counts'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Categories with counts retrieved successfully'
+  })
+  async getCategoriesWithCounts(): Promise<CollectionResponse<any>> {
+    return this.categoriesService.getCategoriesWithCounts();
+  }
+
+  @Get('stats')
+  @ApiOperation({ 
+    summary: 'Get category statistics',
+    description: 'Returns aggregated statistics about categories and products'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Category statistics retrieved successfully'
+  })
+  async getCategoryStats(): Promise<any> {
+    return this.categoriesService.getCategoryStats();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a category by ID' })
   @ApiParam({ name: 'id', description: 'Category ID' })
@@ -180,6 +209,24 @@ export class CategoriesController {
     @Query('includeAncestors') includeAncestors?: boolean,
   ): Promise<CategoryResponseDto> {
     return this.categoriesService.findOne(id, includeAncestors);
+  }
+
+  @Get(':id/with-counts')
+  @ApiOperation({ 
+    summary: 'Get single category with product count',
+    description: 'Returns a specific category with its product count'
+  })
+  @ApiParam({ name: 'id', description: 'Category ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Category with count retrieved successfully'
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Category not found'
+  })
+  async getCategoryWithCounts(@Param('id', ParseUUIDPipe) id: string): Promise<any> {
+    return this.categoriesService.getCategoryWithCounts(id);
   }
 
   @Get(':id/ancestors')

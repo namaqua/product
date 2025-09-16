@@ -24,11 +24,14 @@ import {
 } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { ProductAttributesService } from './services/product-attributes.service';
+import { CategoryResponseDto } from '../categories/dto/category-response.dto';
 import {
   CreateProductDto,
   UpdateProductDto,
   ProductQueryDto,
   ProductResponseDto,
+  AssignCategoriesDto,
+  BulkAssignCategoriesDto,
 } from './dto';
 import {
   AssignProductAttributesDto,
@@ -128,13 +131,15 @@ export class ProductsController {
   @ApiOperation({ summary: 'Get a product by ID' })
   @ApiParam({ name: 'id', description: 'Product ID' })
   @ApiQuery({ name: 'includeVariants', required: false, type: Boolean, description: 'Include product variants' })
+  @ApiQuery({ name: 'includeCategories', required: false, type: Boolean, description: 'Include product categories' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Product retrieved successfully', type: ProductResponseDto })
   @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
   async findOne(
     @Param('id', ParseUUIDPipe) id: string,
     @Query('includeVariants') includeVariants?: boolean,
+    @Query('includeCategories') includeCategories?: boolean,
   ): Promise<{ success: boolean; data: ProductResponseDto; timestamp: string }> {
-    const product = await this.productsService.findOne(id, includeVariants);
+    const product = await this.productsService.findOne(id, includeVariants, includeCategories);
     return {
       success: true,
       data: product,
@@ -229,6 +234,80 @@ export class ProductsController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<ActionResponseDto<ProductResponseDto>> {
     return this.productsService.restore(id);
+  }
+
+  // ============ CATEGORY MANAGEMENT ENDPOINTS ============
+
+  @Post(':id/categories')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Assign categories to a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Categories assigned successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid category IDs' })
+  async assignCategories(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Body() dto: AssignCategoriesDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    return this.productsService.assignCategories(productId, dto.categoryIds, false);
+  }
+
+  @Get(':id/categories')
+  @ApiOperation({ summary: 'Get categories assigned to a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Categories retrieved successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async getProductCategories(
+    @Param('id', ParseUUIDPipe) productId: string,
+  ): Promise<CollectionResponseDto<CategoryResponseDto>> {
+    return this.productsService.getProductCategories(productId);
+  }
+
+  @Delete(':id/categories/:categoryId')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove a category from a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiParam({ name: 'categoryId', description: 'Category ID to remove' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Category removed successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product or category not found' })
+  async removeCategory(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @Param('categoryId', ParseUUIDPipe) categoryId: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    return this.productsService.removeCategory(productId, categoryId);
+  }
+
+  @Delete(':id/categories')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove all categories from a product' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'All categories removed successfully' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Product not found' })
+  async removeAllCategories(
+    @Param('id', ParseUUIDPipe) productId: string,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    return this.productsService.removeAllCategories(productId);
+  }
+
+  @Post('categories/bulk-assign')
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Bulk assign categories to multiple products' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Categories assigned successfully' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid product or category IDs' })
+  async bulkAssignCategories(
+    @Body() dto: BulkAssignCategoriesDto,
+    @CurrentUser('id') userId: string,
+  ): Promise<ActionResponseDto<{ affected: number; results: any[] }>> {
+    return this.productsService.bulkAssignCategories(
+      dto.productIds,
+      dto.categoryIds,
+      dto.replace,
+    );
   }
 
   // ============ VARIANT MANAGEMENT ENDPOINTS ============

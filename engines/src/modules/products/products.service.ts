@@ -6,8 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Like, Between, In, Not, IsNull } from 'typeorm';
+import { Repository, FindOptionsWhere, Like, Between, In, Not, IsNull, DataSource } from 'typeorm';
 import { Product, ProductStatus, ProductType } from './entities/product.entity';
+import { Category } from '../categories/entities/category.entity';
+import { CategoryResponseDto } from '../categories/dto/category-response.dto';
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -43,6 +45,9 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -83,17 +88,38 @@ export class ProductsService {
       }
     }
 
+    // Extract categoryIds if provided
+    const { categoryIds, ...productData } = createProductDto;
+
     // Create product entity
     const product = this.productRepository.create({
-      ...createProductDto,
+      ...productData,
       createdBy: userId,
       updatedBy: userId,
-      inStock: createProductDto.quantity ? createProductDto.quantity > 0 : false,
+      inStock: productData.quantity ? productData.quantity > 0 : false,
     });
 
     // Generate URL key if not provided
     if (!product.urlKey && product.name) {
       product.urlKey = this.generateUrlKey(product.name);
+    }
+
+    // Handle categories if provided
+    if (categoryIds && categoryIds.length > 0) {
+      const categories = await this.categoryRepository.findBy({
+        id: In(categoryIds),
+        isDeleted: false,
+      });
+
+      if (categories.length !== categoryIds.length) {
+        const foundIds = categories.map(c => c.id);
+        const invalidIds = categoryIds.filter(id => !foundIds.includes(id));
+        throw new BadRequestException(
+          `Invalid category IDs: ${invalidIds.join(', ')}`,
+        );
+      }
+
+      product.categories = categories;
     }
 
     const savedProduct = await this.productRepository.save(product);
@@ -184,6 +210,17 @@ export class ProductsService {
       queryBuilder.andWhere('product.tags && :tags', { tags: query.tags });
     }
 
+    // Apply category filter with hierarchical support
+    if (query.categoryIds && query.categoryIds.length > 0) {
+      // Get all descendant categories for hierarchical filtering
+      const allCategoryIds = await this.getDescendantCategoryIds(query.categoryIds);
+      
+      queryBuilder
+        .leftJoin('product.categories', 'category')
+        .andWhere('category.id IN (:...allCategoryIds)', { allCategoryIds })
+        .andWhere('category.isDeleted = :catDeleted', { catDeleted: false });
+    }
+
     // Add relations if needed
     if (includeVariants) {
       queryBuilder.leftJoinAndSelect('product.variants', 'variant');
@@ -209,8 +246,10 @@ export class ProductsService {
   /**
    * Find a single product by ID
    */
-  async findOne(id: string, includeVariants = false): Promise<ProductResponseDto> {
-    const relations = includeVariants ? ['variants'] : [];
+  async findOne(id: string, includeVariants = false, includeCategories = false): Promise<ProductResponseDto> {
+    const relations = [];
+    if (includeVariants) relations.push('variants');
+    if (includeCategories) relations.push('categories');
     
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: false },
@@ -249,31 +288,35 @@ export class ProductsService {
   ): Promise<ActionResponseDto<ProductResponseDto>> {
     const product = await this.productRepository.findOne({
       where: { id, isDeleted: false },
+      relations: ['categories'],
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
 
+    // Extract categoryIds if provided
+    const { categoryIds, ...productData } = updateProductDto;
+
     // Check SKU uniqueness if changing
-    if (updateProductDto.sku && updateProductDto.sku !== product.sku) {
+    if (productData.sku && productData.sku !== product.sku) {
       const existingProduct = await this.productRepository.findOne({
-        where: { sku: updateProductDto.sku, id: Not(id) },
+        where: { sku: productData.sku, id: Not(id) },
       });
 
       if (existingProduct) {
-        throw new ConflictException(`Product with SKU ${updateProductDto.sku} already exists`);
+        throw new ConflictException(`Product with SKU ${productData.sku} already exists`);
       }
     }
 
     // Validate parent product if changing
-    if (updateProductDto.parentId && updateProductDto.parentId !== product.parentId) {
+    if (productData.parentId && productData.parentId !== product.parentId) {
       const parentProduct = await this.productRepository.findOne({
-        where: { id: updateProductDto.parentId },
+        where: { id: productData.parentId },
       });
 
       if (!parentProduct) {
-        throw new NotFoundException(`Parent product with ID ${updateProductDto.parentId} not found`);
+        throw new NotFoundException(`Parent product with ID ${productData.parentId} not found`);
       }
 
       // Allow simple variants for any product type
@@ -282,17 +325,40 @@ export class ProductsService {
     }
 
     // Update product
-    Object.assign(product, updateProductDto);
+    Object.assign(product, productData);
     product.updatedBy = userId;
 
     // Update stock status if quantity changed
-    if (updateProductDto.quantity !== undefined) {
-      product.inStock = updateProductDto.quantity > 0;
+    if (productData.quantity !== undefined) {
+      product.inStock = productData.quantity > 0;
     }
 
     // Generate URL key if name changed and no URL key provided
-    if (updateProductDto.name && !updateProductDto.urlKey && !product.urlKey) {
-      product.urlKey = this.generateUrlKey(updateProductDto.name);
+    if (productData.name && !productData.urlKey && !product.urlKey) {
+      product.urlKey = this.generateUrlKey(productData.name);
+    }
+
+    // Handle categories if provided
+    if (categoryIds !== undefined) {
+      if (categoryIds.length > 0) {
+        const categories = await this.categoryRepository.findBy({
+          id: In(categoryIds),
+          isDeleted: false,
+        });
+
+        if (categories.length !== categoryIds.length) {
+          const foundIds = categories.map(c => c.id);
+          const invalidIds = categoryIds.filter(id => !foundIds.includes(id));
+          throw new BadRequestException(
+            `Invalid category IDs: ${invalidIds.join(', ')}`,
+          );
+        }
+
+        product.categories = categories;
+      } else {
+        // Empty array means remove all categories
+        product.categories = [];
+      }
     }
 
     const updatedProduct = await this.productRepository.save(product);
@@ -442,6 +508,44 @@ export class ProductsService {
       totalItems: dtos.length,
       itemCount: dtos.length
     });
+  }
+
+  /**
+   * Get all descendant category IDs (including the parent)
+   * This is used for hierarchical filtering
+   */
+  private async getDescendantCategoryIds(categoryIds: string[]): Promise<string[]> {
+    if (!categoryIds || categoryIds.length === 0) {
+      return [];
+    }
+
+    const allCategoryIds = new Set<string>();
+    
+    // For each selected category, get it and all its descendants
+    for (const categoryId of categoryIds) {
+      // Add the parent category itself
+      allCategoryIds.add(categoryId);
+      
+      // Get the category with its nested set values
+      const category = await this.categoryRepository.findOne({
+        where: { id: categoryId, isDeleted: false }
+      });
+      
+      if (category) {
+        // Use nested set model to get all descendants efficiently
+        const descendants = await this.categoryRepository
+          .createQueryBuilder('cat')
+          .where('cat.left > :left', { left: category.left })
+          .andWhere('cat.right < :right', { right: category.right })
+          .andWhere('cat.isDeleted = :isDeleted', { isDeleted: false })
+          .getMany();
+        
+        // Add all descendant IDs
+        descendants.forEach(desc => allCategoryIds.add(desc.id));
+      }
+    }
+    
+    return Array.from(allCategoryIds);
   }
 
   /**
@@ -1003,6 +1107,225 @@ export class ProductsService {
     const dtos = items.map(item => this.toResponseDto(item));
 
     return ResponseHelpers.wrapPaginated([dtos, total], page, limit);
+  }
+
+  // ============ CATEGORY MANAGEMENT METHODS ============
+
+  /**
+   * Assign categories to a product
+   */
+  async assignCategories(
+    productId: string,
+    categoryIds: string[],
+    replace = false,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    this.logger.log(`Assigning ${categoryIds.length} categories to product ${productId}`);
+
+    // Get the product
+    const product = await this.productRepository.findOne({
+      where: { id: productId, isDeleted: false },
+      relations: ['categories'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Validate all category IDs exist
+    const categories = await this.categoryRepository.findBy({
+      id: In(categoryIds),
+      isDeleted: false,
+    });
+
+    if (categories.length !== categoryIds.length) {
+      const foundIds = categories.map(c => c.id);
+      const invalidIds = categoryIds.filter(id => !foundIds.includes(id));
+      throw new BadRequestException(
+        `Invalid category IDs: ${invalidIds.join(', ')}`,
+      );
+    }
+
+    // Update categories
+    if (replace) {
+      product.categories = categories;
+    } else {
+      // Merge with existing categories
+      const existingIds = product.categories.map(c => c.id);
+      const newCategories = categories.filter(c => !existingIds.includes(c.id));
+      product.categories = [...product.categories, ...newCategories];
+    }
+
+    await this.productRepository.save(product);
+
+    // Reload with categories for response
+    const updatedProduct = await this.productRepository.findOne({
+      where: { id: productId },
+      relations: ['categories'],
+    });
+
+    const dto = this.toResponseDto(updatedProduct!);
+    return new ActionResponseDto(
+      dto,
+      `Assigned ${categories.length} categories successfully`,
+    );
+  }
+
+  /**
+   * Get product categories
+   */
+  async getProductCategories(
+    productId: string,
+  ): Promise<CollectionResponse<CategoryResponseDto>> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId, isDeleted: false },
+      relations: ['categories'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    const categories = product.categories.filter(c => !c.isDeleted);
+    const dtos = categories.map(category => {
+      const dto = new CategoryResponseDto();
+      Object.assign(dto, category);
+      return dto;
+    });
+
+    return ResponseHelpers.wrapCollection(dtos, {
+      totalItems: dtos.length,
+      itemCount: dtos.length,
+    });
+  }
+
+  /**
+   * Remove a category from a product
+   */
+  async removeCategory(
+    productId: string,
+    categoryId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId, isDeleted: false },
+      relations: ['categories'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Remove the category
+    product.categories = product.categories.filter(c => c.id !== categoryId);
+    await this.productRepository.save(product);
+
+    const dto = this.toResponseDto(product);
+    return new ActionResponseDto(dto, 'Category removed successfully');
+  }
+
+  /**
+   * Remove all categories from a product
+   */
+  async removeAllCategories(
+    productId: string,
+  ): Promise<ActionResponseDto<ProductResponseDto>> {
+    const product = await this.productRepository.findOne({
+      where: { id: productId, isDeleted: false },
+      relations: ['categories'],
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Clear all categories
+    product.categories = [];
+    await this.productRepository.save(product);
+
+    const dto = this.toResponseDto(product);
+    return new ActionResponseDto(dto, 'All categories removed successfully');
+  }
+
+  /**
+   * Bulk assign categories to multiple products
+   */
+  async bulkAssignCategories(
+    productIds: string[],
+    categoryIds: string[],
+    replace = false,
+  ): Promise<ActionResponseDto<{ affected: number; results: any[] }>> {
+    this.logger.log(
+      `Bulk assigning ${categoryIds.length} categories to ${productIds.length} products`,
+    );
+
+    // Validate all category IDs exist
+    const categories = await this.categoryRepository.findBy({
+      id: In(categoryIds),
+      isDeleted: false,
+    });
+
+    if (categories.length !== categoryIds.length) {
+      throw new BadRequestException('One or more invalid category IDs');
+    }
+
+    // Process each product in a transaction
+    const results = await this.dataSource.transaction(async manager => {
+      const processedResults = [];
+
+      for (const productId of productIds) {
+        try {
+          const product = await manager.findOne(Product, {
+            where: { id: productId, isDeleted: false },
+            relations: ['categories'],
+          });
+
+          if (!product) {
+            processedResults.push({
+              productId,
+              success: false,
+              error: 'Product not found',
+            });
+            continue;
+          }
+
+          // Update categories
+          if (replace) {
+            product.categories = categories;
+          } else {
+            const existingIds = product.categories.map(c => c.id);
+            const newCategories = categories.filter(
+              c => !existingIds.includes(c.id),
+            );
+            product.categories = [...product.categories, ...newCategories];
+          }
+
+          await manager.save(product);
+
+          processedResults.push({
+            productId,
+            success: true,
+            categoryCount: product.categories.length,
+          });
+        } catch (error: any) {
+          processedResults.push({
+            productId,
+            success: false,
+            error: error.message,
+          });
+        }
+      }
+
+      return processedResults;
+    });
+
+    const successCount = results.filter(r => r.success).length;
+
+    return new ActionResponseDto(
+      {
+        affected: successCount,
+        results,
+      },
+      `Categories assigned to ${successCount} of ${productIds.length} products`,
+    );
   }
 
   // ============ VARIANT HELPER METHODS ============

@@ -1,0 +1,330 @@
+import React, { useState, useEffect } from 'react';
+import { FolderIcon, ChevronDownIcon, XMarkIcon, FunnelIcon } from '@heroicons/react/24/outline';
+import categoryService from '../../services/category.service';
+import { CategoryTreeDto } from '../../types/dto/categories';
+
+interface CategoryFilterProps {
+  onFilterChange: (categoryIds: string[]) => void;
+  selectedCategoryIds: string[];
+}
+
+export default function CategoryFilter({ onFilterChange, selectedCategoryIds }: CategoryFilterProps) {
+  const [categories, setCategories] = useState<CategoryTreeDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      console.log('Loading categories with counts...');
+      
+      // Try to get categories with counts first
+      try {
+        const response = await categoryService.getCategoriesWithCounts();
+        console.log('Categories with counts response:', response);
+        
+        // Extract items from the response
+        const items = response.data?.items || [];
+        
+        // Build tree from the flat list
+        const tree = buildTreeFromFlat(items);
+        setCategories(tree);
+        console.log('Categories loaded:', tree.length, 'root categories with counts');
+      } catch (countsError) {
+        console.error('Failed to load categories with counts, trying fallback:', countsError);
+        
+        // Fallback to getCategoryTree
+        const categoryTree = await categoryService.getCategoryTree();
+        console.log('Category tree response:', categoryTree);
+        
+        // Add zero counts if not present
+        const treeWithCounts = categoryTree.map(cat => ({
+          ...cat,
+          productCount: cat.productCount || 0,
+          totalProductCount: cat.totalProductCount || 0
+        }));
+        
+        setCategories(treeWithCounts);
+      }
+    } catch (err) {
+      console.error('Failed to load categories:', err);
+      // Final fallback to regular categories endpoint
+      try {
+        const response = await categoryService.getCategories({ limit: 100 });
+        console.log('Final fallback response:', response);
+        
+        // Build tree from flat list
+        const items = response.data?.items || [];
+        const tree = buildTreeFromFlat(items);
+        setCategories(tree);
+      } catch (fallbackErr) {
+        console.error('All attempts to load categories failed:', fallbackErr);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const buildTreeFromFlat = (items: any[]): any[] => {
+    const map = new Map<string, any>();
+    const tree: any[] = [];
+
+    // First pass: create map of all items
+    items.forEach(item => {
+      map.set(item.id, { 
+        ...item, 
+        children: [],
+        productCount: 0,
+        totalProductCount: 0
+      });
+    });
+
+    // Second pass: build tree structure
+    items.forEach(item => {
+      const node = map.get(item.id)!;
+      if (item.parentId) {
+        const parent = map.get(item.parentId);
+        if (parent) {
+          if (!parent.children) parent.children = [];
+          parent.children.push(node);
+        }
+      } else {
+        tree.push(node);
+      }
+    });
+
+    return tree;
+  };
+
+  const toggleCategory = (categoryId: string) => {
+    const newSelection = [...selectedCategoryIds];
+    const index = newSelection.indexOf(categoryId);
+    
+    if (index > -1) {
+      newSelection.splice(index, 1);
+    } else {
+      newSelection.push(categoryId);
+    }
+    
+    onFilterChange(newSelection);
+  };
+
+  const clearFilters = () => {
+    onFilterChange([]);
+    setIsOpen(false);
+  };
+
+  const toggleExpanded = (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const getCategoryName = (categoryId: string): string => {
+    const findCategory = (cats: any[]): any => {
+      for (const cat of cats) {
+        if (cat.id === categoryId) return cat;
+        if (cat.children) {
+          const found = findCategory(cat.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    const category = findCategory(categories);
+    return category?.name || 'Unknown';
+  };
+
+  const renderCategoryTree = (categories: any[], level = 0) => {
+    return categories.map(category => {
+      const hasChildren = category.children && category.children.length > 0;
+      const isExpanded = expandedCategories.has(category.id);
+      const isSelected = selectedCategoryIds.includes(category.id);
+      
+      return (
+        <div key={category.id}>
+          <div
+            className={`
+              flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer
+              ${isSelected ? 'bg-blue-50 text-blue-900' : ''}
+            `}
+            style={{ paddingLeft: `${(level * 20) + 12}px` }}
+            onClick={() => toggleCategory(category.id)}
+          >
+            {hasChildren && (
+              <button
+                onClick={(e) => toggleExpanded(category.id, e)}
+                className="p-0.5 hover:bg-gray-200 rounded"
+              >
+                <ChevronDownIcon 
+                  className={`h-3 w-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                />
+              </button>
+            )}
+            {!hasChildren && <div className="w-4" />}
+            
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => {}}
+              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            
+            <FolderIcon className={`h-4 w-4 ${isSelected ? 'text-blue-600' : 'text-gray-400'}`} />
+            
+            <span className={`text-sm ${isSelected ? 'font-medium' : ''}`}>
+              {category.name}
+              {category.totalProductCount > 0 && (
+                <span className="ml-2 text-xs text-gray-500">
+                  ({category.totalProductCount})
+                </span>
+              )}
+            </span>
+          </div>
+          
+          {hasChildren && isExpanded && (
+            <div>{renderCategoryTree(category.children, level + 1)}</div>
+          )}
+        </div>
+      );
+    });
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2">
+        {/* Filter Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`
+            px-4 py-2 border rounded-lg flex items-center gap-2 transition-colors
+            ${selectedCategoryIds.length > 0 
+              ? 'border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100' 
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+            }
+          `}
+        >
+          <FunnelIcon className="h-4 w-4" />
+          <span className="text-sm font-medium">
+            Filter by Category
+            {selectedCategoryIds.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white rounded-full text-xs">
+                {selectedCategoryIds.length}
+              </span>
+            )}
+          </span>
+          <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Active Filters */}
+        {selectedCategoryIds.length > 0 && (
+          <>
+            <div className="flex items-center gap-1 flex-wrap">
+              {selectedCategoryIds.slice(0, 3).map(categoryId => (
+                <span
+                  key={categoryId}
+                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs"
+                >
+                  <FolderIcon className="h-3 w-3" />
+                  {getCategoryName(categoryId)}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCategory(categoryId);
+                    }}
+                    className="ml-0.5 hover:text-blue-900"
+                  >
+                    <XMarkIcon className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+              {selectedCategoryIds.length > 3 && (
+                <span className="text-xs text-gray-500">
+                  +{selectedCategoryIds.length - 3} more
+                </span>
+              )}
+            </div>
+            
+            <button
+              onClick={clearFilters}
+              className="text-sm text-gray-600 hover:text-gray-800 underline"
+            >
+              Clear all
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Dropdown Panel */}
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown */}
+          <div className="absolute left-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+            <div className="p-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-900">
+                  Filter by Categories
+                </h3>
+                {selectedCategoryIds.length > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    Clear ({selectedCategoryIds.length})
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div className="max-h-80 overflow-y-auto">
+              {loading ? (
+                <div className="p-4 text-center text-sm text-gray-500">
+                  Loading categories...
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="p-4 text-center text-sm text-gray-500">
+                  No categories available
+                </div>
+              ) : (
+                <div className="py-2">
+                  {renderCategoryTree(categories)}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-3 border-t border-gray-200 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  {selectedCategoryIds.length} categor{selectedCategoryIds.length !== 1 ? 'ies' : 'y'} selected
+                </span>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                >
+                  Apply Filter
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

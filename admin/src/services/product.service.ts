@@ -11,6 +11,7 @@ import {
   UpdateProductDto,
   ProductQueryDto,
 } from '../types/dto/products';
+import { CategoryResponseDto } from '../types/dto/categories';
 
 class ProductService {
   /**
@@ -233,6 +234,80 @@ class ProductService {
   async deleteVariant(productId: string, variantId: string): Promise<ActionResponse<any>> {
     const response = await api.delete(`/products/${productId}/variants/${variantId}`);
     return ApiResponseParser.parseAction<any>(response);
+  }
+  // ============ CATEGORY MANAGEMENT METHODS ============
+
+  /**
+   * Assign categories to a product
+   */
+  async assignCategories(productId: string, categoryIds: string[]): Promise<ActionResponse<ProductResponseDto>> {
+    try {
+      const response = await api.post(`/products/${productId}/categories`, { categoryIds });
+      return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to assign categories:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Get categories assigned to a product
+   */
+  async getProductCategories(productId: string): Promise<CollectionResponse<CategoryResponseDto>> {
+    try {
+      const response = await api.get(`/products/${productId}/categories`);
+      return ApiResponseParser.parseCollection<CategoryResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to get product categories:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove a category from a product
+   */
+  async removeCategory(productId: string, categoryId: string): Promise<ActionResponse<ProductResponseDto>> {
+    try {
+      const response = await api.delete(`/products/${productId}/categories/${categoryId}`);
+      return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to remove category:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Remove all categories from a product
+   */
+  async removeAllCategories(productId: string): Promise<ActionResponse<ProductResponseDto>> {
+    try {
+      const response = await api.delete(`/products/${productId}/categories`);
+      return ApiResponseParser.parseAction<ProductResponseDto>(response);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to remove all categories:', error.response?.data || error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Bulk assign categories to multiple products
+   */
+  async bulkAssignCategories(
+    productIds: string[],
+    categoryIds: string[],
+    replace: boolean = false
+  ): Promise<ActionResponse<any>> {
+    try {
+      const response = await api.post('/products/categories/bulk-assign', {
+        productIds,
+        categoryIds,
+        replace,
+      });
+      return ApiResponseParser.parseAction<any>(response);
+    } catch (error: any) {
+      console.error('[ProductService] Failed to bulk assign categories:', error.response?.data || error.message);
+      throw error;
+    }
   }
 }
 

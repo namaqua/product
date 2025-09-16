@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude, Expose, Type } from 'class-transformer';
 import { ProductType, ProductStatus } from '../entities/product.entity';
+import { CategoryResponseDto } from '../../categories/dto/category-response.dto';
 
 @Exclude()
 export class ProductResponseDto {
@@ -133,6 +134,12 @@ export class ProductResponseDto {
   @ApiProperty({ description: 'Variant products', type: [ProductResponseDto], required: false })
   @Type(() => ProductResponseDto)
   variants: ProductResponseDto[];
+
+  // Category relationships
+  @Expose()
+  @ApiProperty({ description: 'Product categories', type: [CategoryResponseDto], required: false })
+  @Type(() => CategoryResponseDto)
+  categories: CategoryResponseDto[];
 
   // Additional data
   @Expose()

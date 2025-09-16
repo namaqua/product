@@ -1,0 +1,28 @@
+// Enhanced category filtering using ProductQueryDto helpers
+const categoryFilters = query.getCategoryFilters();
+
+if (categoryFilters.length > 0) {
+  queryBuilder.innerJoin(
+    'product.categories',
+    'category',
+    'category.id IN (:...categoryIds)',
+    { categoryIds: categoryFilters }
+  );
+  
+  // Ensure distinct results to avoid duplicates from join
+  queryBuilder.distinct(true);
+}
+
+// Price range filtering using helper
+if (query.hasPriceRange()) {
+  if (query.minPrice !== undefined && query.maxPrice !== undefined) {
+    queryBuilder.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
+      minPrice: query.minPrice,
+      maxPrice: query.maxPrice,
+    });
+  } else if (query.minPrice !== undefined) {
+    queryBuilder.andWhere('product.price >= :minPrice', { minPrice: query.minPrice });
+  } else if (query.maxPrice !== undefined) {
+    queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice: query.maxPrice });
+  }
+}
