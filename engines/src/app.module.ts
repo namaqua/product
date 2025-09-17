@@ -8,6 +8,7 @@ import { DatabaseHealthService } from './config/database-health.service';
 import { AuditSubscriber } from './common/subscribers/audit.subscriber';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { AccountsModule } from './modules/accounts/accounts.module';
 import { ProductsModule } from './modules/products/products.module';
 import { CategoriesModule } from './modules/categories/categories.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
@@ -40,6 +41,7 @@ import { VariantsModule } from './modules/variants/variants.module';
     // Feature Modules
     AuthModule,
     UsersModule,
+    AccountsModule,
     ProductsModule,
     CategoriesModule,
     AttributesModule,

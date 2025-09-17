@@ -40,7 +40,9 @@ interface MediaLibraryState {
   stats: {
     totalFiles: number;
     totalSize: number;
-    byType: Record<string, number>;
+    byType?: Record<string, number>;
+    averageFileSize?: number;
+    totalProducts?: number;
   } | null;
 }
 
@@ -277,8 +279,8 @@ export default function MediaLibrary() {
     loadStats();
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+  const formatFileSize = (bytes: number | undefined | null): string => {
+    if (!bytes || bytes === 0 || isNaN(bytes)) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -474,10 +476,10 @@ export default function MediaLibrary() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <span>{state.totalItems} files</span>
-            {state.stats && (
+            {state.stats && state.stats.totalSize !== undefined && (
               <>
                 <span>•</span>
-                <span>{formatFileSize(state.stats.totalSize)} used</span>
+                <span>{formatFileSize(state.stats.totalSize || 0)} used</span>
               </>
             )}
             {state.selectedItems.length > 0 && (

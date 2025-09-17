@@ -1,0 +1,248 @@
+.heroBanner {
+  padding: 4rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+}
+
+@media screen and (max-width: 996px) {
+  .heroBanner {
+    padding: 2rem;
+  }
+}
+
+.iconContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.rocketIcon {
+  width: 80px;
+  height: 80px;
+  color: #ffffff;
+  stroke-width: 1.5;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.buttonIcon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Features Section */
+.features {
+  display: flex;
+  align-items: center;
+  padding: 4rem 0;
+  width: 100%;
+  background: #ffffff;
+}
+
+[data-theme='dark'] .features {
+  background: #1a1a1a;
+}
+
+.featureIcon {
+  width: 48px;
+  height: 48px;
+  color: #3b82f6;
+  stroke-width: 1.5;
+  margin-bottom: 1rem;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.featureIcon:hover {
+  transform: scale(1.1);
+  color: #2563eb;
+}
+
+.featureLink {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.featureLink:hover {
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.featureLinkIcon {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  transition: transform 0.3s ease;
+}
+
+.featureLink:hover .featureLinkIcon {
+  transform: translateX(4px);
+}
+
+/* Engines Section */
+.enginesSection {
+  padding: 4rem 0;
+  background: #f9fafb;
+}
+
+[data-theme='dark'] .enginesSection {
+  background: #0f0f0f;
+}
+
+.enginesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.engineSection {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+[data-theme='dark'] .engineSection {
+  background: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(255, 255, 255, 0.1);
+  border: 1px solid #374151;
+}
+
+.engineSection:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.engineHeader {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.engineIcon {
+  width: 40px;
+  height: 40px;
+  color: #3b82f6;
+  stroke-width: 1.5;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.engineTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+[data-theme='dark'] .engineTitle {
+  color: #f3f4f6;
+}
+
+.engineDescription {
+  margin: 0.25rem 0 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+[data-theme='dark'] .engineDescription {
+  color: #9ca3af;
+}
+
+.engineFeatures {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.engineFeature {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+[data-theme='dark'] .engineFeature {
+  color: #d1d5db;
+}
+
+.engineFeatureIcon {
+  width: 18px;
+  height: 18px;
+  margin-right: 0.5rem;
+  color: #9ca3af;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+/* Developer Section */
+.developerSection {
+  padding: 4rem 0;
+  background: white;
+}
+
+[data-theme='dark'] .developerSection {
+  background: #1a1a1a;
+}
+
+/* CTA Section */
+.ctaSection {
+  padding: 5rem 0;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+[data-theme='dark'] .ctaSection {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+}
+
+.ctaButtons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+  .enginesGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .engineSection {
+    margin-bottom: 1rem;
+  }
+  
+  .rocketIcon {
+    width: 60px;
+    height: 60px;
+  }
+}

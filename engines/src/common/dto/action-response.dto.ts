@@ -15,15 +15,15 @@ export class ActionResponseDto<T> {
     this.message = message;
   }
 
-  static create<T>(item: T): ActionResponseDto<T> {
-    return new ActionResponseDto(item, 'Created successfully');
+  static create<T>(item: T, message?: string): ActionResponseDto<T> {
+    return new ActionResponseDto(item, message || 'Created successfully');
   }
 
-  static update<T>(item: T): ActionResponseDto<T> {
-    return new ActionResponseDto(item, 'Updated successfully');
+  static update<T>(item: T, message?: string): ActionResponseDto<T> {
+    return new ActionResponseDto(item, message || 'Updated successfully');
   }
 
-  static delete<T>(item: T): ActionResponseDto<T> {
-    return new ActionResponseDto(item, 'Deleted successfully');
+  static delete<T>(item: T, message?: string): ActionResponseDto<T> {
+    return new ActionResponseDto(item, message || 'Deleted successfully');
   }
 }

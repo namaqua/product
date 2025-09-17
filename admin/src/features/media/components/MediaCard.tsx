@@ -115,7 +115,7 @@ export default function MediaCard({
       </div>
 
       {/* Primary Badge */}
-      {media.isPrimary && (
+      {media.isPrimary && !selectionMode && (
         <div className="absolute top-2 left-2 z-10">
           <span className="px-2 py-1 text-xs bg-orange-500 text-white rounded-full font-medium">
             Primary
@@ -123,8 +123,8 @@ export default function MediaCard({
         </div>
       )}
 
-      {/* Thumbnail */}
-      <div className="aspect-w-1 aspect-h-1 bg-gray-100 rounded-t-lg overflow-hidden">
+      {/* Thumbnail - using aspect-square for 1:1 ratio */}
+      <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
         <MediaThumbnail
           media={media}
           className="w-full h-full object-cover"

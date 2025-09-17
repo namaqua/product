@@ -5,9 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '../../components/common/Button';
 import { Modal } from '../../components/common/Modal';
+import ProductMediaSection from './components/ProductMediaSection';
+import { Media } from '../../services/media.service';
 import productService from '../../services/product.service';
 import categoryService from '../../services/category.service';
 import attributeService from '../../services/attribute.service';
+import mediaService from '../../services/media.service';
 import { 
   Product, 
   ProductStatus, 
@@ -60,6 +63,8 @@ export default function ProductForm({ mode = 'create' }: ProductFormProps) {
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [selectedAttributes, setSelectedAttributes] = useState<Set<string>>(new Set());
   const [attributeValues, setAttributeValues] = useState<Record<string, any>>({});
+  const [productMedia, setProductMedia] = useState<Media[]>([]);
+  const [primaryMediaId, setPrimaryMediaId] = useState<string | undefined>();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,6 +155,21 @@ export default function ProductForm({ mode = 'create' }: ProductFormProps) {
         });
         setAttributeValues(values);
       }
+      
+      // Load product media
+      try {
+        const mediaResponse = await mediaService.getProductMedia(productId);
+        if (mediaResponse.success) {
+          setProductMedia(mediaResponse.data.items);
+          // Find primary media
+          const primary = mediaResponse.data.items.find(m => m.isPrimary);
+          if (primary) {
+            setPrimaryMediaId(primary.id);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load product media:', err);
+      }
     } catch (err) {
       console.error('Failed to load product:', err);
       setError('Failed to load product');
@@ -172,10 +192,35 @@ export default function ProductForm({ mode = 'create' }: ProductFormProps) {
         attributes: attributeData
       };
 
+      let savedProductId: string;
+
       if (mode === 'create') {
-        await productService.createProduct(productData as CreateProductDto);
+        const response = await productService.createProduct(productData as CreateProductDto);
+        savedProductId = response.id;
       } else if (id) {
         await productService.updateProduct(id, productData as UpdateProductDto);
+        savedProductId = id;
+      } else {
+        throw new Error('Invalid product ID');
+      }
+
+      // Associate media with the product
+      if (productMedia.length > 0 && savedProductId) {
+        const mediaIds = productMedia.map(m => m.id);
+        try {
+          // Associate all selected media with the product
+          for (const media of productMedia) {
+            await mediaService.associateWithProducts(media.id, [savedProductId]);
+            
+            // Set primary media if specified
+            if (primaryMediaId === media.id) {
+              await mediaService.updateMedia(media.id, { isPrimary: true });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to associate media:', err);
+          // Don't fail the whole operation if media association fails
+        }
       }
 
       setShowSuccessModal(true);
@@ -673,6 +718,15 @@ export default function ProductForm({ mode = 'create' }: ProductFormProps) {
             </div>
           </div>
         </div>
+
+        {/* Product Media */}
+        <ProductMediaSection
+          productId={id}
+          media={productMedia}
+          onChange={setProductMedia}
+          primaryMediaId={primaryMediaId}
+          onSetPrimary={setPrimaryMediaId}
+        />
 
         {/* Actions */}
         <div className="flex justify-end space-x-3">

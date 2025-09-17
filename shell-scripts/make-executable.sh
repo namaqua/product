@@ -1,12 +1,9 @@
 #!/bin/bash
 
 # Make all shell scripts executable
-echo "Setting execute permissions on all shell scripts..."
-
-cd /Users/colinroets/dev/projects/product
-chmod +x shell-scripts/*.sh
-
-echo "✅ All scripts are now executable"
+cd /Users/colinroets/dev/projects/product/shell-scripts
+chmod +x *.sh
+echo "✅ All shell scripts are now executable"
 echo ""
 echo "Available scripts:"
-ls -la shell-scripts/*.sh | awk '{print "  - " $NF}' | sed 's|.*/||'
+ls -1 *.sh | sed 's/^/  ./g'

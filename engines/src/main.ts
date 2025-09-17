@@ -103,8 +103,8 @@ async function bootstrap() {
 
   // Swagger documentation
   const config = new DocumentBuilder()
-    .setTitle('PIM API')
-    .setDescription('Product Information Management System API')
+    .setTitle('My Engines API')
+    .setDescription('Business Engines System API')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('Authentication', 'User authentication endpoints')

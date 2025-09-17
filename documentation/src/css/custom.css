@@ -1,0 +1,150 @@
+/**
+ * Custom CSS for PIM Documentation
+ * Consistent with admin app color scheme
+ */
+
+:root {
+  /* Primary blue colors matching admin app */
+  --ifm-color-primary: #3b82f6;
+  --ifm-color-primary-dark: #2563eb;
+  --ifm-color-primary-darker: #1d4ed8;
+  --ifm-color-primary-darkest: #1e40af;
+  --ifm-color-primary-light: #60a5fa;
+  --ifm-color-primary-lighter: #93bbfc;
+  --ifm-color-primary-lightest: #dbeafe;
+  
+  /* Accent orange color matching admin app */
+  --accent-color: #f97316;
+  --accent-color-dark: #ea580c;
+  --accent-color-light: #fb923c;
+  
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Mode */
+[data-theme='dark'] {
+  --ifm-color-primary: #60a5fa;
+  --ifm-color-primary-dark: #3b82f6;
+  --ifm-color-primary-darker: #2563eb;
+  --ifm-color-primary-darkest: #1d4ed8;
+  --ifm-color-primary-light: #93bbfc;
+  --ifm-color-primary-lighter: #a5c3fd;
+  --ifm-color-primary-lightest: #dbeafe;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.hero--primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero__title {
+  font-size: 3rem;
+  font-weight: bold;
+  color: white;
+}
+
+.hero__subtitle {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hero--primary .container {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  padding: 3rem 2rem;
+  max-width: 800px;
+}
+
+.button--lg {
+  font-weight: 600;
+  padding: 1rem 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Match admin app button style */
+.hero--primary .button--secondary {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  transition: background 0.3s;
+}
+
+.hero--primary .button--secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+  text-decoration: none;
+}
+
+/* Navbar styling to match admin app */
+.navbar {
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme='dark'] .navbar {
+  background: #111827;
+  border-bottom: 1px solid #374151;
+}
+
+/* Navbar logo styling - orange accent color to match admin app */
+.navbar__logo {
+  height: 2rem;
+  margin-right: 0.5rem;
+  color: #f97316 !important;  /* Orange accent from admin app */
+  stroke-width: 1.5;
+}
+
+.navbar__logo:hover {
+  color: #ea580c !important;  /* Darker orange on hover */
+}
+
+/* Footer styling */
+.footer {
+  background: #111827;
+  color: #9ca3af;
+}
+
+.footer__title {
+  color: #f3f4f6;
+}
+
+.footer__link-item {
+  color: #9ca3af;
+  transition: color 0.3s;
+}
+
+.footer__link-item:hover {
+  color: #60a5fa;
+  text-decoration: none;
+}
+
+/* Code blocks */
+pre {
+  border-radius: 8px;
+}
+
+/* Tables */
+table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Alerts and admonitions */
+.alert {
+  border-radius: 8px;
+}
+
+/* Pagination */
+.pagination-nav__link {
+  border-radius: 8px;
+}
+
+/* Ensure outline icons have proper stroke width */
+svg {
+  stroke-width: 1.5;
+}

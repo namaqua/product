@@ -171,29 +171,51 @@ class MediaService {
 
   // Helper to get full URL for media
   getMediaUrl(media: Media): string {
-    // If URL is provided, use it directly (backend should provide full URLs)
+    // If URL is provided and it's already a full URL, use it directly
     if (media.url) {
-      // If it's already a full URL, return as-is
       if (media.url.startsWith('http://') || media.url.startsWith('https://')) {
         return media.url;
       }
       // If it's a relative URL, make it absolute
-      // Use the baseURL from the API config, removing the /api/v1 part
-      const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
+      const baseUrl = 'http://localhost:3010';
       return `${baseUrl}${media.url.startsWith('/') ? media.url : '/' + media.url}`;
     }
     
     // Fallback: construct URL from path or filename
+    const baseUrl = 'http://localhost:3010';
+    
     if (media.path) {
-      // Extract just the filename from the path
+      // If path starts with 'uploads/', use it directly
+      if (media.path.startsWith('uploads/')) {
+        return `${baseUrl}/${media.path}`;
+      }
+      // Otherwise add /uploads/ prefix
       const filename = media.path.split('/').pop() || media.filename;
-      const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
       return `${baseUrl}/uploads/${filename}`;
     }
     
     // Last resort: use filename
-    const baseUrl = api.defaults.baseURL?.replace('/api/v1', '') || 'http://localhost:3010';
     return `${baseUrl}/uploads/${media.filename}`;
+  }
+  
+  // Helper to get thumbnail URL
+  getThumbnailUrl(media: Media, size: 'thumb' | 'small' | 'medium' | 'large' | 'gallery' = 'thumb'): string | null {
+    if (media.type !== 'image' || !media.thumbnails) {
+      return null;
+    }
+    
+    const thumbnailPath = media.thumbnails[size];
+    if (!thumbnailPath) {
+      // Fallback to main image
+      return this.getMediaUrl(media);
+    }
+    
+    // Construct full URL for thumbnail
+    const baseUrl = 'http://localhost:3010';
+    if (thumbnailPath.startsWith('http://') || thumbnailPath.startsWith('https://')) {
+      return thumbnailPath;
+    }
+    return `${baseUrl}${thumbnailPath.startsWith('/') ? thumbnailPath : '/' + thumbnailPath}`;
   }
 }
 

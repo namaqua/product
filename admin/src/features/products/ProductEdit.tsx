@@ -3,6 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import productService from '../../services/product.service';
 import mediaService, { Media } from '../../services/media.service';
 import MediaUpload from '../../components/media/MediaUpload';
+import ProductMediaSection from './components/ProductMediaSection';
 import CategoryAssignment from '../../components/products/CategoryAssignment';
 import ProductVariants from './ProductVariants';
 import ConfigurableProduct from './ConfigurableProduct';
@@ -16,6 +17,7 @@ export default function ProductEdit() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [productMedia, setProductMedia] = useState<Media[]>([]);
+  const [primaryMediaId, setPrimaryMediaId] = useState<string | undefined>();
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Form data
@@ -123,6 +125,11 @@ export default function ProductEdit() {
       const media = response.data?.items || response.items || response || [];
       console.log('Loaded product media:', media);
       setProductMedia(Array.isArray(media) ? media : []);
+      // Find primary media
+      const primary = media.find((m: Media) => m.isPrimary);
+      if (primary) {
+        setPrimaryMediaId(primary.id);
+      }
     } catch (err) {
       console.error('Failed to load product media:', err);
       // Don't show error as media is optional
@@ -490,26 +497,14 @@ export default function ProductEdit() {
           />
         )}
 
-        {/* Media Upload Section */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Product Images & Media</h2>
-          <MediaUpload
-            productId={id}
-            existingMedia={productMedia}
-            onUploadComplete={handleMediaUpload}
-            onMediaRemove={handleMediaRemove}
-            multiple={true}
-            maxFiles={10}
-            acceptedFileTypes={{
-              'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
-            }}
-            maxFileSize={5 * 1024 * 1024} // 5MB
-          />
-          <p className="mt-2 text-sm text-gray-500">
-            Upload or manage product images. You can set a primary image and reorder them.
-            Supported formats: JPEG, PNG, GIF, WebP (max 5MB each)
-          </p>
-        </div>
+        {/* Media Section with Gallery Picker */}
+        <ProductMediaSection
+          productId={id}
+          media={productMedia}
+          onChange={setProductMedia}
+          primaryMediaId={primaryMediaId}
+          onSetPrimary={setPrimaryMediaId}
+        />
 
         {/* Pricing & Inventory */}
         <div className="bg-white shadow rounded-lg p-6">

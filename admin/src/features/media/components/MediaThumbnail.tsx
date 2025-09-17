@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   PhotoIcon,
   DocumentIcon,
@@ -6,7 +6,6 @@ import {
   DocumentTextIcon,
 } from '@heroicons/react/24/outline';
 import { Media } from '../../../services/media.service';
-import mediaService from '../../../services/media.service';
 
 interface MediaThumbnailProps {
   media: Media;
@@ -21,76 +20,50 @@ export default function MediaThumbnail({
   media,
   size = 'medium',
   className = '',
-  lazy = true,
+  lazy = false, // Disable lazy loading for now to test
   onError,
   onClick,
 }: MediaThumbnailProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const [isInView, setIsInView] = useState(!lazy);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   // Get the appropriate thumbnail URL based on size
   const getThumbnailUrl = (): string | null => {
     if (media.type !== 'image') return null;
 
-    // Try to get thumbnail from thumbnails object
-    if (media.thumbnails) {
-      switch (size) {
-        case 'small':
-          return media.thumbnails.thumb || media.thumbnails.small || media.thumbnails.medium;
-        case 'medium':
-          return media.thumbnails.medium || media.thumbnails.gallery || media.thumbnails.large;
-        case 'large':
-          return media.thumbnails.large || media.thumbnails.gallery;
-        case 'full':
-          return mediaService.getMediaUrl(media);
-        default:
-          return media.thumbnails.medium || media.thumbnails.gallery;
-      }
+    // For debugging - let's use the main URL directly
+    if (media.url) {
+      console.log('Using main URL:', media.url);
+      return media.url;
     }
 
-    // Fallback to full image
-    return mediaService.getMediaUrl(media);
+    // Construct URL from path
+    const baseUrl = 'http://localhost:3010';
+    if (media.path) {
+      const url = media.path.startsWith('uploads/') 
+        ? `${baseUrl}/${media.path}`
+        : `${baseUrl}/uploads/${media.path}`;
+      console.log('Constructed URL from path:', url);
+      return url;
+    }
+
+    return null;
   };
 
-  // Setup intersection observer for lazy loading
-  useEffect(() => {
-    if (!lazy || !containerRef.current) {
-      setIsInView(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px',
-        threshold: 0.01,
-      }
-    );
-
-    observer.observe(containerRef.current);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [lazy]);
-
-  const handleImageError = () => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.currentTarget;
+    console.error('Image load error:', {
+      src: target.src,
+      media: media.filename,
+      error: e,
+    });
     setError(true);
     setLoaded(true);
     if (onError) onError();
   };
 
   const handleImageLoad = () => {
+    console.log('Image loaded successfully:', media.filename);
     setLoaded(true);
     setError(false);
   };
@@ -131,7 +104,7 @@ export default function MediaThumbnail({
       <div 
         className={`
           w-full h-full flex flex-col items-center justify-center
-          ${bgColor} ${className}
+          ${bgColor} ${className} rounded
         `}
         onClick={onClick}
       >
@@ -154,56 +127,42 @@ export default function MediaThumbnail({
   }
 
   const thumbnailUrl = getThumbnailUrl();
+  
+  if (!thumbnailUrl) {
+    console.warn('No URL available for media:', media.filename);
+    return renderPlaceholder();
+  }
 
   return (
     <div 
-      ref={containerRef}
       className={`relative ${className}`}
       onClick={onClick}
     >
-      {/* Loading skeleton */}
-      {!loaded && isInView && (
-        <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
-      )}
-
-      {/* Image */}
-      {isInView && thumbnailUrl && !error ? (
-        <img
-          ref={imgRef}
-          src={thumbnailUrl}
-          alt={media.alt || media.filename}
-          className={`
-            ${className}
-            ${loaded ? 'opacity-100' : 'opacity-0'}
-            transition-opacity duration-300
-          `}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          loading="lazy"
-        />
-      ) : null}
-
-      {/* Error fallback */}
-      {error && renderPlaceholder()}
-
-      {/* Video duration overlay */}
-      {media.type === 'video' && media.duration && (
-        <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-1.5 py-0.5 rounded">
-          {formatDuration(media.duration)}
-        </div>
+      {/* Always render the image */}
+      {error ? (
+        renderPlaceholder()
+      ) : (
+        <>
+          {/* Loading state */}
+          {!loaded && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse rounded" />
+          )}
+          
+          {/* Actual image */}
+          <img
+            src={thumbnailUrl}
+            alt={media.alt || media.filename}
+            className={`
+              ${className}
+              ${loaded ? 'opacity-100' : 'opacity-0'}
+              transition-opacity duration-300
+            `}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            crossOrigin="anonymous" // Add this for CORS
+          />
+        </>
       )}
     </div>
   );
-}
-
-// Helper function to format video duration
-function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }

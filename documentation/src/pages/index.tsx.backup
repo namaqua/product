@@ -1,0 +1,110 @@
+import clsx from 'clsx';
+import Link from '@docusaurus/Link';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import Layout from '@theme/Layout';
+import Heading from '@theme/Heading';
+import styles from './index.module.css';
+import { 
+  RocketLaunchIcon, 
+  CubeIcon,
+  PhotoIcon,
+  CodeBracketIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ServerStackIcon
+} from '@heroicons/react/24/solid';
+
+function HomepageHeader() {
+  const {siteConfig} = useDocusaurusContext();
+  return (
+    <header className={clsx('hero hero--primary', styles.heroBanner)}>
+      <div className="container">
+        <div className={styles.iconContainer}>
+          <RocketLaunchIcon className={styles.rocketIcon} />
+        </div>
+        <Heading as="h1" className="hero__title">
+          My Engines API Server
+        </Heading>
+        <p className="hero__subtitle">{siteConfig.tagline}</p>
+        <div className={styles.buttons}>
+          <Link
+            className="button button--secondary button--lg"
+            to="/docs/intro">
+            <ClockIcon className={styles.buttonIcon} />
+            Get Started - 5min
+          </Link>
+          <Link
+            className="button button--secondary button--lg"
+            to="http://localhost:3010/api/docs"
+            target="_blank">
+            <DocumentTextIcon className={styles.buttonIcon} />
+            API Documentation
+          </Link>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Feature({Icon, title, description}) {
+  return (
+    <div className={clsx('col col--4')}>
+      <div className="text--center padding-horiz--md">
+        <Icon className={styles.featureIcon} />
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+export default function Home(): JSX.Element {
+  const {siteConfig} = useDocusaurusContext();
+  return (
+    <Layout
+      title={`Welcome to My Engines`}
+      description="Modern Product Information Management System">
+      <HomepageHeader />
+      <main>
+        <section className={styles.features}>
+          <div className="container">
+            <div className="row">
+              <Feature
+                Icon={ServerStackIcon}
+                title="Modern Stack"
+                description="Built with NestJS, React, TypeScript, and PostgreSQL"
+              />
+              <Feature
+                Icon={PhotoIcon}
+                title="Media Library"
+                description="Powerful digital asset management with automatic optimization"
+              />
+              <Feature
+                Icon={CodeBracketIcon}
+                title="API First"
+                description="RESTful API with Swagger documentation"
+              />
+            </div>
+            <div className="row" style={{marginTop: '2rem'}}>
+              <Feature
+                Icon={CubeIcon}
+                title="Product Management"
+                description="Complete product lifecycle management with variants and attributes"
+              />
+              <Feature
+                Icon={RocketLaunchIcon}
+                title="Fast & Scalable"
+                description="Optimized for performance and ready to grow with your business"
+              />
+              <Feature
+                Icon={DocumentTextIcon}
+                title="Well Documented"
+                description="Comprehensive documentation and API reference"
+              />
+            </div>
+          </div>
+        </section>
+      </main>
+    </Layout>
+  );
+}
