@@ -28,8 +28,41 @@ export const useToast = () => {
   return context;
 };
 
+// Add CSS styles
+const toastStyles = `
+  @keyframes slideInToast {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .toast-enter {
+    animation: slideInToast 0.3s ease-out;
+  }
+`;
+
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [styleInjected, setStyleInjected] = useState(false);
+
+  // Inject styles once
+  React.useEffect(() => {
+    if (!styleInjected) {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = toastStyles;
+      document.head.appendChild(styleElement);
+      setStyleInjected(true);
+      
+      return () => {
+        document.head.removeChild(styleElement);
+      };
+    }
+  }, [styleInjected]);
 
   const addToast = useCallback((message: string, type: ToastType) => {
     const id = Date.now().toString();
@@ -89,10 +122,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`flex items-center gap-3 px-4 py-3 border rounded-lg shadow-lg transition-all duration-300 ${getStyles(t.type)}`}
-            style={{
-              animation: 'slideIn 0.3s ease-out',
-            }}
+            className={`toast-enter flex items-center gap-3 px-4 py-3 border rounded-lg shadow-lg transition-all duration-300 ${getStyles(t.type)}`}
           >
             {getIcon(t.type)}
             <p className="text-sm font-medium">{t.message}</p>
@@ -105,19 +135,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           </div>
         ))}
       </div>
-      
-      <style jsx>{`
-        @keyframes slideIn {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </ToastContext.Provider>
   );
 };

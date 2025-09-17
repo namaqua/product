@@ -15,6 +15,17 @@ import ApplicationShell from './components/layouts/ApplicationShell';
 
 // Features
 import Dashboard from './features/dashboard/Dashboard';
+
+// Account Features
+import AccountList from './features/accounts/AccountList';
+import AccountDashboard from './features/accounts/AccountDashboard';
+import AccountCreate from './features/accounts/AccountCreate';
+import AccountDetails from './features/accounts/AccountDetails';
+import AccountEdit from './features/accounts/AccountEdit';
+import AccountRelationships from './features/accounts/AccountRelationships';
+import UserAccountAssignment from './features/accounts/UserAccountAssignment';
+import AccountAddresses from './features/accounts/AccountAddresses';
+
 import ProductDashboard from './features/product-dashboard/ProductDashboard';
 import ProductList from './features/products/ProductList';
 import ProductCreate from './features/products/ProductCreate';
@@ -35,6 +46,9 @@ import MediaLibrary from './features/media/MediaLibrary';
 
 // Stores
 import { useAuthStore } from './stores/auth.store';
+
+// Contexts
+import { ToastProvider } from './contexts/ToastContext';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -80,6 +94,16 @@ function AppRoutes() {
         {/* Dashboard */}
         <Route index element={<Dashboard />} />
         <Route path="dashboard" element={<Dashboard />} />
+        
+        {/* Account Engine */}
+        <Route path="accounts" element={<AccountList />} />
+        <Route path="accounts/dashboard" element={<AccountDashboard />} />
+        <Route path="accounts/relationships" element={<AccountRelationships />} />
+        <Route path="accounts/user-assignments" element={<UserAccountAssignment />} />
+        <Route path="accounts/new" element={<AccountCreate />} />
+        <Route path="accounts/:id" element={<AccountDetails />} />
+        <Route path="accounts/:id/edit" element={<AccountEdit />} />
+        <Route path="accounts/:id/addresses" element={<AccountAddresses />} />
         
         {/* Product Engine */}
         <Route path="product-dashboard" element={<ProductDashboard />} />
@@ -178,10 +202,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <RouteDebugger />
-        <AppRoutes />
-      </Router>
+      <ToastProvider>
+        <Router>
+          <RouteDebugger />
+          <AppRoutes />
+        </Router>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

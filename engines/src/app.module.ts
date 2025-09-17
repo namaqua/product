@@ -14,6 +14,7 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { MediaModule } from './modules/media/media.module';
 import { VariantsModule } from './modules/variants/variants.module';
+import { AddressesModule } from './modules/addresses/addresses.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { VariantsModule } from './modules/variants/variants.module';
     AuthModule,
     UsersModule,
     AccountsModule,
+    AddressesModule,
     ProductsModule,
     CategoriesModule,
     AttributesModule,

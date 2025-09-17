@@ -24,6 +24,9 @@ import {
   ShoppingCartIcon,
   RocketLaunchIcon,
   ChartPieIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { MagnifyingGlassIcon, BellIcon } from '@heroicons/react/20/solid';
 import { useAuthStore } from '../../stores/auth.store';
@@ -36,6 +39,18 @@ const navigationSections = [
     icon: HomeIcon,
     href: '/',
     isSection: false,
+  },
+  {
+    id: 'account-engine',
+    name: 'Account Engine',
+    icon: BuildingOfficeIcon,
+    isSection: true,
+    items: [
+      { name: 'Dashboard', href: '/accounts/dashboard', icon: ChartBarIcon },
+      { name: 'Accounts', href: '/accounts', icon: BuildingOfficeIcon },
+      { name: 'Relationships', href: '/accounts/relationships', icon: UserGroupIcon },
+      { name: 'User Assignments', href: '/accounts/user-assignments', icon: UsersIcon },
+    ],
   },
   {
     id: 'product-engine',
@@ -99,9 +114,9 @@ export default function ApplicationShell() {
   const { user, logout } = useAuthStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
-  // Track expanded sections - Product Engine and Administration expanded by default
+  // Track expanded sections - Account Engine, Product Engine and Administration expanded by default
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['product-engine', 'administration'])
+    new Set(['account-engine', 'product-engine', 'administration'])
   );
 
   const handleLogout = async () => {
@@ -120,12 +135,43 @@ export default function ApplicationShell() {
     setExpandedSections(newExpanded);
   };
 
-  // Determine current path for navigation highlighting
+  // Determine current path for navigation highlighting - FIXED
   const isCurrentPath = (href: string) => {
+    const currentPath = location.pathname;
+    
+    // Special case for home
     if (href === '/') {
-      return location.pathname === '/' || location.pathname === '/dashboard';
+      return currentPath === '/' || currentPath === '/dashboard';
     }
-    return location.pathname.startsWith(href);
+    
+    // For /accounts, only match exact path (not sub-paths)
+    if (href === '/accounts') {
+      return currentPath === '/accounts' || currentPath === '/accounts/';
+    }
+    
+    // For /products, only match exact path (not sub-paths)
+    if (href === '/products') {
+      return currentPath === '/products' || currentPath === '/products/';
+    }
+    
+    // For /users, only match exact path (not sub-paths)
+    if (href === '/users') {
+      return currentPath === '/users' || currentPath === '/users/';
+    }
+    
+    // For /settings, only match exact path
+    if (href === '/settings') {
+      return currentPath === '/settings' || currentPath === '/settings/';
+    }
+    
+    // For all other paths, check if current path matches exactly or starts with href followed by /
+    // This ensures /accounts/dashboard doesn't match /accounts
+    if (currentPath === href) {
+      return true;
+    }
+    
+    // Check if it's a sub-path (with /)
+    return currentPath.startsWith(href + '/');
   };
 
   // Check if any item in a section is active

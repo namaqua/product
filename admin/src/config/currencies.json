@@ -1,0 +1,35 @@
+{
+  "currencies": [
+    {
+      "code": "EUR",
+      "name": "Euro",
+      "symbol": "€",
+      "displayName": "EUR - Euro"
+    },
+    {
+      "code": "CHF",
+      "name": "Swiss Franc",
+      "symbol": "CHF",
+      "displayName": "CHF - Swiss Franc"
+    },
+    {
+      "code": "GBP",
+      "name": "British Pound",
+      "symbol": "£",
+      "displayName": "GBP - British Pound"
+    },
+    {
+      "code": "USD",
+      "name": "US Dollar",
+      "symbol": "$",
+      "displayName": "USD - US Dollar"
+    },
+    {
+      "code": "ZAR",
+      "name": "South African Rand",
+      "symbol": "R",
+      "displayName": "ZAR - South African Rand"
+    }
+  ],
+  "defaultCurrency": "EUR"
+}

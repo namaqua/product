@@ -2,6 +2,7 @@ import { Entity, Column, Index, ManyToOne, OneToMany, JoinColumn, ManyToMany, Jo
 import { BaseEntity } from '../../../common/entities';
 import { User } from '../../users/entities/user.entity';
 import { Media } from '../../media/entities/media.entity';
+import { Address } from '../../addresses/entities/address.entity';
 
 export enum AccountType {
   CUSTOMER = 'customer',
@@ -140,9 +141,11 @@ export class Account extends BaseEntity {
   ownershipType: OwnershipType | null;
 
   // Contact & Address Data
+  // DEPRECATED: Use addresses relationship instead
   @Column({ 
     type: 'jsonb',
-    comment: 'Headquarters address' 
+    nullable: true,
+    comment: 'DEPRECATED - Headquarters address - Use addresses relation instead' 
   })
   headquartersAddress: {
     street: string;
@@ -150,12 +153,12 @@ export class Account extends BaseEntity {
     state?: string;
     country: string;
     postalCode: string;
-  };
+  } | null;
 
   @Column({ 
     type: 'jsonb',
     nullable: true,
-    comment: 'Billing address (if different from headquarters)' 
+    comment: 'DEPRECATED - Billing address - Use addresses relation instead' 
   })
   billingAddress: {
     street: string;
@@ -168,7 +171,7 @@ export class Account extends BaseEntity {
   @Column({ 
     type: 'jsonb',
     nullable: true,
-    comment: 'Shipping address (if different from headquarters)' 
+    comment: 'DEPRECATED - Shipping address - Use addresses relation instead' 
   })
   shippingAddress: {
     street: string;
@@ -177,6 +180,13 @@ export class Account extends BaseEntity {
     country: string;
     postalCode: string;
   } | null;
+
+  // New Address Relationship - Multiple addresses per account
+  @OneToMany(() => Address, address => address.account, {
+    cascade: true,
+    eager: false
+  })
+  addresses: Address[];
 
   @Column({ 
     type: 'varchar', 
@@ -335,5 +345,21 @@ export class Account extends BaseEntity {
    */
   get displayName(): string {
     return this.tradeName || this.legalName;
+  }
+
+  /**
+   * Helper method to get the headquarters address
+   */
+  getHeadquartersAddress(): Address | undefined {
+    if (!this.addresses) return undefined;
+    return this.addresses.find(addr => addr.addressType === 'headquarters');
+  }
+
+  /**
+   * Helper method to get addresses by type
+   */
+  getAddressesByType(type: string): Address[] {
+    if (!this.addresses) return [];
+    return this.addresses.filter(addr => addr.addressType === type);
   }
 }
