@@ -1,0 +1,118 @@
+# Local Testing Docker Compose
+# Use this to test the Docker setup locally before deploying
+# Run: docker-compose -f docker-compose.test.yml up --build
+
+version: '3.8'
+
+name: pim-test
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pim-test-postgres
+    environment:
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: pim_test
+    ports:
+      - "5434:5432"  # Different port to avoid conflicts
+    volumes:
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim_user -d pim_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-test-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pim-test-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6381:6379"  # Different port to avoid conflicts
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-test-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./engines
+      dockerfile: Dockerfile
+    container_name: pim-test-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: pim_test
+      DATABASE_USER: pim_user
+      DATABASE_PASSWORD: test_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: test_jwt_secret_for_local_testing_only
+      CORS_ORIGIN: http://localhost:8080
+    ports:
+      - "3011:3010"  # Different port to avoid conflicts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - pim-test-network
+
+  # Frontend Admin
+  frontend:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080/api
+    container_name: pim-test-frontend
+    ports:
+      - "8081:80"  # Different port to avoid conflicts
+    depends_on:
+      - backend
+    networks:
+      - pim-test-network
+
+  # Documentation Site
+  docs:
+    build:
+      context: .
+      dockerfile: ./docs-site/Dockerfile
+    container_name: pim-test-docs
+    ports:
+      - "8082:80"  # Different port for direct access
+    networks:
+      - pim-test-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: pim-test-nginx
+    ports:
+      - "8080:80"  # Main access point for testing
+    volumes:
+      - ./deployment/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - pim-test-network
+
+networks:
+  pim-test-network:
+    driver: bridge

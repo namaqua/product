@@ -1,0 +1,123 @@
+version: '3.8'
+
+name: pim-production
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pim-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-pim_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+      POSTGRES_DB: ${DB_NAME:-pim_prod}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-pim_user} -d ${DB_NAME:-pim_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pim-redis
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pim-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./engines
+      dockerfile: Dockerfile
+    container_name: pim-backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3010
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DB_NAME:-pim_prod}
+      DATABASE_USER: ${DB_USER:-pim_user}
+      DATABASE_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:-your_jwt_secret_here_change_me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://product.roets.co.uk}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+      - backend_logs:/app/logs
+    networks:
+      - pim-network
+
+  # Frontend Admin
+  frontend:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://product.roets.co.uk/api}
+    container_name: pim-frontend
+    restart: always
+    depends_on:
+      - backend
+    networks:
+      - pim-network
+
+  # Documentation Site
+  docs:
+    build:
+      context: .
+      dockerfile: ./docs-site/Dockerfile
+    container_name: pim-docs
+    restart: always
+    networks:
+      - pim-network
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: pim-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deployment/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./deployment/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+      - ./deployment/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - pim-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_logs:
+  nginx_logs:
+
+networks:
+  pim-network:
+    driver: bridge

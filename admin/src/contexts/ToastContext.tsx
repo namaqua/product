@@ -70,10 +70,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     
     setToasts(prev => [...prev, newToast]);
     
-    // Auto remove after 3 seconds
+    // Auto remove after different durations based on type
+    const duration = type === 'error' ? 6000 : 3000; // 6 seconds for errors, 3 for others
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
-    }, 3000);
+    }, duration);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -118,17 +119,21 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       {children}
       
       {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-50 space-y-2">
+      <div className="fixed top-4 right-4 z-50 space-y-2 max-w-md">
         {toasts.map(t => (
           <div
             key={t.id}
-            className={`toast-enter flex items-center gap-3 px-4 py-3 border rounded-lg shadow-lg transition-all duration-300 ${getStyles(t.type)}`}
+            className={`toast-enter flex items-start gap-3 px-4 py-3 border rounded-lg shadow-lg transition-all duration-300 ${getStyles(t.type)}`}
           >
-            {getIcon(t.type)}
-            <p className="text-sm font-medium">{t.message}</p>
+            <div className="flex-shrink-0 mt-0.5">
+              {getIcon(t.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium whitespace-pre-wrap break-words">{t.message}</p>
+            </div>
             <button
               onClick={() => removeToast(t.id)}
-              className="ml-auto p-1 hover:bg-white/20 rounded"
+              className="flex-shrink-0 ml-2 p-1 hover:bg-white/20 rounded"
             >
               <X className="w-4 h-4" />
             </button>

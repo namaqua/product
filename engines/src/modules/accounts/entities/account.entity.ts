@@ -191,16 +191,18 @@ export class Account extends BaseEntity {
   @Column({ 
     type: 'varchar', 
     length: 20,
+    nullable: true,
     comment: 'Primary phone number' 
   })
-  primaryPhone: string;
+  primaryPhone: string | null;
 
   @Column({ 
     type: 'varchar', 
     length: 255,
+    nullable: true,
     comment: 'Primary email address' 
   })
-  primaryEmail: string;
+  primaryEmail: string | null;
 
   @Column({ 
     type: 'varchar', 

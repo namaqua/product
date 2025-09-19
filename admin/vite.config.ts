@@ -12,6 +12,8 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    host: true, // Allow external connections
+    allowedHosts: ['product.roets.co.uk', 'localhost', '104.248.247.65'],
     proxy: {
       '/api': {
         target: 'http://localhost:3010',

@@ -1,107 +1,60 @@
 #!/bin/bash
 
-# Simple, guaranteed fix for the database issue
+# Simple solution - use the API's register endpoint
+set -e
 
-echo "======================================"
-echo "   🔧 SIMPLE DATABASE FIX"
-echo "======================================"
+PORT=3010
 
-# Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
+echo "========================================"
+echo "  SIMPLE FIX - USE API REGISTRATION"
+echo "========================================"
 echo ""
-echo "This will:"
-echo "  1. Delete the entire database"
-echo "  2. Create a fresh database"
-echo "  3. Let TypeORM create correct tables"
+
+# Step 1: Delete any existing admin user
+echo "Cleaning up any existing admin user..."
+docker exec postgres-pim psql -U pim_user -d pim_dev -c "DELETE FROM users WHERE email = 'admin@pim.com';" 2>/dev/null || true
+
+# Step 2: Register through API (let TypeORM handle everything)
 echo ""
-echo -e "${RED}All data will be deleted!${NC}"
-echo "Continue? (y/n)"
-read -r answer
+echo "Registering admin user through API..."
+echo "This lets TypeORM handle all the column names and hashing..."
+echo ""
 
-if [ "$answer" != "y" ]; then
-    echo "Cancelled"
-    exit 0
-fi
+RESPONSE=$(curl -s -X POST "http://localhost:$PORT/api/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@pim.com",
+    "password": "Admin123!",
+    "firstName": "Admin",
+    "lastName": "User"
+  }')
 
-# Kill any running Node processes
-echo -e "\n${YELLOW}Stopping any running servers...${NC}"
-pkill -f node 2>/dev/null
-sleep 2
-
-# Delete and recreate database
-echo -e "\n${YELLOW}Recreating database...${NC}"
-psql -U postgres << EOF
-DROP DATABASE IF EXISTS pim_dev;
-CREATE DATABASE pim_dev;
-GRANT ALL PRIVILEGES ON DATABASE pim_dev TO pim_user;
-EOF
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to recreate database${NC}"
-    echo "Try manually:"
-    echo "  psql -U postgres"
-    echo "  DROP DATABASE IF EXISTS pim_dev;"
-    echo "  CREATE DATABASE pim_dev;"
-    echo "  GRANT ALL ON DATABASE pim_dev TO pim_user;"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Database recreated${NC}"
-
-# Go to backend directory
-cd /Users/colinroets/dev/projects/product/pim
-
-# Clean build files
-echo -e "\n${YELLOW}Cleaning build files...${NC}"
-rm -rf dist/
-echo -e "${GREEN}✓ Build files cleaned${NC}"
-
-# Build the project
-echo -e "\n${YELLOW}Building project...${NC}"
-npm run build
-
-if [ $? -ne 0 ]; then
-    echo -e "${RED}Build failed${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Project built${NC}"
-
-# Start server to create tables
-echo -e "\n${YELLOW}Starting server to create tables...${NC}"
-echo "(This will run for 15 seconds)"
-
-# Run server for 15 seconds to create tables
-timeout 15 npm run start:dev 2>&1 | grep -E "Table.*created|successfully started" &
-
-# Wait
-sleep 15
-
-echo -e "\n${GREEN}✓ Tables should be created${NC}"
-
-# Check what was created
-echo -e "\n${YELLOW}Checking tables...${NC}"
-export PGPASSWORD='secure_password_change_me'
-psql -U pim_user -d pim_dev -h localhost -c "\dt" 2>/dev/null
-unset PGPASSWORD
-
-# Now try seeding
-echo -e "\n${YELLOW}Seeding database...${NC}"
-npm run seed
-
-if [ $? -eq 0 ]; then
-    echo -e "\n${GREEN}=====================================${NC}"
-    echo -e "${GREEN}   ✅ SUCCESS! Database fixed!${NC}"
-    echo -e "${GREEN}=====================================${NC}"
+# Check response
+if echo "$RESPONSE" | grep -q "accessToken"; then
+    echo "✅ SUCCESS! User registered!"
+    echo ""
+    echo "$RESPONSE" | jq '{email: .user.email, role: .user.role}' 2>/dev/null
+    echo ""
+    echo "You can now login at: http://localhost:5173"
+    echo "Email: admin@pim.com"
+    echo "Password: Admin123!"
+elif echo "$RESPONSE" | grep -q "already exists"; then
+    echo "User already exists. Let's try to login..."
+    echo ""
+    curl -s -X POST "http://localhost:$PORT/api/auth/login" \
+      -H "Content-Type: application/json" \
+      -d '{"email":"admin@pim.com","password":"Admin123!"}' | jq . 2>/dev/null
 else
-    echo -e "\n${YELLOW}If seeding failed, try:${NC}"
-    echo "1. Start the server: npm run start:dev"
-    echo "2. In another terminal: npm run seed"
+    echo "❌ Registration failed:"
+    echo "$RESPONSE" | jq . 2>/dev/null || echo "$RESPONSE"
+    echo ""
+    echo "The backend might have a database connection issue."
+    echo ""
+    echo "Try:"
+    echo "1. Restart the backend:"
+    echo "   - Stop with Ctrl+C"
+    echo "   - cd /Users/colinroets/dev/projects/product/engines"
+    echo "   - npm run start:dev"
+    echo ""
+    echo "2. Then run: ./shell-scripts/rebuild-users-table.sh"
 fi
-
-echo ""
-echo "Next: npm run start:dev"

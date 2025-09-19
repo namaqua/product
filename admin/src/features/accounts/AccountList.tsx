@@ -11,6 +11,7 @@ import {
   ArrowDownTrayIcon,
   BuildingOfficeIcon,
   ChevronDownIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/20/solid';
 import { accountService } from '../../services/account.service';
@@ -412,6 +413,13 @@ export default function AccountList() {
                               title="View"
                             >
                               <EyeIcon className="h-5 w-5" />
+                            </Link>
+                            <Link
+                              to={`/accounts/${account.id}/addresses`}
+                              className="text-green-600 hover:text-green-900"
+                              title="Manage Addresses"
+                            >
+                              <MapPinIcon className="h-5 w-5" />
                             </Link>
                             <Link
                               to={`/accounts/${account.id}/edit`}

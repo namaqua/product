@@ -77,14 +77,15 @@ export interface CreateAccountDto {
   paymentTerms?: string;
   currency?: string;
   creditLimit?: number;
-  accountManagerId?: string;
-  parentAccountId?: string;
-  primaryContactId?: string;
+  accountManagerId?: string | undefined;
+  parentAccountId?: string | undefined;
+  primaryContactId?: string | undefined;
   businessClassification?: string;
   annualRevenue?: number;
   employeeCount?: number;
   notes?: string;
   tags?: string[];
+  recordOwnerId?: string | undefined;
 }
 
 export interface UpdateAccountDto extends Partial<CreateAccountDto> {

@@ -1,67 +1,80 @@
 version: '3.8'
 
+name: pim-simple
+
 services:
-  # PostgreSQL with explicit network settings
+  # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
-    container_name: postgres-simple
+    container_name: pim-simple-postgres
+    restart: always
     environment:
-      POSTGRES_USER: product_user
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: product_db
-      POSTGRES_HOST_AUTH_METHOD: trust
-    ports:
-      - "5433:5432"
-    network_mode: bridge
-    restart: unless-stopped
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: demo_password_2024
+      POSTGRES_DB: pim_demo
+    volumes:
+      - postgres_simple_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim_user -d pim_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pim-simple-network
 
-  # Redis 
-  redis:
-    image: redis:7-alpine
-    container_name: redis-simple
-    ports:
-      - "6379:6379"
-    network_mode: bridge
-    restart: unless-stopped
-
-  # API using host network to access other containers
-  api:
-    build:
-      context: ./engines
-      dockerfile: Dockerfile.production
-    container_name: api-simple
+  # Backend - Run directly with Node, no build
+  backend:
+    image: node:20-alpine
+    container_name: pim-simple-backend
+    working_dir: /app
+    restart: always
     environment:
-      NODE_ENV: production
+      NODE_ENV: development
       PORT: 3010
-      DB_HOST: host.docker.internal
-      DB_PORT: 5433
-      DB_NAME: product_db
-      DB_USER: product_user
-      DB_PASSWORD: password123
-      REDIS_HOST: host.docker.internal
-      REDIS_PORT: 6379
-      JWT_SECRET: my-jwt-secret
-      JWT_REFRESH_SECRET: my-refresh-secret
-      JWT_EXPIRES_IN: 15m
-      JWT_REFRESH_EXPIRES_IN: 7d
-      CORS_ORIGIN: http://localhost:3000
-    network_mode: host
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-
-  # Frontend
-  frontend:
-    build:
-      context: ./admin
-      dockerfile: Dockerfile.production
-      args:
-        VITE_API_URL: http://localhost:3010/api
-    container_name: frontend-simple
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: pim_demo
+      DATABASE_USER: pim_user
+      DATABASE_PASSWORD: demo_password_2024
+      JWT_SECRET: demo_jwt_secret_for_testing_only_2024
+      CORS_ORIGIN: "*"
     ports:
-      - "3000:80"
-    network_mode: bridge
+      - "3010:3010"
     depends_on:
-      - api
-    restart: unless-stopped
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./engines:/app
+      - engines_node_modules:/app/node_modules
+      - ./uploads:/app/uploads
+    command: sh -c "npm install && npm run start:dev"
+    networks:
+      - pim-simple-network
+
+  # Frontend - Run directly with Node, no build
+  frontend:
+    image: node:20-alpine
+    container_name: pim-simple-frontend
+    working_dir: /app
+    restart: always
+    environment:
+      VITE_API_URL: http://localhost:3010
+    ports:
+      - "80:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./admin:/app
+      - admin_node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    networks:
+      - pim-simple-network
+
+volumes:
+  postgres_simple_data:
+  engines_node_modules:
+  admin_node_modules:
+
+networks:
+  pim-simple-network:
+    driver: bridge

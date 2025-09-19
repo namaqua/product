@@ -15,7 +15,7 @@ import {
   Min,
   Matches
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { 
   AccountType, 
@@ -113,7 +113,8 @@ export class CreateAccountDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
+  @Transform(({ value }) => value?.filter((id: any) => id !== ''))
+  @IsUUID('4', { each: true, message: 'Each document ID must be a valid UUID' })
   documentIds?: string[];
 
   // Business Classification
@@ -160,13 +161,14 @@ export class CreateAccountDto {
   ownershipType?: OwnershipType;
 
   // Contact & Address Data
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     description: 'Headquarters address',
     type: CreateAddressDto
   })
+  @IsOptional()
   @ValidateNested()
   @Type(() => CreateAddressDto)
-  headquartersAddress: CreateAddressDto;
+  headquartersAddress?: CreateAddressDto;
 
   @ApiPropertyOptional({ 
     description: 'Billing address (if different from headquarters)',
@@ -186,23 +188,23 @@ export class CreateAccountDto {
   @Type(() => CreateAddressDto)
   shippingAddress?: CreateAddressDto;
 
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     description: 'Primary phone number',
     example: '+1-555-123-4567'
   })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(20)
-  primaryPhone: string;
+  primaryPhone?: string;
 
-  @ApiProperty({ 
+  @ApiPropertyOptional({ 
     description: 'Primary email address',
     example: 'contact@acme.com'
   })
+  @IsOptional()
   @IsEmail()
-  @IsNotEmpty()
   @MaxLength(255)
-  primaryEmail: string;
+  primaryEmail?: string;
 
   @ApiPropertyOptional({ 
     description: 'Company website URL',
@@ -219,7 +221,8 @@ export class CreateAccountDto {
     example: 'parent-account-uuid'
   })
   @IsOptional()
-  @IsUUID()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsUUID('4', { message: 'Parent account ID must be a valid UUID' })
   parentAccountId?: string;
 
   @ApiPropertyOptional({ 
@@ -229,7 +232,8 @@ export class CreateAccountDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID('4', { each: true })
+  @Transform(({ value }) => value?.filter((id: any) => id !== ''))
+  @IsUUID('4', { each: true, message: 'Each linked user ID must be a valid UUID' })
   linkedUserIds?: string[];
 
   // Commercial Attributes
@@ -308,6 +312,7 @@ export class CreateAccountDto {
     example: 'user-uuid'
   })
   @IsOptional()
-  @IsUUID()
+  @Transform(({ value }) => value === '' ? undefined : value)
+  @IsUUID('4', { message: 'Record owner ID must be a valid UUID' })
   recordOwnerId?: string;
 }

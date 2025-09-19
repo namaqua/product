@@ -193,35 +193,43 @@ export class AddressesService {
   async update(id: string, updateAddressDto: UpdateAddressDto): Promise<Address> {
     this.logger.log(`Updating address ${id} with data: ${JSON.stringify(updateAddressDto)}`);
     
-    const address = await this.findOne(id);
+    // Fetch the existing address
+    const existingAddress = await this.findOne(id);
 
     // Don't allow changing address type
-    if (updateAddressDto.addressType && updateAddressDto.addressType !== address.addressType) {
+    if (updateAddressDto.addressType && updateAddressDto.addressType !== existingAddress.addressType) {
       throw new BadRequestException('Cannot change address type. Delete and create a new address instead.');
     }
 
-    // For shipping addresses, handle default flag
-    if (address.addressType === AddressType.SHIPPING && 
-        updateAddressDto.isDefault && 
-        !address.isDefault) {
-      await this.clearDefaultAddress(address.accountId, AddressType.SHIPPING);
+    // For shipping addresses, handle default flag changes
+    if (existingAddress.addressType === AddressType.SHIPPING && 
+        updateAddressDto.isDefault === true && 
+        !existingAddress.isDefault) {
+      await this.clearDefaultAddress(existingAddress.accountId, AddressType.SHIPPING);
     }
 
     // Don't allow removing default from HQ or Billing
-    if ((address.addressType === AddressType.HEADQUARTERS || 
-         address.addressType === AddressType.BILLING) && 
+    if ((existingAddress.addressType === AddressType.HEADQUARTERS || 
+         existingAddress.addressType === AddressType.BILLING) && 
         updateAddressDto.isDefault === false) {
       updateAddressDto.isDefault = true; // Force it to remain default
     }
 
-    // Update the address with provided data
-    Object.assign(address, updateAddressDto);
-    
-    const updatedAddress = await this.addressRepository.save(address);
-    
-    this.logger.log(`Address updated: ${JSON.stringify(updatedAddress)}`);
-    
-    return updatedAddress;
+    try {
+      // Merge the updates with the existing address
+      Object.assign(existingAddress, updateAddressDto);
+      
+      // Save the updated address using TypeORM's save method
+      // This will automatically handle the updatedAt field
+      const updatedAddress = await this.addressRepository.save(existingAddress);
+      
+      this.logger.log(`Address updated successfully: ${JSON.stringify(updatedAddress)}`);
+      
+      return updatedAddress;
+    } catch (error) {
+      this.logger.error(`Failed to update address: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -280,11 +288,19 @@ export class AddressesService {
       return address; // Already default
     }
 
-    // Clear other default shipping addresses
-    await this.clearDefaultAddress(address.accountId, AddressType.SHIPPING);
+    try {
+      // Clear other default shipping addresses
+      await this.clearDefaultAddress(address.accountId, AddressType.SHIPPING);
 
-    address.isDefault = true;
-    return this.addressRepository.save(address);
+      // Set this address as default using TypeORM save
+      address.isDefault = true;
+      const updatedAddress = await this.addressRepository.save(address);
+      
+      return updatedAddress;
+    } catch (error) {
+      this.logger.error(`Failed to set default address: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**
@@ -365,14 +381,24 @@ export class AddressesService {
       return; // Only shipping addresses can have multiple entries
     }
 
-    await this.addressRepository.update(
-      { 
-        accountId,
-        addressType: AddressType.SHIPPING,
-        isDefault: true,
-      },
-      { isDefault: false }
-    );
+    try {
+      // Find all default addresses and update them using TypeORM
+      const defaultAddresses = await this.addressRepository.find({
+        where: {
+          accountId,
+          addressType,
+          isDefault: true,
+        },
+      });
+
+      for (const addr of defaultAddresses) {
+        addr.isDefault = false;
+        await this.addressRepository.save(addr);
+      }
+    } catch (error) {
+      this.logger.error(`Failed to clear default addresses: ${error.message}`, error.stack);
+      // Don't throw - continue with the operation
+    }
   }
 
   /**
@@ -405,10 +431,15 @@ export class AddressesService {
    * Track address usage
    */
   async trackUsage(addressId: string): Promise<void> {
-    await this.addressRepository.update(addressId, {
-      lastUsedAt: new Date(),
-      usageCount: () => 'usage_count + 1',
-    });
+    try {
+      const address = await this.findOne(addressId);
+      address.lastUsedAt = new Date();
+      address.usageCount = (address.usageCount || 0) + 1;
+      await this.addressRepository.save(address);
+    } catch (error) {
+      this.logger.error(`Failed to track usage: ${error.message}`, error.stack);
+      // Don't throw - tracking is not critical
+    }
   }
 
   /**

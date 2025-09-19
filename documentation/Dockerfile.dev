@@ -1,0 +1,22 @@
+# Docusaurus Documentation Dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for better compatibility
+RUN apk add --no-cache python3 make g++ bash
+
+# Copy package files
+COPY package*.json ./
+
+# Use npm install for flexibility
+RUN npm install
+
+# Copy all documentation files
+COPY . .
+
+# Expose Docusaurus default port
+EXPOSE 3000
+
+# Run Docusaurus development server
+CMD ["npm", "start", "--", "--host", "0.0.0.0"]

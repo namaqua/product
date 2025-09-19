@@ -64,33 +64,15 @@ export default function AccountEdit() {
     email: '',
     phoneNumber: '',
     faxNumber: '',
-    headquartersAddress: {
-      street: '',
-      city: '',
-      state: '',
-      country: '',
-      postalCode: '',
-    },
-    shippingAddress: {
-      street: '',
-      city: '',
-      state: '',
-      country: '',
-      postalCode: '',
-    },
-    billingAddress: {
-      street: '',
-      city: '',
-      state: '',
-      country: '',
-      postalCode: '',
-    },
+    headquartersAddress: undefined,
+    shippingAddress: undefined,
+    billingAddress: undefined,
     paymentTerms: '',
     currency: defaultCurrency,
     creditLimit: undefined,
-    accountManagerId: '',
-    parentAccountId: '',
-    primaryContactId: '',
+    accountManagerId: undefined,
+    parentAccountId: undefined,
+    primaryContactId: undefined,
     businessClassification: '',
     annualRevenue: undefined,
     employeeCount: undefined,
@@ -117,33 +99,15 @@ export default function AccountEdit() {
         email: account.email || '',
         phoneNumber: account.phoneNumber || '',
         faxNumber: account.faxNumber || '',
-        headquartersAddress: account.headquartersAddress || {
-          street: '',
-          city: '',
-          state: '',
-          country: '',
-          postalCode: '',
-        },
-        shippingAddress: account.shippingAddress || {
-          street: '',
-          city: '',
-          state: '',
-          country: '',
-          postalCode: '',
-        },
-        billingAddress: account.billingAddress || {
-          street: '',
-          city: '',
-          state: '',
-          country: '',
-          postalCode: '',
-        },
+        headquartersAddress: account.headquartersAddress || undefined,
+        shippingAddress: account.shippingAddress || undefined,
+        billingAddress: account.billingAddress || undefined,
         paymentTerms: account.paymentTerms || '',
         currency: account.currency || defaultCurrency,
         creditLimit: account.creditLimit || undefined,
-        accountManagerId: account.accountManagerId || '',
-        parentAccountId: account.parentAccountId || '',
-        primaryContactId: account.primaryContactId || '',
+        accountManagerId: account.accountManagerId || undefined,
+        parentAccountId: account.parentAccountId || undefined,
+        primaryContactId: account.primaryContactId || undefined,
         businessClassification: account.businessClassification || '',
         annualRevenue: account.annualRevenue || undefined,
         employeeCount: account.employeeCount || undefined,
@@ -195,8 +159,45 @@ export default function AccountEdit() {
       return;
     }
 
+    // Clean up data before submission
+    const submitData = { ...formData };
+    
+    // Remove empty string fields that should be undefined/null
+    if (!submitData.parentAccountId || submitData.parentAccountId === '') {
+      delete submitData.parentAccountId;
+    }
+    if (!submitData.accountManagerId || submitData.accountManagerId === '') {
+      delete submitData.accountManagerId;
+    }
+    if (!submitData.primaryContactId || submitData.primaryContactId === '') {
+      delete submitData.primaryContactId;
+    }
+    if (!submitData.recordOwnerId || submitData.recordOwnerId === '') {
+      delete submitData.recordOwnerId;
+    }
+    
+    // Clean up empty addresses
+    if (submitData.headquartersAddress && 
+        !submitData.headquartersAddress.street && 
+        !submitData.headquartersAddress.city &&
+        !submitData.headquartersAddress.country) {
+      delete submitData.headquartersAddress;
+    }
+    if (submitData.shippingAddress && 
+        !submitData.shippingAddress.street && 
+        !submitData.shippingAddress.city &&
+        !submitData.shippingAddress.country) {
+      delete submitData.shippingAddress;
+    }
+    if (submitData.billingAddress && 
+        !submitData.billingAddress.street && 
+        !submitData.billingAddress.city &&
+        !submitData.billingAddress.country) {
+      delete submitData.billingAddress;
+    }
+
     // Only send changed fields (but we'll send all for simplicity with PATCH)
-    updateMutation.mutate(formData);
+    updateMutation.mutate(submitData);
   };
 
   // Handle cancel
@@ -230,13 +231,16 @@ export default function AccountEdit() {
 
   // Handle address changes
   const handleAddressChange = (addressType: 'headquartersAddress' | 'shippingAddress' | 'billingAddress', field: keyof Address, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [addressType]: {
-        ...prev[addressType],
-        [field]: value,
-      },
-    }));
+    setFormData(prev => {
+      const currentAddress = prev[addressType] || { street: '', city: '', state: '', country: '', postalCode: '' };
+      return {
+        ...prev,
+        [addressType]: {
+          ...currentAddress,
+          [field]: value,
+        },
+      };
+    });
   };
 
   // Handle tag addition
@@ -262,10 +266,14 @@ export default function AccountEdit() {
   // Copy headquarters address
   const copyHeadquarters = (target: 'shipping' | 'billing') => {
     const addressField = target === 'shipping' ? 'shippingAddress' : 'billingAddress';
-    setFormData(prev => ({
-      ...prev,
-      [addressField]: { ...prev.headquartersAddress },
-    }));
+    if (formData.headquartersAddress) {
+      setFormData(prev => ({
+        ...prev,
+        [addressField]: { ...prev.headquartersAddress },
+      }));
+    } else {
+      toast.error('Please enter a headquarters address first');
+    }
   };
 
   // Reset form to original data
@@ -682,7 +690,7 @@ export default function AccountEdit() {
                 </div>
                 {/* Headquarters Address */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Headquarters Address</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Headquarters Address <span className="text-sm font-normal text-gray-500">(Optional)</span></h3>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label htmlFor="hq-street" className="block text-sm font-medium text-gray-700">
@@ -691,7 +699,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="hq-street"
-                        value={formData.headquartersAddress?.street}
+                        value={formData.headquartersAddress?.street || ''}
                         onChange={(e) => handleAddressChange('headquartersAddress', 'street', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -704,7 +712,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="hq-city"
-                        value={formData.headquartersAddress?.city}
+                        value={formData.headquartersAddress?.city || ''}
                         onChange={(e) => handleAddressChange('headquartersAddress', 'city', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -717,7 +725,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="hq-state"
-                        value={formData.headquartersAddress?.state}
+                        value={formData.headquartersAddress?.state || ''}
                         onChange={(e) => handleAddressChange('headquartersAddress', 'state', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -730,7 +738,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="hq-country"
-                        value={formData.headquartersAddress?.country}
+                        value={formData.headquartersAddress?.country || ''}
                         onChange={(e) => handleAddressChange('headquartersAddress', 'country', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -743,7 +751,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="hq-postalCode"
-                        value={formData.headquartersAddress?.postalCode}
+                        value={formData.headquartersAddress?.postalCode || ''}
                         onChange={(e) => handleAddressChange('headquartersAddress', 'postalCode', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -754,7 +762,7 @@ export default function AccountEdit() {
                 {/* Shipping Address */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Shipping Address</h3>
+                    <h3 className="text-lg font-medium text-gray-900">Shipping Address <span className="text-sm font-normal text-gray-500">(Optional)</span></h3>
                     <button
                       type="button"
                       onClick={() => copyHeadquarters('shipping')}
@@ -771,7 +779,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="ship-street"
-                        value={formData.shippingAddress?.street}
+                        value={formData.shippingAddress?.street || ''}
                         onChange={(e) => handleAddressChange('shippingAddress', 'street', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -784,7 +792,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="ship-city"
-                        value={formData.shippingAddress?.city}
+                        value={formData.shippingAddress?.city || ''}
                         onChange={(e) => handleAddressChange('shippingAddress', 'city', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -797,7 +805,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="ship-state"
-                        value={formData.shippingAddress?.state}
+                        value={formData.shippingAddress?.state || ''}
                         onChange={(e) => handleAddressChange('shippingAddress', 'state', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -810,7 +818,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="ship-country"
-                        value={formData.shippingAddress?.country}
+                        value={formData.shippingAddress?.country || ''}
                         onChange={(e) => handleAddressChange('shippingAddress', 'country', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -823,7 +831,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="ship-postalCode"
-                        value={formData.shippingAddress?.postalCode}
+                        value={formData.shippingAddress?.postalCode || ''}
                         onChange={(e) => handleAddressChange('shippingAddress', 'postalCode', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -834,7 +842,7 @@ export default function AccountEdit() {
                 {/* Billing Address */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">Billing Address</h3>
+                    <h3 className="text-lg font-medium text-gray-900">Billing Address <span className="text-sm font-normal text-gray-500">(Optional)</span></h3>
                     <button
                       type="button"
                       onClick={() => copyHeadquarters('billing')}
@@ -851,7 +859,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="bill-street"
-                        value={formData.billingAddress?.street}
+                        value={formData.billingAddress?.street || ''}
                         onChange={(e) => handleAddressChange('billingAddress', 'street', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -864,7 +872,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="bill-city"
-                        value={formData.billingAddress?.city}
+                        value={formData.billingAddress?.city || ''}
                         onChange={(e) => handleAddressChange('billingAddress', 'city', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -877,7 +885,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="bill-state"
-                        value={formData.billingAddress?.state}
+                        value={formData.billingAddress?.state || ''}
                         onChange={(e) => handleAddressChange('billingAddress', 'state', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -890,7 +898,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="bill-country"
-                        value={formData.billingAddress?.country}
+                        value={formData.billingAddress?.country || ''}
                         onChange={(e) => handleAddressChange('billingAddress', 'country', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -903,7 +911,7 @@ export default function AccountEdit() {
                       <input
                         type="text"
                         id="bill-postalCode"
-                        value={formData.billingAddress?.postalCode}
+                        value={formData.billingAddress?.postalCode || ''}
                         onChange={(e) => handleAddressChange('billingAddress', 'postalCode', e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -985,7 +993,7 @@ export default function AccountEdit() {
                       type="text"
                       name="accountManagerId"
                       id="accountManagerId"
-                      value={formData.accountManagerId}
+                      value={formData.accountManagerId || ''}
                       onChange={handleInputChange}
                       placeholder="User ID of account manager"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -1000,8 +1008,8 @@ export default function AccountEdit() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <AccountSelector
-                    value={formData.parentAccountId}
-                    onChange={(value) => setFormData(prev => ({ ...prev, parentAccountId: value || '' }))}
+                    value={formData.parentAccountId || ''}
+                    onChange={(value) => setFormData(prev => ({ ...prev, parentAccountId: value || undefined }))}
                     label="Parent Account"
                     placeholder="Select parent account (if subsidiary)..."
                     excludeIds={id ? [id] : []} // Exclude current account
@@ -1016,7 +1024,7 @@ export default function AccountEdit() {
                       type="text"
                       name="primaryContactId"
                       id="primaryContactId"
-                      value={formData.primaryContactId}
+                      value={formData.primaryContactId || ''}
                       onChange={handleInputChange}
                       placeholder="ID of primary contact person"
                       className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

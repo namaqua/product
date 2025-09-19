@@ -1,0 +1,39 @@
+# Backend Development Dockerfile with Timeout Fix
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies for better compatibility
+RUN apk add --no-cache python3 make g++ bash
+
+# Set npm configuration for better reliability
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-timeout 300000 && \
+    npm config set timeout 300000 && \
+    npm config set registry https://registry.npmjs.org/
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies with increased timeout and retry logic
+RUN npm install --verbose --fetch-timeout=300000 --fetch-retries=5 || \
+    (echo "First install attempt failed, retrying..." && npm install --verbose) || \
+    (echo "Second install attempt failed, trying with --force..." && npm install --force --verbose)
+
+# Copy source code
+COPY . .
+
+# Build the application (optional for dev, but good to have)
+RUN npm run build || echo "Build failed, continuing anyway for dev"
+
+# Create uploads directory
+RUN mkdir -p uploads public
+
+# Expose port
+EXPOSE 3010
+
+# Run in development mode with hot reload
+CMD ["npm", "run", "start:dev"]

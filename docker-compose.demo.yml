@@ -1,0 +1,95 @@
+version: '3.8'
+
+name: pim-demo
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pim-demo-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: pim_user
+      POSTGRES_PASSWORD: demo_password_2024
+      POSTGRES_DB: pim_demo
+    # Comment out ports if you don't need external database access
+    # ports:
+    #   - "5433:5432"  # Uncomment only if you need to connect from host
+    volumes:
+      - postgres_demo_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pim_user -d pim_demo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - pim-demo-network
+
+  # Redis Cache (optional, but lightweight)
+  redis:
+    image: redis:7-alpine
+    container_name: pim-demo-redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_demo_data:/data
+    networks:
+      - pim-demo-network
+
+  # Backend API (Development Mode)
+  backend:
+    build:
+      context: ./engines
+      dockerfile: Dockerfile.dev
+    container_name: pim-demo-backend
+    restart: always
+    environment:
+      NODE_ENV: development  # Keep as development for better debugging
+      PORT: 3010
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: pim_demo
+      DATABASE_USER: pim_user
+      DATABASE_PASSWORD: demo_password_2024
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: demo_jwt_secret_for_testing_only_2024
+      CORS_ORIGIN: "*"  # Allow all origins for demo
+    ports:
+      - "3010:3010"  # Expose backend directly
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./engines/src:/app/src  # Mount source for hot reload
+      - ./uploads:/app/uploads
+    networks:
+      - pim-demo-network
+
+  # Frontend (Development Mode)
+  frontend:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    container_name: pim-demo-frontend
+    restart: always
+    environment:
+      VITE_API_URL: http://product.roets.co.uk:3010  # Direct to backend port
+    ports:
+      - "80:5173"  # Map Vite dev server to port 80
+    depends_on:
+      - backend
+    volumes:
+      - ./admin/src:/app/src  # Mount source for hot reload
+      - ./admin/public:/app/public
+    networks:
+      - pim-demo-network
+
+volumes:
+  postgres_demo_data:
+  redis_demo_data:
+
+networks:
+  pim-demo-network:
+    driver: bridge

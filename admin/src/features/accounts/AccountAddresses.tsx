@@ -633,7 +633,24 @@ export default function AccountAddresses() {
   });
 
   // Extract addresses from standardized response
-  const addresses = addressesResponse?.data?.items || [];
+  // Handle both single and double-wrapped responses
+  const extractAddresses = (response: any) => {
+    // Check if double-wrapped (data.data structure)
+    if (response?.data?.data?.items) {
+      console.log('Double-wrapped response detected');
+      return response.data.data.items;
+    }
+    // Check if single-wrapped (data.items structure)
+    if (response?.data?.items) {
+      console.log('Single-wrapped response detected');
+      return response.data.items;
+    }
+    // Fallback to empty array
+    console.log('No addresses found in response');
+    return [];
+  };
+  
+  const addresses = extractAddresses(addressesResponse) || [];
 
   // Debug log
   useEffect(() => {
@@ -644,7 +661,7 @@ export default function AccountAddresses() {
 
   // Create mutation
   const createMutation = useMutation({
-    mutationFn: (data: AddressFormData) => {
+    mutationFn: async (data: AddressFormData) => {
       // Ensure accountId is included
       const createDto: CreateAddressDto = {
         ...data,
@@ -652,7 +669,13 @@ export default function AccountAddresses() {
       } as CreateAddressDto;
       
       console.log('Creating address with data:', createDto);
-      return addressService.createAddress(createDto);
+      const response = await addressService.createAddress(createDto);
+      
+      // Handle both single and double-wrapped responses
+      if (response?.data?.data?.item || response?.data?.item) {
+        return response;
+      }
+      throw new Error('Invalid response structure');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['addresses', id] });
@@ -676,7 +699,8 @@ export default function AccountAddresses() {
       console.log('Updating address with data:', updateDto);
       return addressService.updateAddress(addressId, updateDto);
     },
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('Update successful, response:', response);
       queryClient.invalidateQueries({ queryKey: ['addresses', id] });
       toast.success('Address updated successfully');
       setIsFormOpen(false);
@@ -691,7 +715,8 @@ export default function AccountAddresses() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (addressId: string) => addressService.deleteAddress(addressId),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      console.log('Delete successful, response:', response);
       queryClient.invalidateQueries({ queryKey: ['addresses', id] });
       toast.success('Address deleted successfully');
       setShowDeleteConfirm(null);
