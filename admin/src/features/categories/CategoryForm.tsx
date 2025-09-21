@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Category, CreateCategoryDto, UpdateCategoryDto } from '../../types/api.types';
 import Button from '../../components/common/Button';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { sanitizeFormData, debugJsonIssues } from '../../utils/form-sanitizer';
 
 interface CategoryFormProps {
   category?: Category | null;
@@ -154,10 +155,18 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
 
     try {
       // Prepare data for submission
-      const submitData = { ...formData };
+      let submitData = { ...formData };
       
       // Log the data before cleaning
       console.log('Form data before cleaning:', submitData);
+      
+      // Debug JSON issues in development
+      if (process.env.NODE_ENV === 'development') {
+        debugJsonIssues(submitData);
+      }
+      
+      // Sanitize all string fields to prevent JSON parsing errors
+      submitData = sanitizeFormData(submitData);
       
       // Ensure metaKeywords is a string (already converted above)
       if (!submitData.metaKeywords) {

@@ -9,7 +9,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  isHydrated: boolean;
+  isHydrated: boolean; // Track if store has been hydrated from localStorage
   
   // Actions
   login: (credentials: LoginDto) => Promise<void>;
@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
       isHydrated: false,
 
       setHydrated: () => {
-        console.log('[AuthStore] Marking as hydrated');
+        console.log('[AuthStore] Store hydrated');
         set({ isHydrated: true });
       },
 
@@ -46,8 +46,10 @@ export const useAuthStore = create<AuthState>()(
           console.log('[AuthStore] Attempting login...');
           const response = await authService.login(credentials);
           
+          // Check if we have the tokens
           if (response.accessToken) {
             console.log('[AuthStore] Login successful');
+            // Mark as authenticated even if user object is missing
             set({
               user: response.user || { email: credentials.email } as User,
               isAuthenticated: true,
@@ -91,28 +93,30 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         console.log('[AuthStore] Logging out...');
         set({ isLoading: true });
-        
         try {
           await authService.logout();
         } catch (error) {
           console.error('[AuthStore] Logout error:', error);
+        } finally {
+          // Clear tokens
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          
+          // Clear persisted auth storage
+          localStorage.removeItem('auth-storage');
+          
+          set({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false,
+            error: null,
+          });
         }
-        
-        // Clear everything
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        localStorage.removeItem('auth-storage');
-        
-        set({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-        });
       },
 
       loadUser: async () => {
         const token = localStorage.getItem('access_token');
+        
         console.log('[AuthStore] Loading user, token exists:', !!token);
         
         if (!token) {
@@ -120,7 +124,10 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
+        // We have a token, so user is authenticated
+        // The user data should already be in the persisted state
         const currentState = get();
+        
         if (currentState.user) {
           console.log('[AuthStore] User data found in state');
           set({
@@ -128,6 +135,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           });
         } else {
+          // Try to fetch user profile
           try {
             console.log('[AuthStore] Fetching user profile...');
             const userProfile = await authService.getProfile();
@@ -138,8 +146,7 @@ export const useAuthStore = create<AuthState>()(
             });
           } catch (error) {
             console.error('[AuthStore] Failed to load user profile:', error);
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
+            // Token might be invalid
             set({
               isAuthenticated: false,
               isLoading: false,
@@ -160,36 +167,27 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         console.log('[AuthStore] Starting rehydration...');
+        // Return a function that will be called after rehydration
         return (rehydratedState, error) => {
           if (error) {
             console.error('[AuthStore] Rehydration error:', error);
-            // Even on error, mark as hydrated so app can proceed
-            state?.setHydrated();
           } else {
             console.log('[AuthStore] Rehydration complete');
+            // Call setHydrated after successful rehydration
+            rehydratedState?.setHydrated();
             
-            // Validate stored state against tokens
-            const token = localStorage.getItem('access_token');
-            if (rehydratedState?.isAuthenticated && !token) {
-              console.log('[AuthStore] Invalid auth state, clearing...');
-              rehydratedState.isAuthenticated = false;
-              rehydratedState.user = null;
+            // Check if we need to validate the stored auth state
+            if (rehydratedState?.isAuthenticated) {
+              const token = localStorage.getItem('access_token');
+              if (!token) {
+                console.log('[AuthStore] No token found, clearing auth state');
+                // No token but authenticated state - clear it
+                rehydratedState.logout();
+              }
             }
-            
-            // Mark as hydrated
-            state?.setHydrated();
           }
         };
       },
     }
   )
 );
-
-// Ensure hydration happens even if persist fails
-setTimeout(() => {
-  const state = useAuthStore.getState();
-  if (!state.isHydrated) {
-    console.warn('[AuthStore] Force hydrating after timeout');
-    state.setHydrated();
-  }
-}, 1000);

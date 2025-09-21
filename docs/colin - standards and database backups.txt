@@ -2,4 +2,10 @@
 
 ./validate-typeorm-standards.sh
 
-FeatureStatusCommandManual Backup✅ Ready./db-backup.sh backupAuto Backup (Daily 2AM)✅ Ready./db-backup.sh autoList Backups✅ Ready./db-backup.sh listRestore✅ Ready./db-backup.sh restore [timestamp]Statistics✅ Ready./db-backup.sh statsCleanup✅ Ready./db-backup.sh clean [days]
+FeatureStatusCommandManual Backup
+✅ Ready./db-backup.sh backup Auto Backup (Daily 2AM)
+✅ Ready./db-backup.sh autoList Backups
+✅ Ready./db-backup.sh listRestore
+✅ Ready./db-backup.sh restore [timestamp]Statistics
+✅ Ready./db-backup.sh statsCleanup
+✅ Ready./db-backup.sh clean [days]

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Import debug utility
 import './utils/debug-auth';
@@ -72,7 +72,6 @@ if (typeof window !== 'undefined') {
   (window as any).checkAuth = () => {
     const state = useAuthStore.getState();
     console.log('Auth State:', state);
-    return state;
   };
 }
 
@@ -188,14 +187,42 @@ function AppRoutes() {
 }
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, isHydrated } = useAuthStore();
+  const [forceReady, setForceReady] = useState(false);
 
   // Log when component mounts
   useEffect(() => {
-    console.log('🚀 App mounted', { isAuthenticated });
+    console.log('🚀 App mounted', { isAuthenticated, isHydrated });
+    
+    // Fallback timeout - force ready after 2 seconds
+    const timeout = setTimeout(() => {
+      if (!isHydrated) {
+        console.warn('⚠️ Force loading app after timeout');
+        setForceReady(true);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
-  // REMOVED HYDRATION CHECK - Direct render
+  // Update when hydration changes
+  useEffect(() => {
+    console.log('💧 Hydration status:', isHydrated);
+  }, [isHydrated]);
+
+  // Wait for auth store to hydrate (with timeout fallback)
+  if (!isHydrated && !forceReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading application...</p>
+          <p className="mt-2 text-xs text-gray-400">If this takes too long, try refreshing the page</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>

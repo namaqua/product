@@ -9,25 +9,38 @@ interface AuthGuardProps {
 
 export default function AuthGuard({ children, requiredRole }: AuthGuardProps) {
   const location = useLocation();
-  const { isAuthenticated, user, loadUser } = useAuthStore();
+  const { isAuthenticated, user, isHydrated, loadUser } = useAuthStore();
 
   useEffect(() => {
-    // Try to load user if we have a token but no auth state
-    if (!isAuthenticated) {
+    // Only try to load user if hydrated and not authenticated
+    if (isHydrated && !isAuthenticated) {
       const token = localStorage.getItem('access_token');
       if (token) {
         console.log('[AuthGuard] Token found, loading user...');
         loadUser();
       }
     }
-  }, [isAuthenticated, loadUser]);
+  }, [isHydrated, isAuthenticated, loadUser]);
 
-  // Check token existence as primary auth check
+  // Wait for the store to be hydrated from localStorage
+  if (!isHydrated) {
+    console.log('[AuthGuard] Waiting for hydration...');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check token existence as backup
   const token = localStorage.getItem('access_token');
   
-  // If no token and not authenticated, redirect to login
-  if (!token && !isAuthenticated) {
-    console.log('[AuthGuard] No auth, redirecting to login...');
+  // Check if user is authenticated
+  if (!isAuthenticated && !token) {
+    console.log('[AuthGuard] Not authenticated, redirecting to login...');
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -37,6 +50,5 @@ export default function AuthGuard({ children, requiredRole }: AuthGuardProps) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Allow access
   return <>{children}</>;
 }

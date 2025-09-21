@@ -30,16 +30,16 @@ docker-compose up -d && cd engines && npm run start:dev
 # New terminal: cd admin && npm run dev
 ```
 
-## Import/Export Sprint (Current)
-- CSV/Excel import (Papa Parse)
-- Mapping UI, validation layer  
-- Product/variant bulk import
-- Export filters, templates
-
 ## Key Docs
 - Full instructions: `/docs/PROJECT_INSTRUCTIONS.md`
 - Tasks: `/docs/TASKS.md`
 - Variants: `/docs/VARIANT_IMPLEMENTATION_CONTINUATION.md`
 
----
-*v5.0 | Dec 2024 | Priority: Import/Export*
+## Shell Script Output Format
+When creating shell scripts in /shell-scripts folder:
+- Output just the filename: "script-name.sh" 
+- Do NOT include path (/shell-scripts/ or ./shell-scripts/)
+- Do NOT include chmod +x commands
+- User has terminal open in /shell-scripts and will handle permissions
+
+Example: "Created auth-quick-fix.sh" instead of "chmod +x /path/to/shell-scripts/auth-quick-fix.sh"
