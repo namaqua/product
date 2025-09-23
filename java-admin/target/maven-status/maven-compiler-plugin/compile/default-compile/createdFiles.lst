@@ -1,0 +1,12 @@
+com/pim/admin/models/VariantAxis.class
+com/pim/admin/api/ProductService.class
+com/pim/admin/controllers/LoginController$1.class
+com/pim/admin/controllers/DashboardController.class
+com/pim/admin/MainApp.class
+com/pim/admin/controllers/LoginController.class
+com/pim/admin/api/AuthService.class
+com/pim/admin/config/ApiConfig.class
+com/pim/admin/models/ApiResponse.class
+com/pim/admin/models/AuthResponse.class
+com/pim/admin/models/Product.class
+com/pim/admin/controllers/DashboardController$1.class

@@ -52,7 +52,11 @@ This document serves as the primary reference for maintaining continuity across 
 │   ├── DATABASE_GUIDE.md        # Database access instructions
 │   ├── LEARNING_LOG.md          # Lessons learned & pitfalls to avoid
 │   ├── VARIANT_TEMPLATES_STATUS.md  # Variant templates implementation
-│   └── UI_DESIGN_GUIDELINES.md  # UI/UX standards
+│   ├── UI_DESIGN_GUIDELINES.md  # UI/UX standards
+│   ├── MARKETPLACE_IMPLEMENTATION_PLAN.md  # B2B2C marketplace feature
+│   ├── MARKETPLACE_MVP_TASKS.md  # Marketplace quick tasks reference
+│   ├── SUBSCRIPTIONS_IMPLEMENTATION_PLAN.md  # Subscription engine feature
+│   └── TASKS.md                  # Current sprint tasks & priorities
 ├── docker-compose.yml     # Docker services configuration
 ├── scripts/               # Database init scripts
 └── shell-scripts/         # All project shell scripts
@@ -297,6 +301,29 @@ Then paste into new chat session.
 6. **Workflow Manager** - Kanban/status boards using Tailwind Pro layouts
 7. **Import/Export** - File upload interfaces with Tailwind Pro upload components
 8. **User Management** - Admin screens using Tailwind Pro user list templates
+9. **Marketplace Management** - Seller onboarding, approval workflows, offerings management
+10. **Subscription Engine** - Recurring billing, subscription lifecycle, tiered plans
+
+## Major Features Implementation
+
+### Marketplace Feature (B2B2C)
+**Documentation**: `/docs/MARKETPLACE_IMPLEMENTATION_PLAN.md`
+- Extends existing Account API for seller functionality
+- Product offerings model (multiple sellers per product)
+- Commission calculation and disbursement tracking
+- Multi-level approval workflow (0-5 stages)
+- Integration with existing Product and Account APIs
+- 6-week MVP timeline with 5 implementation phases
+
+### Subscription Engine
+**Documentation**: `/docs/SUBSCRIPTIONS_IMPLEMENTATION_PLAN.md`
+- Recurring billing and subscription lifecycle management
+- Tiered plans with feature flags
+- Usage-based billing support
+- Parent-child subscription relationships
+- Proration and mid-cycle adjustments
+- Payment provider integration ready
+- 25-step implementation plan (currently 28% complete)
 
 ## Notes for Assistant
 - Always check this file first when starting a new session
@@ -313,6 +340,6 @@ Then paste into new chat session.
 - When implementing admin UI, always check if a suitable component exists in Tailwind Pro first
 
 ---
-*Last Updated: September 12, 2025*
-*Version: 1.2*
-*Changes: Updated directory structure (engines, admin, docs) from old structure (pim, pim-admin, pimdocs)*
+*Last Updated: January 2025*
+*Version: 1.3*
+*Changes: Added Marketplace and Subscription Engine features to project scope*

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.pim.admin.controllers.DashboardController">
+    
+    <MenuBar>
+        <Menu text="File">
+            <MenuItem text="Refresh" onAction="#handleRefresh"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="Logout" onAction="#handleLogout"/>
+            <MenuItem text="Exit" onAction="#handleExit"/>
+        </Menu>
+        <Menu text="Products">
+            <MenuItem text="View All" onAction="#handleViewProducts"/>
+            <MenuItem text="Add New" onAction="#handleAddProduct"/>
+        </Menu>
+        <Menu text="Help">
+            <MenuItem text="About" onAction="#handleAbout"/>
+        </Menu>
+    </MenuBar>
+    
+    <TabPane VBox.vgrow="ALWAYS">
+        <Tab text="Products" closable="false">
+            <VBox spacing="10">
+                <padding>
+                    <Insets top="10" right="10" bottom="10" left="10"/>
+                </padding>
+                
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <TextField fx:id="searchField" promptText="Search products..." prefWidth="300"/>
+                    <Button text="Search" onAction="#handleSearch"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Add Product" onAction="#handleAddProduct" styleClass="primary-button"/>
+                </HBox>
+                
+                <TableView fx:id="productsTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn fx:id="idColumn" text="ID" prefWidth="100"/>
+                        <TableColumn fx:id="nameColumn" text="Name" prefWidth="200"/>
+                        <TableColumn fx:id="skuColumn" text="SKU" prefWidth="120"/>
+                        <TableColumn fx:id="priceColumn" text="Price" prefWidth="100"/>
+                        <TableColumn fx:id="quantityColumn" text="Quantity" prefWidth="80"/>
+                        <TableColumn fx:id="statusColumn" text="Status" prefWidth="100"/>
+                        <TableColumn fx:id="featuredColumn" text="Featured" prefWidth="80"/>
+                        <TableColumn fx:id="actionsColumn" text="Actions" prefWidth="150"/>
+                    </columns>
+                </TableView>
+                
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="prevButton" text="Previous" onAction="#handlePrevPage"/>
+                    <Label fx:id="pageLabel" text="Page 1 of 1"/>
+                    <Button fx:id="nextButton" text="Next" onAction="#handleNextPage"/>
+                </HBox>
+            </VBox>
+        </Tab>
+    </TabPane>
+    
+    <HBox styleClass="status-bar" spacing="10" alignment="CENTER_LEFT">
+        <padding>
+            <Insets top="5" right="10" bottom="5" left="10"/>
+        </padding>
+        <Label fx:id="statusLabel" text="Connected to: http://localhost:3010"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="timeLabel"/>
+    </HBox>
+</VBox>

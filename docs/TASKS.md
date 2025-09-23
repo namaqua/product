@@ -1,6 +1,6 @@
 # PIM Project - Task Tracking
 
-## Current Sprint Status (December 12, 2024)
+## Current Sprint Status (January 2025)
 
 ### ✅ COMPLETED FEATURES (98% Core Functionality)
 
@@ -66,6 +66,56 @@
 - Quick stats cards
 - Charts (revenue, products, categories)
 - Recent activity feed
+
+### 🏪 NEW FEATURE: Marketplace (B2B2C) Platform (January 2025)
+
+**Status**: 🟡 PLANNED - Documentation Complete
+**Documentation**: 
+- [MARKETPLACE_IMPLEMENTATION_PLAN.md](./MARKETPLACE_IMPLEMENTATION_PLAN.md)
+- [MARKETPLACE_MVP_TASKS.md](./MARKETPLACE_MVP_TASKS.md)
+
+#### Implementation Phases (6-week timeline)
+- [ ] Phase 1: Foundation - Seller account enhancement (Week 1-2)
+- [ ] Phase 2: Product Offerings - Multi-seller per product (Week 2-3)
+- [ ] Phase 3: Approval Workflow - Admin approval system (Week 3-4)
+- [ ] Phase 4: Financial Management - Commission & disbursements (Week 4-5)
+- [ ] Phase 5: Marketplace Features - Performance metrics & ratings (Week 5-6)
+
+#### Key Components
+- Extends existing Account API for sellers
+- Offerings model (multiple sellers per product)
+- Multi-level approval workflow (0-5 stages)
+- Commission calculation per seller
+- Disbursement tracking and processing
+- Seller performance metrics
+
+**Priority**: HIGH - Revenue generating feature
+**Next Step**: Start Phase 1 - Extend Account entity with seller fields
+
+### 🎆 NEW FEATURE: Subscription Engine (January 2025)
+
+**Status**: 🟡 PLANNED - Documentation Complete
+**Documentation**: [SUBSCRIPTIONS_IMPLEMENTATION_PLAN.md](./SUBSCRIPTIONS_IMPLEMENTATION_PLAN.md)
+
+#### Implementation Phases (6-week core + 3-week advanced)
+- [ ] Phase 1: Foundation - Plans & subscriptions (Week 1)
+- [ ] Phase 2: Billing Cycles - Cycle management & proration (Week 2)
+- [ ] Phase 3: Lifecycle Management - State transitions (Week 3)
+- [ ] Phase 4: Invoicing & Payments - Invoice generation & processing (Week 4)
+- [ ] Phase 5: Advanced Features - Usage-based billing & addons (Week 5)
+- [ ] Phase 6: Integration & Polish - Payment gateway & notifications (Week 6)
+
+#### Key Components
+- Subscription plans with flexible pricing models
+- Billing cycle management with proration
+- Invoice generation and payment processing
+- Trial periods and grace periods
+- Usage-based billing support
+- Payment method management
+- Comprehensive lifecycle management
+
+**Priority**: HIGH - Revenue-critical feature
+**Next Step**: Create Subscription module structure
 
 ### 🚀 NEXT DEVELOPMENT PRIORITIES
 
@@ -159,6 +209,8 @@
 | Media | ✅ 100% | ✅ 100% | ⚠️ | ✅ |
 | Users | ✅ 100% | ✅ 100% | ⚠️ | ✅ |
 | Dashboard | ✅ 100% | ✅ 100% | ❌ | ✅ |
+| Marketplace | ❌ 0% | ❌ 0% | ❌ | ✅ |
+| Subscriptions | ❌ 0% | ❌ 0% | ❌ | ✅ |
 | Import/Export | ❌ | ❌ | ❌ | ❌ |
 | Search | ⚠️ Basic | ⚠️ Basic | ❌ | ❌ |
 | Bulk Ops | ⚠️ 50% | ❌ | ❌ | ❌ |
@@ -206,52 +258,74 @@
 
 ### 🎯 IMMEDIATE NEXT STEPS
 
-1. **Completed Today (Dec 12)**
-   - ✅ Complete variant documentation update
-   - ✅ Implement Enhanced Media Library
-   - ✅ Add thumbnail generation with SKU naming
-   - ✅ Create batch upload functionality
-   - ✅ Complete Product-Category Assignments
-   - ✅ Bulk category assignment UI
-   - ✅ Category filter in Product List
+1. **Current Sprint Focus (January 2025)**
+   - [ ] **MARKETPLACE MVP - Phase 1**
+     - [ ] Extend Account entity with seller fields
+     - [ ] Create seller registration DTOs
+     - [ ] Implement seller registration endpoint
+     - [ ] Create database migrations for seller fields
+     - [ ] Build seller registration UI
+   
+   - [ ] **SUBSCRIPTIONS - Phase 1**
+     - [ ] Create Subscription module structure
+     - [ ] Define Plan entity and migrations
+     - [ ] Implement Plan CRUD endpoints
+     - [ ] Build subscription plans UI
 
-2. **This Week**
-   - Implement CSV import for products
-   - Create import mapping UI
-   - Add validation layer
-   - Test with sample data
+2. **This Week Priority**
+   - Start Marketplace implementation (higher business priority)
+   - Create seller onboarding flow
+   - Setup approval workflow foundation
+   - Begin offerings model design
 
 3. **Next Week**
-   - Complete Excel import
-   - Add export functionality
-   - Implement background jobs
-   - Create import templates
+   - Continue Marketplace Phase 2 (Offerings)
+   - Start Subscriptions Phase 1 if resources available
+   - Import/Export system (if marketplace delayed)
 
 ### 📅 SPRINT PLANNING
 
-#### Sprint 15 (Dec 12-19) - Import/Export
-- CSV/Excel import implementation
-- Export with filters
-- Import validation and mapping
-- Template system
+#### Sprint 16 (Jan 13-20) - Marketplace Phase 1
+- Seller account enhancement
+- Registration flow
+- Database migrations
+- Basic seller dashboard
 
-#### Sprint 16 (Dec 19-26) - Advanced Search
-- Elasticsearch setup
-- Faceted search implementation
-- Search UI components
+#### Sprint 17 (Jan 20-27) - Marketplace Phase 2
+- Product offerings model
+- Offering CRUD operations
+- Multi-seller product display
+- Buy Box algorithm
+
+#### Sprint 18 (Jan 27-Feb 3) - Marketplace Phase 3
+- Approval workflow
+- Admin approval dashboard
+- Document verification
+- Status notifications
+
+#### Sprint 19 (Feb 3-10) - Marketplace Phase 4
+- Transaction tracking
+- Commission calculation
+- Disbursement system
+- Financial reporting
+
+#### Sprint 20 (Feb 10-17) - Subscriptions Phase 1-2
+- Plan management
+- Subscription creation
+- Billing cycles
+- Proration logic
+
+#### Sprint 21 (Feb 17-24) - Subscriptions Phase 3-4
+- Lifecycle management
+- Invoice generation
+- Payment processing
+- Trial management
+
+#### Sprint 22 (Feb 24-Mar 3) - Integration & Testing
+- Payment gateway integration
+- End-to-end testing
 - Performance optimization
-
-#### Sprint 17 (Dec 26-Jan 2) - Bulk Operations
-- Bulk editor UI
-- Mass assignment tools
-- Operation history
-- Undo/redo functionality
-
-#### Sprint 18 (Jan 2-9) - Polish & Deploy
-- Bug fixes
-- Performance tuning
-- Documentation completion
-- Production deployment
+- Documentation updates
 
 ### 🚢 DEPLOYMENT CHECKLIST
 
@@ -287,6 +361,8 @@
    - Enable team collaboration
 
 ---
-*Last Updated: December 12, 2024*
-*Sprint: 15*
+*Last Updated: January 2025*
+*Sprint: 16*
 *Version: 1.0.0-beta*
+*Active Features: Marketplace (0% - Planning) | Subscriptions (0% - Planning)*
+*Documentation: Complete for both Marketplace and Subscriptions*

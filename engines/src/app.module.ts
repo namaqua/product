@@ -15,6 +15,7 @@ import { AttributesModule } from './modules/attributes/attributes.module';
 import { MediaModule } from './modules/media/media.module';
 import { VariantsModule } from './modules/variants/variants.module';
 import { AddressesModule } from './modules/addresses/addresses.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AddressesModule } from './modules/addresses/addresses.module';
     AttributesModule,
     MediaModule,
     VariantsModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService, DatabaseHealthService, AuditSubscriber],

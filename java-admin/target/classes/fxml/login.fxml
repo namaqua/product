@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.pim.admin.controllers.LoginController"
+      alignment="CENTER" spacing="20" styleClass="login-container">
+    
+    <padding>
+        <Insets top="40" right="40" bottom="40" left="40"/>
+    </padding>
+    
+    <Label text="PIM Admin Login" styleClass="login-title"/>
+    
+    <VBox spacing="15">
+        <VBox spacing="5">
+            <Label text="Email"/>
+            <TextField fx:id="emailField" promptText="Enter email"/>
+        </VBox>
+        
+        <VBox spacing="5">
+            <Label text="Password"/>
+            <PasswordField fx:id="passwordField" promptText="Enter password"/>
+        </VBox>
+    </VBox>
+    
+    <Label fx:id="errorLabel" styleClass="error-label" visible="false"/>
+    
+    <Button fx:id="loginButton" text="Login" onAction="#handleLogin" 
+            prefWidth="200" styleClass="primary-button"/>
+</VBox>
